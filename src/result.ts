@@ -38,7 +38,7 @@ type Ok<T> = {
 
 type Result<T> = Error<T> | Ok<T>
 
-function errors <T> (errs: ErrorDetails[]): Error<T> { 
+function errors <T> (errs: ErrorDetails[]): Error<T> {
   return { tag: 'error', details: errs, andThen: f => errors(errs) }
 }
 
@@ -51,7 +51,6 @@ function error <T> (phase: string, message: string, range?: Range, src?: string,
     hint
   }])
 }
-
 
 function ok <T> (x: T): Ok<T> {
   return { tag: 'ok', value: x, andThen: f => f(x) }

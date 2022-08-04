@@ -89,38 +89,38 @@ const numeqPrim : Prim = (head, args, app) => compareOp('=', (x, y) => x === y, 
 
 const zeroPrim : Prim = (head, args, app) =>
   args.length !== 1
-    ? runtimeError(msg('error-arity', 'zero?', '1' ,args.length), app)
+    ? runtimeError(msg('error-arity', 'zero?', '1', args.length), app)
     : !isNumber(args[0])
-      ? runtimeError(msg('error-type-expected-fun', 'zero?', 'number', args[0].tag), app)
-      : ok(nlebool(asNum_(args[0]) === 0))
+        ? runtimeError(msg('error-type-expected-fun', 'zero?', 'number', args[0].tag), app)
+        : ok(nlebool(asNum_(args[0]) === 0))
 
 const positivePrim : Prim = (head, args, app) =>
   args.length !== 1
-    ? runtimeError(msg('error-arity', 'positive?', '1' ,args.length), app)
-  : !isNumber(args[0])
-    ? runtimeError(msg('error-type-expected-fun', 'positive?', 'number', args[0].tag), app)
-    :  ok(nlebool(asNum_(args[0]) > 0))
+    ? runtimeError(msg('error-arity', 'positive?', '1', args.length), app)
+    : !isNumber(args[0])
+        ? runtimeError(msg('error-type-expected-fun', 'positive?', 'number', args[0].tag), app)
+        : ok(nlebool(asNum_(args[0]) > 0))
 
 const negativePrim : Prim = (head, args, app) =>
   args.length !== 1
-    ? runtimeError(msg('error-arity', 'negative?', '1' ,args.length), app)
-  : !isNumber(args[0])
-    ? runtimeError(msg('error-type-expected-fun', 'negative?', 'number', args[0].tag), app)
-    :  ok(nlebool(asNum_(args[0]) < 0))
+    ? runtimeError(msg('error-arity', 'negative?', '1', args.length), app)
+    : !isNumber(args[0])
+        ? runtimeError(msg('error-type-expected-fun', 'negative?', 'number', args[0].tag), app)
+        : ok(nlebool(asNum_(args[0]) < 0))
 
 const oddPrim : Prim = (head, args, app) =>
   args.length !== 1
-    ? runtimeError(msg('error-arity', 'odd?', '1' ,args.length), app)
-  : !isNumber(args[0])
-    ? runtimeError(msg('error-type-expected-fun', 'odd?', 'number', args[0].tag), app)
-    :  ok(nlebool((asNum_(args[0]) & 1) === 1))
+    ? runtimeError(msg('error-arity', 'odd?', '1', args.length), app)
+    : !isNumber(args[0])
+        ? runtimeError(msg('error-type-expected-fun', 'odd?', 'number', args[0].tag), app)
+        : ok(nlebool((asNum_(args[0]) & 1) === 1))
 
 const evenPrim : Prim = (head, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'even?', '1', args.length), app)
-  : !isNumber(args[0])
-    ? runtimeError(msg('error-type-expected-fun', 'even?', 'number', args[0].tag), app)
-    :  ok(nlebool((asNum_(args[0]) & 1) !== 1))
+    : !isNumber(args[0])
+        ? runtimeError(msg('error-type-expected-fun', 'even?', 'number', args[0].tag), app)
+        : ok(nlebool((asNum_(args[0]) & 1) !== 1))
 
 function numericUOp (symbol: string, op: (x: number) => number, args: Exp[], app: Exp): Result<Exp> {
   return args.length !== 1
@@ -169,8 +169,8 @@ const moduloPrim: Prim = (head, args, app) => numericBOp('modulo', (x, y) => x %
 //   (numerator q)    ...wait, do we need these?
 //   (denominator q)  ...wait, do we need these?
 
-const floorPrim: Prim = (head, args, app) => numericUOp('floor', (x) => Math.floor(x) ,args, app)
-const ceilingPrim: Prim = (head, args, app) => numericUOp('ceiling', (x) => Math.ceil(x) ,args, app)
+const floorPrim: Prim = (head, args, app) => numericUOp('floor', (x) => Math.floor(x), args, app)
+const ceilingPrim: Prim = (head, args, app) => numericUOp('ceiling', (x) => Math.ceil(x), args, app)
 const truncatePrim: Prim = (head, args, app) => numericUOp('truncate', (x) => Math.trunc(x), args, app)
 const roundPrim: Prim = (head, args, app) => numericUOp('round', (x) => Math.round(x), args, app)
 
@@ -309,7 +309,7 @@ const pairListPrimitives: [string, Prim][] = [
   ['list?', listPrim]
 ]
 
-const makeListPrim: Prim = function(head, args, app) {
+const makeListPrim: Prim = function (head, args, app) {
   // N.B., (make-list k) returns the empty list, but this behavior is weird, so we don't replicate it!
   if (args.length !== 2) {
     return runtimeError(msg('error-arity', 'make-list', '2', args.length), app)
@@ -330,7 +330,7 @@ const lengthPrim: Prim = function (head, args, app) {
   if (args.length !== 1) {
     return runtimeError(msg('error-arity', 'length', '1', args.length), app)
   }
-  let length = 0
+  const length = 0
   let e: Exp = args[0]
   while (e.tag !== 'nil') {
     if (e.tag === 'pair') {
@@ -355,7 +355,7 @@ function appendOne_ (l1: Exp, l2: Exp): Exp {
 const appendPrim: Prim = function (head, args, app) {
   if (args.length === 0) {
     return runtimeError(msg('error-arity-atleast', 'append', '1', args.length))
-  } 
+  }
   args.forEach(e => {
     if (!isList(e)) {
       return runtimeError(msg('error-type-expected-fun', 'append', 'list', e.tag), e)
@@ -389,7 +389,7 @@ const appendPrim: Prim = function (head, args, app) {
 const listPrimitives: [string, Prim][] = [
   ['make-list', makeListPrim],
   ['length', lengthPrim],
-  ['append', appendPrim],
+  ['append', appendPrim]
 ]
 
 // Symbols (6.5)
@@ -459,7 +459,7 @@ const stringRefPrim: Prim = function (head, args, app) {
   }
   const str = asString_(args[0])
   const i = asNum_(args[1])
-  if (0 <= i && i < str.length) {
+  if (i >= 0 && i < str.length) {
     return ok(nlechar(str[i]))
   } else {
     return runtimeError(msg('error-index-string', i, str), app)
@@ -547,7 +547,7 @@ const applyPrim: Prim = (head, args, app) =>
 
 const controlPrimitives: [string, Prim][] = [
   ['procedure?', procedurePrim],
-  ['apply', applyPrim],
+  ['apply', applyPrim]
 ]
 
 // Exceptions (6.11)

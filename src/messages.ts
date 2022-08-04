@@ -1,9 +1,7 @@
-import { ICE } from "./result"
+import { ICE } from './result.js'
 
 type Template = (...args: any) => string
 type Messages = Map<string, Template>
-
-////////////////////////////////////////////////////////////////////////////////
 
 const templates: Messages = new Map([
   ['error-arity', (vs) => `${vs[0]} expects ${vs[1]} arguments but ${vs[2]} arguments were given`],
@@ -24,14 +22,12 @@ const templates: Messages = new Map([
   ['error-var-undef', (vs) => `Variable ${vs[0]} is not defined`],
   ['error-var-shadowed', (vs) => `Variable ${vs[0]} has already been defined`],
   ['phase-lexer', (_) => 'Lexer'],
-  ['phase-parser', (_) => `Parser`],
+  ['phase-parser', (_) => 'Parser'],
   ['phase-runtime', (_) => 'Runtime'],
-  ['phase-scope', (_) => 'Scope'],
+  ['phase-scope', (_) => 'Scope']
 ])
 
-////////////////////////////////////////////////////////////////////////////////
-
-export function msg(id: string, ...args: any): string {
+export function msg (id: string, ...args: any): string {
   if (templates.has(id)) {
     return templates.get(id)!(args)
   } else {

@@ -1,4 +1,4 @@
-import { ecall, eif, elam, elet, epair, isValue, Exp, Env, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, isBoolean, nleand, nleor } from './lang.js'
+import { ecall, eif, elam, elet, epair, isValue, Exp, Env, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor } from './lang.js'
 import { primMap } from './prims.js'
 import { Result, error, ok, rethrow } from './result.js'
 import { msg } from './messages.js'
@@ -171,7 +171,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       } else {
         const guard = e.branches[0][0]
         const body = e.branches[0][1]
-        if (isValue(e.branches[0][0]))  {
+        if (isValue(e.branches[0][0])) {
           if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === true) {
             return ok(body)
           } else if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === false) {
@@ -182,10 +182,10 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
         } else {
           return stepExp(env, guard).andThen(guardp =>
             ok(nlecond([[guardp, body], ...e.branches.slice(1)])))
-        }      
+        }
       }
     case 'and':
-      if (e.args.length == 0) {
+      if (e.args.length === 0) {
         return ok(nlebool(true))
       } else {
         const head = e.args[0]
@@ -204,7 +204,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       }
     // N.B., or is identical to and expect dualized---factor redundancy?
     case 'or':
-      if (e.args.length == 0) {
+      if (e.args.length === 0) {
         return ok(nlebool(false))
       } else {
         const head = e.args[0]
@@ -260,6 +260,7 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
             return [env, sbinding(s.name.value, result.value)]
         }
       }
+      /* eslint-disable no-fallthrough */
     case 'exp':
       if (isValue(s.value)) {
         return [env, svalue(s.value)]
@@ -277,5 +278,5 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
 
 export {
   runtimeError, substitute,
-  stepExp, stepStmt, evaluateExp,
+  stepExp, stepStmt, evaluateExp
 }

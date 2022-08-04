@@ -1,10 +1,10 @@
-import { ErrorDetails, errorDetails, Result, ok, errors } from './result.js'
-import { Env, EVar, Exp, expToString, Program, Stmt } from './lang.js'
+import { ErrorDetails, errorDetails } from './result.js'
+import { Env, Exp, Program } from './lang.js'
 import { primMap } from './prims.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
 
-function undefinedVariableError(x: string, range: Range): ErrorDetails {
+function undefinedVariableError (x: string, range: Range): ErrorDetails {
   return errorDetails(
     msg('phase-scope'),
     msg('error-var-undef', x),
@@ -13,7 +13,7 @@ function undefinedVariableError(x: string, range: Range): ErrorDetails {
   )
 }
 
-function shadowedVariableError(x: string, range: Range): ErrorDetails {
+function shadowedVariableError (x: string, range: Range): ErrorDetails {
   return errorDetails(
     msg('phase-scope'),
     msg('error-var-shadowed', x),
@@ -68,13 +68,12 @@ function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
       case 'define':
         if (bvars.includes(s.name.value)) {
           errors.push(shadowedVariableError(s.name.value, s.name.range))
-        } 
+        }
         bvars = bvars.concat([s.name.value])
         errors = errors.concat(checkExp(bvars, s.value))
         return
       case 'exp':
         errors = errors.concat(checkExp(bvars, s.value))
-        return
     }
   })
   return errors

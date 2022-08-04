@@ -8,7 +8,7 @@ export * from './result.js'
 export { expToString, stmtToString, progToString } from './lang.js'
 
 export function compileProgram (src: string): Result<Program> {
-  return parseProgram(src).andThen(prog => 
+  return parseProgram(src).andThen(prog =>
     detailsToResult(scopeCheckProgram(prog)).andThen(_ =>
       ok(prog)))
 }
@@ -24,15 +24,15 @@ export class ProgramState {
   prog: Program
 
   constructor (prog: Program, env?: Env) {
-    this.env = env ? env : new Map()
+    this.env = env || new Map()
     this.prog = prog
   }
 
-  isFullyEvaluated(): boolean {
+  isFullyEvaluated (): boolean {
     return this.prog.every(isStmtDone)
   }
 
-  step(): ProgramState {
+  step (): ProgramState {
     for (let i = 0; i < this.prog.length; i++) {
       const s = this.prog[i]
       if (!isStmtDone(s)) {
@@ -47,7 +47,7 @@ export class ProgramState {
     return this
   }
 
-  evaluate(): ProgramState {
+  evaluate (): ProgramState {
     let st: ProgramState = this
     while (!st.isFullyEvaluated()) {
       st = st.step()
@@ -55,15 +55,15 @@ export class ProgramState {
     return st
   }
 
-  stepExp(e: Exp): Result<Exp> {
+  stepExp (e: Exp): Result<Exp> {
     return stepExp(this.env, e)
   }
 
-  evaluateExp(e: Exp): Result<Exp> {
+  evaluateExp (e: Exp): Result<Exp> {
     return evaluateExp(this.env, e)
   }
 
-  toString(): string {
+  toString (): string {
     return progToString(this.prog)
   }
 }
@@ -77,13 +77,13 @@ export class ProgramTrace {
     this.pos = 0
   }
 
-  getCurrentState(): ProgramState {
+  getCurrentState (): ProgramState {
     return this.states[this.pos]
   }
 
-  stepForward(): void {
+  stepForward (): void {
     const lastI = this.states.length - 1
-    if (this.pos == lastI && !this.states[lastI].isFullyEvaluated()) {
+    if (this.pos === lastI && !this.states[lastI].isFullyEvaluated()) {
       this.states.push(this.states[lastI].step())
       this.pos += 1
     } else if (this.pos < lastI) {
@@ -93,13 +93,13 @@ export class ProgramTrace {
     // do not advance forward.
   }
 
-  stepBackward(): void {
+  stepBackward (): void {
     if (this.pos > 0) {
       this.pos--
     }
   }
 
-  evalNextStmt(): void {
+  evalNextStmt (): void {
     if (this.getCurrentState().isFullyEvaluated()) { return }
     const i = indexOfCurrentStmt(this.getCurrentState().prog)
     while (indexOfCurrentStmt(this.getCurrentState().prog) === i) {
@@ -107,32 +107,32 @@ export class ProgramTrace {
     }
   }
 
-  revertPrevStmt(): void {
+  revertPrevStmt (): void {
     const i = indexOfCurrentStmt(this.getCurrentState().prog)
     while (indexOfCurrentStmt(this.getCurrentState().prog) === i && this.pos > 0) {
       this.stepBackward()
     }
   }
 
-  evaluateProg(): void {
+  evaluateProg (): void {
     while (!this.states[this.pos].isFullyEvaluated()) {
       this.stepForward()
     }
   }
 
-  resetProg(): void {
+  resetProg (): void {
     this.pos = 0
   }
 
-  currentStep(): number {
+  currentStep (): number {
     return this.pos + 1
   }
 
-  currentState(): ProgramState {
+  currentState (): ProgramState {
     return this.states[this.pos]
   }
 
-  addStmt(s: Stmt): void {
+  addStmt (s: Stmt): void {
     this.states.forEach(st => st.prog.push(s))
   }
 }

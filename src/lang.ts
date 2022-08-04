@@ -45,9 +45,9 @@ type Exp
 
   // Derived forms
   | ELet
-  | ECond    // TODO: implement me
-  | EAnd     // TODO: implement me
-  | EOr      // TODO: implement me
+  | ECond
+  | EAnd
+  | EOr
   // | EBegin   // TODO: implement me
 
 /* eslint-enable no-use-before-define */
@@ -261,7 +261,8 @@ function expEquals (e1: Exp, e2: Exp): boolean {
   }
 }
 
-type SEffect = SError | SBinding | SValue 
+/* eslint-disable no-use-before-define */
+type SEffect = SError | SBinding | SValue
 
 type SError = { tag: 'error', errors: ErrorDetails[] }
 const serror = (errors: ErrorDetails[]): SEffect => ({ tag: 'error', errors })
@@ -272,6 +273,7 @@ const sbinding = (name: string, value: Exp): SBinding => ({ tag: 'binding', name
 type SValue = { tag: 'value', value: Exp }
 const svalue = (value: Exp): SValue => ({ tag: 'value', value })
 
+/* eslint-disable no-use-before-define */
 type Stmt = SDefine | SExp | SEffect
 
 type SDefine = { tag: 'define', name: Name, value: Exp }

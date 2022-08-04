@@ -21,7 +21,7 @@ function sexpToStringList (s: Sexp): Result<Name[]> {
   switch (s.tag) {
     case 'atom':
       return parserError(msg('error-type-expected', 'list', 'identifier'), s)
-    case 'slist': 
+    case 'slist':
       return join(s.list.map((x) => x.tag === 'atom'
         ? ok(name(x.single, x.range))
         : parserError(msg('error-type-expected', 'identifier', 'list'), x)))

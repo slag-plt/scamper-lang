@@ -1,8 +1,8 @@
-import { Result, ok, error, rethrow, ICE } from './result.js'
+import { Result, ok, error, rethrow } from './result.js'
 import { Loc, mkLoc, noLoc, Range, mkRange, noRange } from './loc.js'
-import { msg } from './messages.js';
+import { msg } from './messages.js'
 
-// eslint-disable no-use-before-define
+/* eslint-disable no-use-before-define */
 type Sexp = Atom | SList
 
 /** A single atom */
@@ -29,7 +29,6 @@ function slist (range: Range, list: Sexp[]): SList {
 
 type Token = { value: string, range: Range }
 const mkToken = (value: string, loc: Loc): Token => ({ value, range: mkRange(loc, mkLoc(loc.line, loc.column + value.length - 1)) })
-const mkNotToken = () => mkToken('', noLoc())
 
 function lexerError <T> (message: string, tok?: Token, hint?: string): Result<T> {
   return error(msg('phase-lexer'), message, tok?.range, tok?.value, hint)
@@ -41,9 +40,9 @@ function tokenize (src: string): Token[] {
   // `tok` is a mutable structure that keeps track of the current token we are
   // building up, if we are building up one currently. When we are not building
   // up a token, `text` is undefined.
-  let tok: { text?: string, start: Loc } = { text: undefined, start: noLoc() }
+  const tok: { text?: string, start: Loc } = { text: undefined, start: noLoc() }
   // N.B., vscode 0-indexes line/col information!?
-  let pos = mkLoc(0 ,0)
+  const pos = mkLoc(0, 0)
 
   for (let i = 0; i < src.length; i++) {
     const isWhitespace = /\s/.test(src[i])
@@ -123,7 +122,7 @@ function tokensToSexp (toks: Token[]): Result<Sexp> {
     const head = toks.shift()!
     switch (head.value) {
       case '(': {
-        return tokensToSListArgs(toks).andThen((args) => ok(slist(mkRange(args[0].range.start, args[args.length- 1].range.end), args)))
+        return tokensToSListArgs(toks).andThen((args) => ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), args)))
       }
       case ',': {
         return tokensToSexp(toks)
