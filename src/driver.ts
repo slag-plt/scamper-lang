@@ -9,7 +9,7 @@ const filename = process.argv[3]
 
 function runProgram (prog: Program) {
   const st = new ProgramState(prog).evaluate()
-  st.prog.forEach(s => {
+  st.prog.statements.forEach(s => {
     if (s.tag === 'value') {
       console.log(expToString(s.value))
     }
@@ -30,7 +30,7 @@ function traceProgram (prog: Program) {
     console.log(progToString(st.prog))
   }
   console.log('===== Output =====')
-  st.prog.forEach(s => console.log(`${stmtToString(s)}`))
+  st.prog.statements.forEach(s => console.log(`${stmtToString(s)}`))
 }
 
 fs.readFile(filename, 'utf8', (error, src) => {

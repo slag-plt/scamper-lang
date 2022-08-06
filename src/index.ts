@@ -29,18 +29,21 @@ export class ProgramState {
   }
 
   isFullyEvaluated (): boolean {
-    return this.prog.every(isStmtDone)
+    return this.prog.statements.every(isStmtDone)
   }
 
   step (): ProgramState {
-    for (let i = 0; i < this.prog.length; i++) {
-      const s = this.prog[i]
+    for (let i = 0; i < this.prog.statements.length; i++) {
+      const s = this.prog.statements[i]
       if (!isStmtDone(s)) {
         // N.B., make sure to not mutate things, but instead, create a new
         // ProgramState with the updates.
         const result = stepStmt(this.env, s)
-        const prog = [...this.prog]
-        prog[i] = result[1]
+        const prog = {
+          imports: this.prog.imports,
+          statements: [...this.prog.statements]
+        }
+        prog.statements[i] = result[1]
         return new ProgramState(prog, result[0])
       }
     }
@@ -133,6 +136,6 @@ export class ProgramTrace {
   }
 
   addStmt (s: Stmt): void {
-    this.states.forEach(st => st.prog.push(s))
+    this.states.forEach(st => st.prog.statements.push(s))
   }
 }

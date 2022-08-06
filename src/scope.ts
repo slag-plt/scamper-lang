@@ -58,12 +58,14 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
       return e.args.flatMap((v) => checkExp(bvars, v))
     case 'or':
       return e.args.flatMap((v) => checkExp(bvars, v))
+    case 'obj':
+      return []
   }
 }
 
 function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
   let errors: ErrorDetails[] = []
-  prog.forEach(s => {
+  prog.statements.forEach(s => {
     switch (s.tag) {
       case 'define':
         if (bvars.includes(s.name.value)) {

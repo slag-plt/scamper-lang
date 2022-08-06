@@ -1,15 +1,15 @@
 import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
-import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps } from './sexp.js'
+import { Atom, Sexp, sexpToString, SList, stringToSexp, stringToSexps } from './sexp.js'
 import { msg } from './messages.js'
 
 const reservedWords = [
   'and',
   'cond',
   'define',
-  'lambda',
   'if',
   'import',
+  'lambda',
   'or'
 ]
 
@@ -184,8 +184,32 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
   }
 }
 
+function isImport (s: Sexp): boolean {
+  return s.tag === 'slist' &&
+    s.list.length === 2 &&
+    (s.list[0].tag === 'atom' && (s.list[0] as Atom).single === 'import') &&
+    s.list[1].tag === 'atom'
+}
+
+function findIndexOfFirstNonImport (ss: Sexp[]): number {
+  for (let i = 0; i < ss.length; i++) {
+    if (!isImport(ss[i])) { return i }
+  }
+  return -1
+}
+
+function sexpToImport_ (s: Sexp): string {
+  return ((s as SList).list[1] as Atom).single
+}
+
 function sexpsToProgram (ss: Sexp[]): Result<Program> {
-  return join(ss.map(sexpToStmt)).andThen(result => ok(result))
+  const i = findIndexOfFirstNonImport(ss)
+  const importsSexps = ss.slice(0, i)
+  const stmtsSexps = ss.slice(i)
+  return join(stmtsSexps.map(sexpToStmt)).andThen(statements => ok({
+    imports: importsSexps.map(sexpToImport_),
+    statements
+  }))
 }
 
 function parseProgram (src: string): Result<Program> {

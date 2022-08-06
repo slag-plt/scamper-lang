@@ -320,7 +320,7 @@ const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, val
 type SExp = { tag: 'exp', value: Exp }
 const sexp = (value: Exp): SExp => ({ tag: 'exp', value })
 
-type Program = Stmt[]
+type Program = { imports: string[], statements: Stmt[] }
 
 // #endregion
 
@@ -337,7 +337,7 @@ function stmtToString (stmt: Stmt): string {
 }
 
 function progToString (prog: Program): string {
-  return prog.map(stmtToString).join('\n\n')
+  return `${prog.imports.map(imp => `(import ${imp})`).join('\n')}\n\n${prog.statements.map(stmtToString).join('\n\n')}`
 }
 
 // #endregion
@@ -349,8 +349,8 @@ function isStmtDone (stmt: Stmt): boolean {
 }
 
 function indexOfCurrentStmt (prog: Program): number {
-  for (let i = 0; i < prog.length; i++) {
-    if (!isStmtDone(prog[i])) {
+  for (let i = 0; i < prog.statements.length; i++) {
+    if (!isStmtDone(prog.statements[i])) {
       return i
     }
   }
