@@ -576,4 +576,4 @@ const primMap = new Map<string, Prim>([
   ...controlPrimitives
 ])
 
-export { primMap }
+export { Prim, primMap }

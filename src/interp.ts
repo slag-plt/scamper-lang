@@ -37,6 +37,8 @@ function substitute (e1: Exp, x: string, e2: Exp): Exp {
       return eand(e2.range, e2.args.map(e => substitute(e1, x, e)))
     case 'or':
       return eor(e2.range, e2.args.map(e => substitute(e1, x, e)))
+    case 'obj':
+      return e2
   }
 }
 
@@ -221,6 +223,8 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
             ok(nleor([headp, ...e.args.slice(1)])))
         }
       }
+    case 'obj':
+      return ok(e)
   }
 }
 

@@ -1,11 +1,11 @@
-/* eslint-disable no-use-before-define -- Mutually recursive definitions */
-
 import { Range, noRange } from './loc'
 import { ErrorDetails } from './result'
 
 type Name = { value: string, range: Range }
 const name = (value: string, range: Range): Name => ({ value, range })
 const nlname = (value: string): Name => name(value, noRange())
+
+/* eslint-disable no-use-before-define */
 
 /** Literal expressions */
 type Lit
@@ -50,7 +50,10 @@ type Exp
   | EOr
   // | EBegin   // TODO: implement me
 
-/* eslint-enable no-use-before-define */
+  // Non-standard forms
+  | EObj // A wrapped, tagged Javascript object
+
+/* eslint-enable */
 
 type EVar = { tag: 'var', range: Range, value: string }
 const evar = (range: Range, value: string): EVar => ({ tag: 'var', range, value })
@@ -105,6 +108,9 @@ type EOr = { tag: 'or', range: Range, args: Exp[] }
 const eor = (range: Range, args: Exp[]): EOr => ({ tag: 'or', range, args })
 const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 
+type EObj = { tag: 'obj', range: Range, kind: string, obj: object }
+const nleobj = (kind: string, obj: object): EObj => ({ tag: 'obj', range: noRange(), kind, obj })
+
 function parens (ss: String[]) {
   return `(${ss.join(' ')})`
 }
@@ -143,6 +149,7 @@ function expToString (e:Exp): string {
     case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
+    case 'obj': return `[object ${e.kind}]`
   }
 }
 
@@ -159,6 +166,7 @@ function isValue (e:Exp): boolean {
     case 'cond': return false
     case 'and': return false
     case 'or': return false
+    case 'obj': return true
   }
 }
 
@@ -201,6 +209,10 @@ function isList (e:Exp): boolean {
   return e.tag === 'nil'
 }
 
+function isObj (e: Exp): boolean {
+  return e.tag === 'obj'
+}
+
 function asNum_ (e:Exp): number {
   return ((e as ELit).value as LNum).value
 }
@@ -211,6 +223,10 @@ function asBool_ (e: Exp): boolean {
 
 function asString_ (e: Exp): string {
   return ((e as ELit).value as LStr).value
+}
+
+function asList_ (e: Exp): Exp[] {
+  return unsafeListToArray(e)
 }
 
 function nameEquals (n1: Name, n2: Name): boolean {
@@ -316,14 +332,14 @@ type Env = Map<string, Exp>
 export {
   Name, name, nlname,
   Lit, LBool, LNum, LChar, LStr,
-  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, ELet, ECond, EAnd, EOr,
+  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, ELet, ECond, EAnd, EOr, EObj,
   lbool, lnum, lchar, lstr, ebool, enumber, echar, estr,
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor,
   nlebool, nlenumber, nlechar, nlestr,
-  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor,
+  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nleobj,
   litToString, expToString, expEquals,
-  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList,
-  asNum_, asBool_, asString_,
+  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isObj,
+  asNum_, asBool_, asString_, asList_,
   Stmt, serror, sbinding, svalue, sdefine, sexp, isStmtDone, stmtToString,
   Program, Env, indexOfCurrentStmt, progToString
 }
