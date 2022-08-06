@@ -1,9 +1,15 @@
 import { Range, noRange } from './loc'
 import { ErrorDetails } from './result'
 
+// #region Names
+
 type Name = { value: string, range: Range }
 const name = (value: string, range: Range): Name => ({ value, range })
 const nlname = (value: string): Name => name(value, noRange())
+
+// #endregion
+
+// #region Expression forms
 
 /* eslint-disable no-use-before-define */
 
@@ -111,6 +117,12 @@ const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 type EObj = { tag: 'obj', range: Range, kind: string, obj: object }
 const nleobj = (kind: string, obj: object): EObj => ({ tag: 'obj', range: noRange(), kind, obj })
 
+type Env = Map<string, Exp>
+
+// #endregion
+
+// #region Expression pretty-printing
+
 function parens (ss: String[]) {
   return `(${ss.join(' ')})`
 }
@@ -152,6 +164,10 @@ function expToString (e:Exp): string {
     case 'obj': return `[object ${e.kind}]`
   }
 }
+
+// #endregion
+
+// #region Expression querying functions
 
 function isValue (e:Exp): boolean {
   switch (e.tag) {
@@ -277,8 +293,13 @@ function expEquals (e1: Exp, e2: Exp): boolean {
   }
 }
 
+// #endregion
+
+// #region Statement and program forms
+
 /* eslint-disable no-use-before-define */
 type SEffect = SError | SBinding | SValue
+/* eslint-enable */
 
 type SError = { tag: 'error', errors: ErrorDetails[] }
 const serror = (errors: ErrorDetails[]): SEffect => ({ tag: 'error', errors })
@@ -291,12 +312,19 @@ const svalue = (value: Exp): SValue => ({ tag: 'value', value })
 
 /* eslint-disable no-use-before-define */
 type Stmt = SDefine | SExp | SEffect
+/* eslint-enable */
 
 type SDefine = { tag: 'define', name: Name, value: Exp }
 const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, value })
 
 type SExp = { tag: 'exp', value: Exp }
 const sexp = (value: Exp): SExp => ({ tag: 'exp', value })
+
+type Program = Stmt[]
+
+// #endregion
+
+// #region Statement and program pretty-printing
 
 function stmtToString (stmt: Stmt): string {
   switch (stmt.tag) {
@@ -308,11 +336,17 @@ function stmtToString (stmt: Stmt): string {
   }
 }
 
+function progToString (prog: Program): string {
+  return prog.map(stmtToString).join('\n\n')
+}
+
+// #endregion
+
+// #region Statement and program querying functions
+
 function isStmtDone (stmt: Stmt): boolean {
   return stmt.tag === 'error' || stmt.tag === 'binding' || stmt.tag === 'value'
 }
-
-type Program = Stmt[]
 
 function indexOfCurrentStmt (prog: Program): number {
   for (let i = 0; i < prog.length; i++) {
@@ -323,11 +357,7 @@ function indexOfCurrentStmt (prog: Program): number {
   return -1
 }
 
-function progToString (prog: Program): string {
-  return prog.map(stmtToString).join('\n\n')
-}
-
-type Env = Map<string, Exp>
+// #endregion
 
 export {
   Name, name, nlname,
