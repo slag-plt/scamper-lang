@@ -1,6 +1,6 @@
 import { ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { asList_, asNum_, asString_, EObj, Exp, isInteger, isList, isString, nleobj, nleprim, Prim } from '../lang.js'
+import { asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim } from '../lang.js'
 import { msg } from '../messages.js'
 import { Env, entry } from '../env.js'
 
@@ -81,19 +81,12 @@ const beside = (drawings: Drawing[]): Beside => ({
 })
 
 const besidePrim: Prim = (args, app) => {
-  if (args.length !== 1) {
-    return runtimeError(msg('error-arity', 'beside', 1, args.length), app)
-  } else if (!isList(args[0])) {
-    return runtimeError(msg('error-type-expected-fun', 'beside', 'list', args[0].tag), app)
-  } else {
-    const drawings = asList_(args[0])
-    drawings.forEach(d => {
-      if (!isDrawing(d)) {
-        return runtimeError(msg('error-type-expected-fun', 'beside', 'Drawing', d.tag), app)
-      }
-    })
-    return ok(nleobj('Drawing', beside(drawings.map(d => (d as EObj).obj as Drawing))))
-  }
+  args.forEach(e => {
+    if (!isDrawing(e)) {
+      return runtimeError(msg('error-type-expected-fun', 'beside', 'drawing', e.tag), app)
+    }
+  })
+  return ok(nleobj('Drawing', beside(args.map(e => (e as EObj).obj as Drawing))))
 }
 
 type Above = { tag: 'above', width: number, height: number, drawings: Drawing[] }
@@ -105,19 +98,12 @@ const above = (drawings: Drawing[]): Above => ({
 })
 
 const abovePrim: Prim = (args, app) => {
-  if (args.length !== 1) {
-    return runtimeError(msg('error-arity', 'above', 1, args.length), app)
-  } else if (!isList(args[0])) {
-    return runtimeError(msg('error-type-expected-fun', 'above', 'list', args[0].tag), app)
-  } else {
-    const drawings = asList_(args[0])
-    drawings.forEach(d => {
-      if (!isDrawing(d)) {
-        return runtimeError(msg('error-type-expected-fun', 'above', 'Drawing', d.tag), app)
-      }
-    })
-    return ok(nleobj('Drawing', above(drawings.map(d => (d as EObj).obj as Drawing))))
-  }
+  args.forEach(e => {
+    if (!isDrawing(e)) {
+      return runtimeError(msg('error-type-expected-fun', 'above', 'drawing', e.tag), app)
+    }
+  })
+  return ok(nleobj('Drawing', above(args.map(e => (e as EObj).obj as Drawing))))
 }
 
 type Overlay = { tag: 'overlay', width: number, height: number, drawings: Drawing[] }
@@ -129,19 +115,12 @@ const overlay = (drawings: Drawing[]): Overlay => ({
 })
 
 const overlayPrim: Prim = (args, app) => {
-  if (args.length !== 1) {
-    return runtimeError(msg('error-arity', 'overlay', 1, args.length), app)
-  } else if (!isList(args[0])) {
-    return runtimeError(msg('error-type-expected-fun', 'overlay', 'list', args[0].tag), app)
-  } else {
-    const drawings = asList_(args[0])
-    drawings.forEach(d => {
-      if (!isDrawing(d)) {
-        return runtimeError(msg('error-type-expected-fun', 'overlay', 'Drawing', d.tag), app)
-      }
-    })
-    return ok(nleobj('Drawing', overlay(drawings.map(d => (d as EObj).obj as Drawing))))
-  }
+  args.forEach(e => {
+    if (!isDrawing(e)) {
+      return runtimeError(msg('error-type-expected-fun', 'overlay', 'drawing', e.tag), app)
+    }
+  })
+  return ok(nleobj('Drawing', overlay(args.map(e => (e as EObj).obj as Drawing))))
 }
 
 function render (x: number, y: number, width: number, height: number, drawing: Drawing, canvas: HTMLCanvasElement) {

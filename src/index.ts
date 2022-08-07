@@ -7,6 +7,7 @@ import { scopeCheckExp, scopeCheckProgram } from './scope.js'
 
 export * from './result.js'
 export { expToString, stmtToString, progToString } from './lang.js'
+export * from './web.js'
 
 export function compileProgram (src: string): Result<Program> {
   return parseProgram(src).andThen(prog =>

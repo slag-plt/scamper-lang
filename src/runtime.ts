@@ -1,4 +1,4 @@
-import { ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim } from './lang.js'
+import { ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine } from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails } from './result.js'
 import { msg } from './messages.js'
 import { entry, Env } from './env.js'
@@ -311,7 +311,7 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
           case 'error':
             return [env, serror(result.details)]
           case 'ok':
-            return [env, sbinding(s.name.value, result.value)]
+            return [env, sdefine(s.name, result.value)]
         }
       }
       /* eslint-disable no-fallthrough */

@@ -10,9 +10,7 @@ const filename = process.argv[3]
 function runProgram (prog: Program) {
   const st = new ProgramState(prog).evaluate()
   st.prog.statements.forEach(s => {
-    if (s.tag === 'value') {
-      console.log(expToString(s.value))
-    }
+    console.log(stmtToString(s))
   })
 }
 
@@ -30,6 +28,7 @@ function traceProgram (prog: Program) {
       console.log(`${b[0]} = ${expToString(b[1].value)}`)
     }
     console.log(progToString(st.prog))
+    // console.log(JSON.stringify(st.env, null, 2))
   }
   console.log('===== Output =====')
   st.prog.statements.forEach(s => console.log(`${stmtToString(s)}`))

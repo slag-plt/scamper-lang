@@ -170,7 +170,17 @@ function expToString (e:Exp): string {
     case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
-    case 'obj': return `[object ${e.kind}]`
+    case 'obj':
+      return e.kind !== 'Drawing'
+        ? `[object ${e.kind}]`
+        : `<canvas id="test"></canvas>
+        <script>
+          const canvas = document.getElementById("test")
+          const drawing = ${JSON.stringify(e.obj)}
+          canvas.width = drawing.width
+          canvas.height = drawing.height
+          renderDrawing(0, 0, drawing, canvas)
+        </script>`
     case 'prim': return `[prim ${e.prim.name}]`
   }
 }
@@ -348,10 +358,10 @@ function stmtToString (stmt: Stmt): string {
     case 'define': return `(define ${stmt.name.value} ${expToString(stmt.value)})`
     case 'exp': return expToString(stmt.value)
     case 'import': return `(import ${stmt.source})`
-    case 'error': return stmt.errors.map(err => `<<error: ${err.message}>>`).join('\n')
-    case 'binding': return `<<${stmt.name} bound>>`
+    case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
+    case 'binding': return `[[${stmt.name} bound]]`
     case 'value': return expToString(stmt.value)
-    case 'imported': return `<<${stmt.source} imported>>`
+    case 'imported': return `[[${stmt.source} imported]]`
   }
 }
 
@@ -386,7 +396,7 @@ export {
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor,
   nlebool, nlenumber, nlechar, nlestr,
   nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nleobj, nleprim,
-  litToString, expToString, expEquals,
+  litToString, unsafeListToArray, expToString, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isObj,
   asNum_, asBool_, asString_, asList_,
   Stmt, serror, sbinding, svalue, simported, sdefine, sexp, isStmtDone, stmtToString, simport,
