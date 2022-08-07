@@ -9,6 +9,7 @@ const templates: Messages = new Map([
   ['error-cond-no-branch-applies', (_) => 'No guard of the conditional expression evaluated to #t'],
   ['error-empty-app', (_) => 'Function application cannot be empty'],
   ['error-eof', (_) => 'Unexpected end of source code encountered'],
+  ['error-import-not-found', (vs) => `Import ${vs[0]} not found`],
   ['error-index-string', (vs) => `${vs[0]} is not a valid index into string "${vs[1]}"`],
   ['error-invalid-string-literal', (_) => 'Invalid string literal encountered'],
   ['error-precondition-not-met', (vs) => `${vs[0]} expects that the argument obeys the following property: ${vs[1]} but ${vs[2]} was given.`],

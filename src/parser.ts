@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, Stmt } from './lang.js'
+import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, importDecl, ImportDecl, Name, name, Program, sdefine, sexp, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, SList, stringToSexp, stringToSexps } from './sexp.js'
 import { msg } from './messages.js'
@@ -198,8 +198,8 @@ function findIndexOfFirstNonImport (ss: Sexp[]): number {
   return -1
 }
 
-function sexpToImport_ (s: Sexp): string {
-  return ((s as SList).list[1] as Atom).single
+function sexpToImport_ (s: Sexp): ImportDecl {
+  return importDecl(s.range, ((s as SList).list[1] as Atom).single)
 }
 
 function sexpsToProgram (ss: Sexp[]): Result<Program> {

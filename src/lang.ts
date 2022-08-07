@@ -331,7 +331,10 @@ const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, val
 type SExp = { tag: 'exp', value: Exp }
 const sexp = (value: Exp): SExp => ({ tag: 'exp', value })
 
-type Program = { imports: string[], statements: Stmt[] }
+type ImportDecl = { range: Range, source: string }
+const importDecl = (range: Range, source: string): ImportDecl => ({ range, source })
+
+type Program = { imports: ImportDecl[], statements: Stmt[] }
 
 // #endregion
 
@@ -382,5 +385,5 @@ export {
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isObj,
   asNum_, asBool_, asString_, asList_,
   Stmt, serror, sbinding, svalue, sdefine, sexp, isStmtDone, stmtToString,
-  Program, indexOfCurrentStmt, progToString
+  ImportDecl, Program, importDecl, indexOfCurrentStmt, progToString
 }
