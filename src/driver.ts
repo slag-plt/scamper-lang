@@ -10,7 +10,10 @@ const filename = process.argv[3]
 function runProgram (prog: Program) {
   const st = new ProgramState(prog).evaluate()
   st.prog.statements.forEach(s => {
-    console.log(stmtToString(s))
+    const text = stmtToString(s)
+    if (text !== '') {
+      console.log(text)
+    }
   })
 }
 

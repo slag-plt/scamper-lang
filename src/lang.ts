@@ -170,17 +170,7 @@ function expToString (e:Exp): string {
     case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
-    case 'obj':
-      return e.kind !== 'Drawing'
-        ? `[object ${e.kind}]`
-        : `<canvas id="test"></canvas>
-        <script>
-          const canvas = document.getElementById("test")
-          const drawing = ${JSON.stringify(e.obj)}
-          canvas.width = drawing.width
-          canvas.height = drawing.height
-          renderDrawing(0, 0, drawing, canvas)
-        </script>`
+    case 'obj': return `[object ${e.kind}]`
     case 'prim': return `[prim ${e.prim.name}]`
   }
 }
@@ -353,20 +343,20 @@ type Program = { statements: Stmt[] }
 
 // #region Statement and program pretty-printing
 
-function stmtToString (stmt: Stmt): string {
+function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
   switch (stmt.tag) {
     case 'define': return `(define ${stmt.name.value} ${expToString(stmt.value)})`
     case 'exp': return expToString(stmt.value)
     case 'import': return `(import ${stmt.source})`
     case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
-    case 'binding': return `[[${stmt.name} bound]]`
+    case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
     case 'value': return expToString(stmt.value)
-    case 'imported': return `[[${stmt.source} imported]]`
+    case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
   }
 }
 
 function progToString (prog: Program): string {
-  return `${prog.statements.map(stmtToString).join('\n\n')}`
+  return `${prog.statements.map(s => stmtToString(s)).join('\n\n')}`
 }
 
 // #endregion

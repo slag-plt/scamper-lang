@@ -34,6 +34,8 @@ function lexerError <T> (message: string, tok?: Token, hint?: string): Result<T>
   return error(msg('phase-lexer'), message, tok?.range, tok?.value, hint)
 }
 
+type LexerState = { pos: Loc, i: number }
+
 // Create tokens from a string of expressions
 function tokenize (src: string): Token[] {
   const result: Token[] = []
@@ -42,20 +44,21 @@ function tokenize (src: string): Token[] {
   // up a token, `text` is undefined.
   const tok: { text?: string, start: Loc } = { text: undefined, start: noLoc() }
   // N.B., vscode 0-indexes line/col information!?
-  const pos = mkLoc(0, 0)
 
-  for (let i = 0; i < src.length; i++) {
-    const isWhitespace = /\s/.test(src[i])
+  const st: LexerState = { pos: mkLoc(0, 0), i: 0 }
+  while (st.i < src.length) {
+    const isWhitespace = /\s/.test(src[st.i])
 
     // 1. Check if character is either bracket or comma
-    if (src[i] === '(' || src[i] === ')' || src[i] === ',') {
+    if (src[st.i] === '(' || src[st.i] === ')' || src[st.i] === ',') {
       // If we were previous tracking a token, then the bracket or comma marks its end.
       if (tok.text !== undefined) {
         result.push(mkToken(tok.text, mkLoc(tok.start.line, tok.start.column)))
         tok.text = undefined
         tok.start = noLoc()
       }
-      result.push(mkToken(src[i], mkLoc(pos.line, pos.column)))
+      result.push(mkToken(src[st.i], mkLoc(st.pos.line, st.pos.column)))
+      st.i++
     // 2. Check if we hit a whitespace. Whitespace terminates the current token
     // we're tracking, if we are tracking one right now.
     } else if (isWhitespace) {
@@ -64,23 +67,25 @@ function tokenize (src: string): Token[] {
         tok.text = undefined
         tok.start = noLoc()
       }
+      st.i++
     // 3. Any other characters are tracked as a multi-character token.
     } else {
       // N.B., set the start position for the token if it has not yet been initialized.
       if (tok.text === undefined) {
-        tok.text = src[i]
-        tok.start = mkLoc(pos.line, pos.column)
+        tok.text = src[st.i]
+        tok.start = mkLoc(st.pos.line, st.pos.column)
       } else {
-        tok.text += src[i]
+        tok.text += src[st.i]
       }
+      st.i++
     }
     // 4. Update our current position based on the token we read.
     // TODO: do we need to chomp \r\n as a newline for Windows-style files?
-    if (src[i] === '\n' || src[i] === '\r') {
-      pos.line += 1
-      pos.column = 0
+    if (src[st.i] === '\n' || src[st.i] === '\r') {
+      st.pos.line += 1
+      st.pos.column = 0
     } else {
-      pos.column += 1
+      st.pos.column += 1
     }
   }
   // After processing the text, push the last token if we are tracking one
