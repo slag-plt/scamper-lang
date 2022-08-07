@@ -1,7 +1,10 @@
-import { ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor } from './lang.js'
-import { Result, error, join, ok, rethrow } from './result.js'
+import { ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim } from './lang.js'
+import { Result, error, join, ok, rethrow, errorDetails } from './result.js'
 import { msg } from './messages.js'
 import { entry, Env } from './env.js'
+
+import { imageLib } from './lib/image.js'
+import { primMap } from './lib/prelude.js'
 
 function runtimeError <T> (message: string, s?: Exp, hint?: string): Result<T> {
   return s
@@ -297,6 +300,8 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       return [env, s]
     case 'value':
       return [env, s]
+    case 'imported':
+      return [env, s]
     case 'define':
       if (isValue(s.value)) {
         return [env.append(s.name.value, entry(s.value, 'binding', s.name.range)), sbinding(s.name.value, s.value)]
@@ -322,10 +327,32 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
             return [env, sexp(result.value)]
         }
       }
+    case 'import':
+      if (internalLibs.has(s.source)) {
+        return [
+          new Env([...env.items(), ...internalLibs.get(s.source)!.items()]),
+          simported(s.source)
+        ]
+      } else {
+        return [
+          env,
+          serror([errorDetails(
+            msg('phase-runtime'),
+            msg('error-import-not-found', s.source, s.range)
+          )])
+        ]
+      }
   }
 }
 
+const preludeEnv: Env = new Env(Array.from(primMap.entries()).map(b => [b[0], entry(nleprim(b[1]), 'Prelude')]))
+
+const internalLibs: Map<string, Env> = new Map([
+  ['image', imageLib]
+])
+
 export {
   runtimeError, substitute,
-  stepExp, stepStmt, evaluateExp
+  stepExp, stepStmt, evaluateExp,
+  preludeEnv, internalLibs
 }

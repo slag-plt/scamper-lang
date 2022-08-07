@@ -309,8 +309,11 @@ function expEquals (e1: Exp, e2: Exp): boolean {
 // #region Statement and program forms
 
 /* eslint-disable no-use-before-define */
-type SEffect = SError | SBinding | SValue
+type SEffect = SImported | SError | SBinding | SValue
 /* eslint-enable */
+
+type SImported = { tag: 'imported', source: string }
+const simported = (source: string): SImported => ({ tag: 'imported', source })
 
 type SError = { tag: 'error', errors: ErrorDetails[] }
 const serror = (errors: ErrorDetails[]): SEffect => ({ tag: 'error', errors })
@@ -322,8 +325,11 @@ type SValue = { tag: 'value', value: Exp }
 const svalue = (value: Exp): SValue => ({ tag: 'value', value })
 
 /* eslint-disable no-use-before-define */
-type Stmt = SDefine | SExp | SEffect
+type Stmt = SImport | SDefine | SExp | SEffect
 /* eslint-enable */
+
+type SImport = { tag: 'import', range: Range, source: string }
+const simport = (range: Range, source: string): SImport => ({ tag: 'import', range, source })
 
 type SDefine = { tag: 'define', name: Name, value: Exp }
 const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, value })
@@ -331,10 +337,7 @@ const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, val
 type SExp = { tag: 'exp', value: Exp }
 const sexp = (value: Exp): SExp => ({ tag: 'exp', value })
 
-type ImportDecl = { range: Range, source: string }
-const importDecl = (range: Range, source: string): ImportDecl => ({ range, source })
-
-type Program = { imports: ImportDecl[], statements: Stmt[] }
+type Program = { statements: Stmt[] }
 
 // #endregion
 
@@ -344,14 +347,16 @@ function stmtToString (stmt: Stmt): string {
   switch (stmt.tag) {
     case 'define': return `(define ${stmt.name.value} ${expToString(stmt.value)})`
     case 'exp': return expToString(stmt.value)
+    case 'import': return `(import ${stmt.source})`
     case 'error': return stmt.errors.map(err => `<<error: ${err.message}>>`).join('\n')
     case 'binding': return `<<${stmt.name} bound>>`
     case 'value': return expToString(stmt.value)
+    case 'imported': return `<<${stmt.source} imported>>`
   }
 }
 
 function progToString (prog: Program): string {
-  return `${prog.imports.map(imp => `(import ${imp})`).join('\n')}\n\n${prog.statements.map(stmtToString).join('\n\n')}`
+  return `${prog.statements.map(stmtToString).join('\n\n')}`
 }
 
 // #endregion
@@ -359,7 +364,7 @@ function progToString (prog: Program): string {
 // #region Statement and program querying functions
 
 function isStmtDone (stmt: Stmt): boolean {
-  return stmt.tag === 'error' || stmt.tag === 'binding' || stmt.tag === 'value'
+  return stmt.tag === 'error' || stmt.tag === 'binding' || stmt.tag === 'value' || stmt.tag === 'imported'
 }
 
 function indexOfCurrentStmt (prog: Program): number {
@@ -384,6 +389,6 @@ export {
   litToString, expToString, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isObj,
   asNum_, asBool_, asString_, asList_,
-  Stmt, serror, sbinding, svalue, sdefine, sexp, isStmtDone, stmtToString,
-  ImportDecl, Program, importDecl, indexOfCurrentStmt, progToString
+  Stmt, serror, sbinding, svalue, simported, sdefine, sexp, isStmtDone, stmtToString, simport,
+  Program, indexOfCurrentStmt, progToString
 }

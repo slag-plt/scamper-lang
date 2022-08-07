@@ -1,9 +1,10 @@
 import { ErrorDetails, errorDetails } from './result.js'
 import { Env } from './env.js'
 import { Exp, Program } from './lang.js'
-import { primMap } from './prims.js'
+import { primMap } from './lib/prelude.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
+import { internalLibs } from './runtime.js'
 
 function undefinedVariableError (x: string, range: Range): ErrorDetails {
   return errorDetails(
@@ -79,6 +80,11 @@ function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
         return
       case 'exp':
         errors = errors.concat(checkExp(bvars, s.value))
+        return
+      case 'import':
+        if (internalLibs.has(s.source)) {
+          bvars = bvars.concat(Array.from(internalLibs.get(s.source)!.names()))
+        }
     }
   })
   return errors

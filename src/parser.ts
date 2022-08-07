@@ -1,6 +1,6 @@
-import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, importDecl, ImportDecl, Name, name, Program, sdefine, sexp, Stmt } from './lang.js'
+import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
-import { Atom, Sexp, sexpToString, SList, stringToSexp, stringToSexps } from './sexp.js'
+import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps } from './sexp.js'
 import { msg } from './messages.js'
 
 const reservedWords = [
@@ -178,36 +178,24 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           : args[0].tag !== 'atom'
             ? parserError('Define expects a variable as the first argument', s)
             : sexpToExp(args[1]).andThen(e => ok(sdefine(name((args[0] as Atom).single, (args[0] as Atom).range), e)))
+      } else if (s.list[0].tag === 'atom' && s.list[0].single === 'import') {
+        const args = s.list.slice(1)
+        if (args.length !== 1) {
+          return parserError(msg('error-arity', 'import', 1, args.length), s)
+        } else {
+          const source = args[0]
+          return source.tag !== 'atom'
+            ? parserError(msg('error-type-expected', 'module name', source.tag), s)
+            : ok(simport(s.range, source.single))
+        }
       } else {
         return sexpToExp(s).andThen(e => ok(sexp(e)))
       }
   }
 }
 
-function isImport (s: Sexp): boolean {
-  return s.tag === 'slist' &&
-    s.list.length === 2 &&
-    (s.list[0].tag === 'atom' && (s.list[0] as Atom).single === 'import') &&
-    s.list[1].tag === 'atom'
-}
-
-function findIndexOfFirstNonImport (ss: Sexp[]): number {
-  for (let i = 0; i < ss.length; i++) {
-    if (!isImport(ss[i])) { return i }
-  }
-  return -1
-}
-
-function sexpToImport_ (s: Sexp): ImportDecl {
-  return importDecl(s.range, ((s as SList).list[1] as Atom).single)
-}
-
 function sexpsToProgram (ss: Sexp[]): Result<Program> {
-  const i = findIndexOfFirstNonImport(ss)
-  const importsSexps = ss.slice(0, i)
-  const stmtsSexps = ss.slice(i)
-  return join(stmtsSexps.map(sexpToStmt)).andThen(statements => ok({
-    imports: importsSexps.map(sexpToImport_),
+  return join(ss.map(sexpToStmt)).andThen(statements => ok({
     statements
   }))
 }

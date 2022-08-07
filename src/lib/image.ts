@@ -1,5 +1,5 @@
 import { ok } from '../result.js'
-import { runtimeError } from '../interp.js'
+import { runtimeError } from '../runtime.js'
 import { asList_, asNum_, asString_, EObj, Exp, isInteger, isList, isString, nleobj, nleprim, Prim } from '../lang.js'
 import { msg } from '../messages.js'
 import { Env, entry } from '../env.js'

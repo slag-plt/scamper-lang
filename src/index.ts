@@ -1,10 +1,9 @@
-import { evaluateExp, stepExp, stepStmt } from './interp.js'
+import { evaluateExp, preludeEnv, stepExp, stepStmt } from './runtime.js'
 import { Exp, Stmt, isStmtDone, Program, indexOfCurrentStmt, progToString } from './lang.js'
 import { Env } from './env.js'
 import { parseExp, parseProgram } from './parser.js'
 import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'
-import { preludeEnv } from './lib/index.js'
 
 export * from './result.js'
 export { expToString, stmtToString, progToString } from './lang.js'
@@ -42,7 +41,6 @@ export class ProgramState {
         // ProgramState with the updates.
         const result = stepStmt(this.env, s)
         const prog = {
-          imports: this.prog.imports,
           statements: [...this.prog.statements]
         }
         prog.statements[i] = result[1]

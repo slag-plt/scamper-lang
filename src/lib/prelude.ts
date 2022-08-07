@@ -1,7 +1,7 @@
-import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, isLambda, nlecall, Prim } from './lang.js'
-import { ICE, ok, Result } from './result.js'
-import { runtimeError } from './interp.js'
-import { msg } from './messages.js'
+import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, isLambda, nlecall, Prim } from '../lang.js'
+import { ICE, ok, Result } from '../result.js'
+import { runtimeError } from '../runtime.js'
+import { msg } from '../messages.js'
 
 function asNumbers (args: Exp[]): Result<number[]> {
   const result = new Array(args.length)
@@ -559,7 +559,7 @@ const controlPrimitives: [string, Prim][] = [
 
 // N.B., not implemented, all operating system-specific stuff.
 
-const primMap = new Map<string, Prim>([
+const preludeMap = new Map<string, Prim>([
   ...equivalencePrimitives,
   ...numericPrimitives,
   ...booleanPrimitives,
@@ -569,4 +569,4 @@ const primMap = new Map<string, Prim>([
   ...controlPrimitives
 ])
 
-export { primMap }
+export { preludeMap as primMap }
