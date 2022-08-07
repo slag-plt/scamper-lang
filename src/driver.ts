@@ -26,7 +26,9 @@ function traceProgram (prog: Program) {
   while (!st.isFullyEvaluated()) {
     st = st.step()
     console.log(`Step ${count++}:`)
-    st.env.forEach((v, k) => { console.log(`${k} = ${expToString(v)}`) })
+    for (const b of st.env.items()) {
+      console.log(`${b[0]} = ${expToString(b[1].value)}`)
+    }
     console.log(progToString(st.prog))
   }
   console.log('===== Output =====')

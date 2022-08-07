@@ -1,8 +1,10 @@
 import { evaluateExp, stepExp, stepStmt } from './interp.js'
-import { Env, Exp, Stmt, isStmtDone, Program, indexOfCurrentStmt, progToString } from './lang.js'
+import { Exp, Stmt, isStmtDone, Program, indexOfCurrentStmt, progToString, nleprim } from './lang.js'
+import { entry, Env } from './env.js'
 import { parseExp, parseProgram } from './parser.js'
 import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'
+import { primMap } from './prims.js'
 
 export * from './result.js'
 export { expToString, stmtToString, progToString } from './lang.js'
@@ -24,7 +26,7 @@ export class ProgramState {
   prog: Program
 
   constructor (prog: Program, env?: Env) {
-    this.env = env || new Map()
+    this.env = env || new Env(Array.from(primMap.entries()).map(b => [b[0], entry(nleprim(b[1]), 'prelude')]))
     this.prog = prog
   }
 

@@ -1,7 +1,7 @@
-import { ecall, eif, elam, elet, epair, isValue, Exp, Env, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor } from './lang.js'
-import { primMap } from './prims.js'
-import { Result, error, ok, rethrow } from './result.js'
+import { ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor } from './lang.js'
+import { Result, error, join, ok, rethrow } from './result.js'
 import { msg } from './messages.js'
+import { entry, Env } from './env.js'
 
 function runtimeError <T> (message: string, s?: Exp, hint?: string): Result<T> {
   return s
@@ -39,6 +39,8 @@ function substitute (e1: Exp, x: string, e2: Exp): Exp {
       return eor(e2.range, e2.args.map(e => substitute(e1, x, e)))
     case 'obj':
       return e2
+    case 'prim':
+      return e2
   }
 }
 
@@ -74,15 +76,60 @@ function substituteAll (es: Exp[], xs: Name[], e: Exp) {
   return e
 }
 
+function substituteWithEnv (env: Env, e: Exp): Result<Exp> {
+  switch (e.tag) {
+    case 'var':
+      return env.has(e.value)
+        ? ok(env.get(e.value)!.value)
+        : runtimeError(msg('error-var-undef', e.value), e)
+    case 'lit':
+      return ok(e)
+    case 'call':
+      return substituteWithEnv(env, e.head).andThen(head =>
+        join(e.args.map(e => substituteWithEnv(env, e))).andThen(args =>
+          ok(ecall(e.range, head, args))))
+    case 'lam':
+      return substituteWithEnv(env.without(e.args.map(b => b.value)), e.body).andThen(body =>
+        ok(elam(e.range, e.args, body)))
+    case 'if':
+      return substituteWithEnv(env, e.e1).andThen(e1 =>
+        substituteWithEnv(env, e.e2).andThen(e2 =>
+          substituteWithEnv(env, e.e3).andThen(e3 =>
+            ok(eif(e.range, e1, e2, e3)))))
+    case 'nil':
+      return ok(e)
+    case 'pair':
+      return substituteWithEnv(env, e.e1).andThen(e1 =>
+        substituteWithEnv(env, e.e2).andThen(e2 =>
+          ok(epair(e.range, e1, e2))))
+    case 'let':
+      return ok(e) // TODO!
+    case 'cond':
+      return join(e.branches.map(b =>
+        substituteWithEnv(env, b[0]).andThen(e1 =>
+          substituteWithEnv(env, b[1]).andThen(e2 =>
+            ok([e1, e2] as [Exp, Exp]))))).andThen(branches => ok(econd(e.range, branches)))
+    case 'and':
+      return join(e.args.map(e => substituteWithEnv(env, e))).andThen(args =>
+        ok(eand(e.range, args)))
+    case 'or':
+      return join(e.args.map(e => substituteWithEnv(env, e))).andThen(args =>
+        ok(eor(e.range, args)))
+    case 'obj':
+      return ok(e)
+    case 'prim':
+      return ok(e)
+  }
+}
+
 function stepExp (env: Env, e: Exp): Result<Exp> {
   switch (e.tag) {
-    // TODO: need to reconcile variables with top-level bindings/env
-    case 'var': {
-      const x = e.value
-      return env.has(x)
-        ? ok(env.get(x)!)
-        : runtimeError('Undefined variable.', e)
-    }
+    // N.B., at this point, variables should be free variables bound in the
+    // environment. We rely on sprinkled calls to substituteWithEnv once an
+    // expression is a value in order to resolve free variables before they
+    // are used.
+    case 'var':
+      return ok(e)
     case 'lit':
       return ok(e)
     case 'call':
@@ -102,25 +149,23 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
             })
           }
         }
-        // If we did not stepExp any arguments, then evaluate the full call
-        switch (e.head.tag) {
-          case 'lam':
-            if (e.args.length === e.head.args.length) {
-              return ok(substituteAll(e.args, e.head.args, e.head.body))
-            } else {
-              return runtimeError(msg('error-arity', 'lambda', e.head.args.length, e.args.length), e)
+        // If we did not stepExp any arguments, then evaluate the full call.
+        // First, substitute away free variables before resolving the call.
+        return substituteWithEnv(env, e.head).andThen(head =>
+          join(e.args.map(x => substituteWithEnv(env, x))).andThen(args => {
+            switch (head.tag) {
+              case 'lam':
+                if (args.length === head.args.length) {
+                  return ok(substituteAll(args, head.args, head.body))
+                } else {
+                  return runtimeError(msg('error-arity', 'lambda', head.args.length, args.length), e)
+                }
+              case 'prim':
+                return head.prim(args, e)
+              default:
+                return runtimeError(msg('error-type-expected-call', e.head.tag), e)
             }
-          case 'var':
-            if (env.has(e.head.value)) {
-              return stepExp(env, ecall(e.range, env.get(e.head.value)!, e.args))
-            } else if (primMap.has(e.head.value)) {
-              return primMap.get(e.head.value)!(e.head.value, e.args, e)
-            } else {
-              return runtimeError(msg('error-var-undef', e.head.value), e)
-            }
-          default:
-            return runtimeError(msg('error-type-expected-call', e.head.tag, e))
-        }
+          }))
       }
     case 'lam':
       return ok(e)
@@ -225,6 +270,8 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       }
     case 'obj':
       return ok(e)
+    case 'prim':
+      return ok(e)
   }
 }
 
@@ -252,9 +299,7 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       return [env, s]
     case 'define':
       if (isValue(s.value)) {
-        const envp = new Map(env)
-        envp.set(s.name.value, s.value)
-        return [envp, sbinding(s.name.value, s.value)]
+        return [env.append(s.name.value, entry(s.value, 'binding', s.name.range)), sbinding(s.name.value, s.value)]
       } else {
         const result = stepExp(env, s.value)
         switch (result.tag) {

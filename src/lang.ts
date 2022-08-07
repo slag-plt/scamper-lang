@@ -1,5 +1,5 @@
 import { Range, noRange } from './loc'
-import { ErrorDetails } from './result'
+import { ErrorDetails, Result } from './result'
 
 // #region Names
 
@@ -12,6 +12,13 @@ const nlname = (value: string): Name => name(value, noRange())
 // #region Expression forms
 
 /* eslint-disable no-use-before-define */
+
+/**
+ * The type of primitive function implementations.
+ * @param args - the arguments passed to the primitive, assumed to be values.
+ * @param app - the full application expression, for error-reporting purposes.
+ */
+type Prim = (args: Exp[], app: Exp) => Result<Exp>
 
 /** Literal expressions */
 type Lit
@@ -58,6 +65,7 @@ type Exp
 
   // Non-standard forms
   | EObj // A wrapped, tagged Javascript object
+  | EPrim // A primitive function value
 
 /* eslint-enable */
 
@@ -117,7 +125,8 @@ const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 type EObj = { tag: 'obj', range: Range, kind: string, obj: object }
 const nleobj = (kind: string, obj: object): EObj => ({ tag: 'obj', range: noRange(), kind, obj })
 
-type Env = Map<string, Exp>
+type EPrim = { tag: 'prim', range: Range, prim: Prim }
+const nleprim = (prim: Prim): EPrim => ({ tag: 'prim', range: noRange(), prim })
 
 // #endregion
 
@@ -162,6 +171,7 @@ function expToString (e:Exp): string {
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'obj': return `[object ${e.kind}]`
+    case 'prim': return `[prim ${e.prim.name}]`
   }
 }
 
@@ -171,7 +181,7 @@ function expToString (e:Exp): string {
 
 function isValue (e:Exp): boolean {
   switch (e.tag) {
-    case 'var': return false
+    case 'var': return true
     case 'lit': return true
     case 'call': return false
     case 'lam': return true
@@ -183,6 +193,7 @@ function isValue (e:Exp): boolean {
     case 'and': return false
     case 'or': return false
     case 'obj': return true
+    case 'prim': return true
   }
 }
 
@@ -360,16 +371,16 @@ function indexOfCurrentStmt (prog: Program): number {
 // #endregion
 
 export {
-  Name, name, nlname,
+  Prim, Name, name, nlname,
   Lit, LBool, LNum, LChar, LStr,
   Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, ELet, ECond, EAnd, EOr, EObj,
   lbool, lnum, lchar, lstr, ebool, enumber, echar, estr,
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor,
   nlebool, nlenumber, nlechar, nlestr,
-  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nleobj,
+  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nleobj, nleprim,
   litToString, expToString, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isObj,
   asNum_, asBool_, asString_, asList_,
   Stmt, serror, sbinding, svalue, sdefine, sexp, isStmtDone, stmtToString,
-  Program, Env, indexOfCurrentStmt, progToString
+  Program, indexOfCurrentStmt, progToString
 }

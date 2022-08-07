@@ -1,5 +1,6 @@
 import { ErrorDetails, errorDetails } from './result.js'
-import { Env, Exp, Program } from './lang.js'
+import { Env } from './env.js'
+import { Exp, Program } from './lang.js'
 import { primMap } from './prims.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
@@ -60,6 +61,8 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
       return e.args.flatMap((v) => checkExp(bvars, v))
     case 'obj':
       return []
+    case 'prim':
+      return []
   }
 }
 
@@ -82,7 +85,7 @@ function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
 }
 
 function mkInitialBVars (env: Env): string[] {
-  return Array.from(env.keys()).concat(Array.from(primMap.keys()))
+  return Array.from(env.names()).concat(Array.from(primMap.keys()))
 }
 
 function scopeCheckExp (env: Env, e: Exp): ErrorDetails[] {
@@ -90,7 +93,7 @@ function scopeCheckExp (env: Env, e: Exp): ErrorDetails[] {
 }
 
 function scopeCheckProgram (prog: Program): ErrorDetails[] {
-  return checkProgram(mkInitialBVars(new Map()), prog)
+  return checkProgram(mkInitialBVars(new Env()), prog)
 }
 
 export { scopeCheckExp, scopeCheckProgram }

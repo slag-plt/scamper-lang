@@ -1,8 +1,8 @@
 import { ok } from '../result.js'
 import { runtimeError } from '../interp.js'
-import { asList_, asNum_, asString_, EObj, Exp, isInteger, isList, isString, nleobj } from '../lang.js'
+import { asList_, asNum_, asString_, EObj, Exp, isInteger, isList, isString, nleobj, nleprim, Prim } from '../lang.js'
 import { msg } from '../messages.js'
-import { Prim } from '../prims.js'
+import { Env, entry } from '../env.js'
 
 type Mode = 'solid' | 'outline'
 
@@ -23,7 +23,7 @@ function isDrawing (e: Exp): boolean {
   return e.tag === 'obj' && e.kind === 'Drawing'
 }
 
-const circlePrim: Prim = (head, args, app) => {
+const circlePrim: Prim = (args, app) => {
   if (args.length !== 3) {
     return runtimeError(msg('error-arity', 'circle', 3, args.length), app)
   } else if (!isInteger(args[0])) {
@@ -48,7 +48,7 @@ type Rectangle = { tag: 'rectangle', width: number, height: number, mode: Mode, 
 const rectangle = (width: number, height: number, mode: Mode, color: string): Rectangle =>
   ({ tag: 'rectangle', width, height, mode, color })
 
-const rectanglePrim: Prim = (head, args, app) => {
+const rectanglePrim: Prim = (args, app) => {
   if (args.length !== 4) {
     return runtimeError(msg('error-arity', 'rectangle', 4, args.length), app)
   } else if (!isInteger(args[0])) {
@@ -80,7 +80,7 @@ const beside = (drawings: Drawing[]): Beside => ({
   drawings
 })
 
-const besidePrim: Prim = (head, args, app) => {
+const besidePrim: Prim = (args, app) => {
   if (args.length !== 1) {
     return runtimeError(msg('error-arity', 'beside', 1, args.length), app)
   } else if (!isList(args[0])) {
@@ -104,7 +104,7 @@ const above = (drawings: Drawing[]): Above => ({
   drawings
 })
 
-const abovePrim: Prim = (head, args, app) => {
+const abovePrim: Prim = (args, app) => {
   if (args.length !== 1) {
     return runtimeError(msg('error-arity', 'above', 1, args.length), app)
   } else if (!isList(args[0])) {
@@ -128,7 +128,7 @@ const overlay = (drawings: Drawing[]): Overlay => ({
   drawings
 })
 
-const overlayPrim: Prim = (head, args, app) => {
+const overlayPrim: Prim = (args, app) => {
   if (args.length !== 1) {
     return runtimeError(msg('error-arity', 'overlay', 1, args.length), app)
   } else if (!isList(args[0])) {
@@ -197,14 +197,14 @@ function renderDrawing (x: number, y: number, drawing: Drawing, canvas: HTMLCanv
   render(x, y, drawing.width, drawing.height, drawing, canvas)
 }
 
-const imageLib: Map<String, Prim> = new Map([
-  ['circle', circlePrim],
-  ['rectangle', rectanglePrim],
-  ['beside', besidePrim],
-  ['above', abovePrim],
-  ['overlay', overlayPrim]
+const imageEntry = (prim: Prim, docs?: string) => entry(nleprim(prim), 'image', undefined, docs)
+
+const imageLib: Env = new Env([
+  ['circle', imageEntry(circlePrim)],
+  ['rectangle', imageEntry(rectanglePrim)],
+  ['beside', imageEntry(besidePrim)],
+  ['above', imageEntry(abovePrim)],
+  ['overlay', imageEntry(overlayPrim)]
 ])
 
-export {
-  renderDrawing, imageLib
-}
+export { renderDrawing, imageLib }
