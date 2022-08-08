@@ -70,10 +70,19 @@ export function emitSupportScript (): string {
     clearDrawing(canvas)
     render(x, y, drawing.width, drawing.height, drawing, canvas)
   }
+
+  function renderAllDrawings() {
+    Array.from(document.getElementsByClassName('drawing-ph')).forEach(ph => {
+      const canvas = document.createElement('canvas')
+      const drawing = JSON.parse(ph.innerText)
+      canvas.width = drawing.width
+      canvas.height = drawing.height
+      renderDrawing(0, 0, drawing, canvas)
+      ph.replaceWith(canvas)
+    })
+  }
 </script>`
 }
-
-let sym: number = 0
 
 function outputDiv (i: number, s: string): string {
   return `<div class="${outputClass}" id="${outputClass}-${i}">${s}</div>`
@@ -105,17 +114,9 @@ export function expToHtml (e: Exp): string {
     case 'and': return `(and ${e.args.map(expToHtml).join(' ')})`
     case 'or': return `(or ${e.args.map(expToHtml).join(' ')})`
     case 'obj': {
-      const drawingId = `drawing-${sym++}`
       return e.kind !== 'Drawing'
         ? `[object ${e.kind}]`
-        : `<canvas id="${drawingId}"></canvas>
-        <script>
-          const canvas = document.getElementById("${drawingId}")
-          const drawing = ${JSON.stringify(e.obj)}
-          canvas.width = drawing.width
-          canvas.height = drawing.height
-          renderDrawing(0, 0, drawing, canvas)
-        </script>`
+        : `<span class="drawing-ph">${JSON.stringify(e.obj)}</span>`
     }
     case 'prim': return `[prim ${e.prim.name}]`
   }
@@ -128,13 +129,13 @@ export function stmtToHtml (s: Stmt, outputBinders: boolean = false): string {
     case 'value':
       return expToHtml(s.value)
     case 'binding':
-      return outputBinders ? stmtToString(s) : ''
+      return outputBinders ? stmtToString(s, true) : ''
     case 'imported':
-      return outputBinders ? stmtToString(s) : ''
+      return outputBinders ? stmtToString(s, true) : ''
     case 'import':
       return stmtToString(s)
     case 'define':
-      return stmtToString(s)
+      return `(define ${s.name.value} ${expToHtml(s.value)})`
     case 'exp':
       return expToHtml(s.value)
   }
