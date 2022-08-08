@@ -1,11 +1,26 @@
 import { ProgramState, compileProgram } from './index.js'
 import { expToString, progToString, Program, stmtToString } from './lang.js'
 import { errorToString } from './result.js'
+import { tokenize } from './sexp.js'
 
 import * as fs from 'fs'
 
 const mode = process.argv[2]
 const filename = process.argv[3]
+
+function lex (src: string): void {
+  const result = tokenize(src)
+  if (result.tag === 'error') {
+    console.log(errorToString(result))
+  } else {
+    result.value.forEach(tok => {
+    // N.B., we 0-index line/col numbers to align with vscode, but for testing
+    // purposes, it is much easier to work with 1-indexed numbers that align
+    // with what editors actually report.
+      console.log(`${tok.value}: (${tok.range.start.line + 1}, ${tok.range.start.column + 1}) => (${tok.range.end.line + 1}, ${tok.range.end.column + 1})`)
+    })
+  }
+}
 
 function runProgram (prog: Program) {
   const st = new ProgramState(prog).evaluate()
@@ -39,22 +54,26 @@ function traceProgram (prog: Program) {
 
 fs.readFile(filename, 'utf8', (error, src) => {
   if (error) { throw error }
-  const result = compileProgram(src)
-  switch (result.tag) {
-    case 'error':
-      console.log(errorToString(result)) // TODO: pretty print this error!
-      break
-    case 'ok': {
-      switch (mode) {
-        case 'output':
-          runProgram(result.value)
-          break
-        case 'trace':
-          traceProgram(result.value)
-          break
-        default:
-          console.log(`Unrecognized driver command: ${mode}`)
-          break
+  if (mode === 'lex') {
+    lex(src)
+  } else {
+    const result = compileProgram(src)
+    switch (result.tag) {
+      case 'error':
+        console.log(errorToString(result)) // TODO: pretty print this error!
+        break
+      case 'ok': {
+        switch (mode) {
+          case 'output':
+            runProgram(result.value)
+            break
+          case 'trace':
+            traceProgram(result.value)
+            break
+          default:
+            console.log(`Unrecognized driver command: ${mode}`)
+            break
+        }
       }
     }
   }

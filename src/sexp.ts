@@ -1,5 +1,5 @@
 import { Result, ok, error, rethrow, ICE } from './result.js'
-import { Loc, mkLoc, noLoc, Range, mkRange, noRange } from './loc.js'
+import { Loc, mkLoc, Range, mkRange, noRange } from './loc.js'
 import { msg } from './messages.js'
 
 /* eslint-disable no-use-before-define */
@@ -28,7 +28,11 @@ function slist (range: Range, list: Sexp[]): SList {
 }
 
 type Token = { value: string, range: Range }
-const mkToken = (value: string, loc: Loc): Token => ({ value, range: mkRange(loc, mkLoc(loc.line, loc.column + value.length - 1)) })
+const mkStartingToken = (value: string, start: Loc) => ({
+  value,
+  // N.B., Clone locs to allow us to safely mutate them during tokenization
+  range: mkRange(mkLoc(start.line, start.column), mkLoc(start.line, start.column))
+})
 
 function lexerError <T> (message: string, tok?: Token, hint?: string): Result<T> {
   return error(msg('phase-lexer'), message, tok?.range, tok?.value, hint)
@@ -42,30 +46,63 @@ function lexerError <T> (message: string, tok?: Token, hint?: string): Result<T>
  *    building up, if we are building up one currently. When we are not
  *    building up a token, `text` is undefined.
  */
-type TokenState = { text?: string, start: Loc }
-type LexerState = { i: number, pos: Loc, tok: TokenState }
+class LexerState {
+  i: number
+  pos: Loc
+  tok: Token | undefined
 
-function resetTokenState (st: LexerState): void {
-  st.tok.text = undefined
-  st.tok.start = noLoc()
-}
-
-function startTracking (st: LexerState, ch: string): void {
-  st.tok.text = ch
-  st.tok.start = mkLoc(st.pos.line, st.pos.column)
-}
-
-function emitToken (st: LexerState): Token {
-  const result = {
-    value: st.tok.text!,
-    // N.B., assumes that the lexer state ends one position past the token
-    // currently being built.
-    range: mkRange(
-      mkLoc(st.tok.start.line, st.tok.start.column),
-      mkLoc(st.pos.line, st.pos.column))
+  constructor () {
+    this.i = 0
+    this.pos = mkLoc(0, 0)
+    this.tok = undefined
   }
-  resetTokenState(st)
-  return result
+
+  public isTracking (): boolean {
+    return this.tok !== undefined
+  }
+
+  public startTracking (ch: string): void {
+    if (this.tok !== undefined) {
+      throw new ICE('startTracking', 'startTracking called when a token is already being built')
+    } else {
+      this.tok = mkStartingToken(ch, this.pos)
+    }
+  }
+
+  public resetTokenState (): void {
+    this.tok = undefined
+  }
+
+  public emitToken (): Token {
+    if (this.tok === undefined) {
+      throw new ICE('emitToken', 'emitToken called when a token is not yet being built')
+    } else {
+      const result = this.tok
+      this.resetTokenState()
+      return result
+    }
+  }
+
+  public advanceColumn (): void {
+    this.i += 1
+    this.pos.column += 1
+  }
+
+  public advanceLine (): void {
+    this.i += 1
+    this.pos.line += 1
+    this.pos.column = 0
+  }
+
+  public append (s: string) {
+    if (this.tok === undefined) {
+      throw new ICE('append', 'append called when a token is not yet being built')
+    } else {
+      this.tok.value += s
+      this.tok.range.end.line = this.pos.line
+      this.tok.range.end.column = this.pos.column
+    }
+  }
 }
 
 function tokenizeStringLiteral (src: string, st: LexerState): Result<Token> {
@@ -73,15 +110,14 @@ function tokenizeStringLiteral (src: string, st: LexerState): Result<Token> {
     throw new ICE('tokenizeStringLiteral', `Beginning character is not a quote: ${src[st.i]}`)
   } else {
     // Advance past the open quote, starting the token we're tracking
-    startTracking(st, '"')
-    st.i += 1
+    st.startTracking('"')
+    st.advanceColumn()
     while (st.i < src.length) {
       // A quote closes this string literal
       if (src[st.i] === '"') {
-        st.tok.text += '"'
-        st.pos.column += 1
-        st.i += 1
-        return ok(emitToken(st))
+        st.append('"')
+        st.advanceColumn()
+        return ok(st.emitToken())
       // Escape characters require us to consume the next character
       } else if (src[st.i] === '\\') {
         if (st.i + 1 === src.length) {
@@ -90,45 +126,56 @@ function tokenizeStringLiteral (src: string, st: LexerState): Result<Token> {
           const ch = src[st.i + 1]
           if (ch === 'a') {
             // Alarm: ASCII 7
-            st.tok.text += '\u0007'
-            st.pos.column += 2
+            st.append('\u0007')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === 'b') {
             // Backspace: ASCII 8
-            st.tok.text += '\u0008'
-            st.pos.column += 2
+            st.append('\u0008')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === 't') {
             // Tab: ASCII 9
-            st.tok.text += '\u0009'
-            st.pos.column += 2
+            st.append('\u0009')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === 'n') {
             // Linefeed: ASCII 10
-            st.tok.text += '\u000A'
-            st.pos.column += 2
+            st.append('\u000A')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === 'v') {
             // Vertical tab: ASCII 11
-            st.tok.text += '\u000B'
-            st.pos.column += 2
+            st.append('\u000B')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === 'f') {
             // Form feed: ASCII 12
-            st.tok.text += '\u000C'
-            st.pos.column += 2
+            st.append('\u000C')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === 'r') {
             // Carriage return: ASCII 13
-            st.tok.text += '\u000D'
-            st.pos.column += 2
+            st.append('\u000D')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === 'e') {
             // Escape: ASCII 27
-            st.tok.text += '\u001B'
-            st.pos.column += 2
+            st.append('\u001B')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === '"') {
-            st.tok.text += '"'
-            st.pos.column += 2
+            st.append('"')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === '\'') {
-            st.tok.text += '\''
-            st.pos.column += 2
+            st.append('\'')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch === '\\') {
-            st.tok.text += '\\'
-            st.pos.column += 2
+            st.append('\\')
+            st.advanceColumn()
+            st.advanceColumn()
           } else if (ch >= '0' && ch <= '9') {
             throw new ICE('tokenizeStringLiteral', 'Octal escape not supported')
           } else if (ch === 'x') {
@@ -137,15 +184,15 @@ function tokenizeStringLiteral (src: string, st: LexerState): Result<Token> {
             throw new ICE('tokenizeStringLiteral', 'Unicode escape not supported')
           } else if (ch === '\n') {
             // Skip over newline characters but continue processing the literal
-            st.pos.line += 1
-            st.pos.column = 0
+            st.advanceColumn()
+            st.advanceLine()
           } else {
             return lexerError(msg('error-unrecognized-escape', ch))
           }
-          st.i += 2 // N.B., we moved forward two characters in the source at this point!
         }
       } else {
-        st.tok.text += src[st.i++]
+        st.append(src[st.i])
+        st.advanceColumn()
       }
     }
     // Eek, if we get this far, then we have exhausted the input without seeing a close quote!
@@ -156,31 +203,34 @@ function tokenizeStringLiteral (src: string, st: LexerState): Result<Token> {
 // Create tokens from a string of expressions
 function tokenize (src: string): Result<Token[]> {
   const result: Token[] = []
-  // N.B., vscode 0-indexes line/col information!?
-  const st: LexerState = { i: 0, pos: mkLoc(0, 0), tok: { text: undefined, start: noLoc() } }
+  const st = new LexerState()
   while (st.i < src.length) {
     const isWhitespace = /\s/.test(src[st.i])
 
     // 1. Check if character is either bracket or comma
     if (src[st.i] === '(' || src[st.i] === ')' || src[st.i] === ',') {
       // If we were previous tracking a token, then the bracket or comma marks its end.
-      if (st.tok.text !== undefined) {
-        result.push(emitToken(st))
+      if (st.isTracking()) {
+        result.push(st.emitToken())
       }
-      startTracking(st, src[st.i])
-      result.push(emitToken(st))
-      st.i++
+      st.startTracking(src[st.i])
+      result.push(st.emitToken())
+      st.advanceColumn()
     // 2. Check if we hit a whitespace. Whitespace terminates the current token
     // we're tracking, if we are tracking one right now.
     } else if (isWhitespace) {
-      if (st.tok.text !== undefined) {
-        result.push(emitToken(st))
+      if (st.isTracking()) {
+        result.push(st.emitToken())
       }
-      st.i++
+      if (src[st.i] === '\n') {
+        st.advanceLine()
+      } else {
+        st.advanceColumn()
+      }
     // 3. Check if we hit a quote. If so, then parse a quote.
     } else if (src[st.i] === '"') {
-      if (st.tok.text !== undefined) {
-        result.push(emitToken(st))
+      if (st.isTracking()) {
+        result.push(st.emitToken())
       }
       const lit = tokenizeStringLiteral(src, st)
       switch (lit.tag) {
@@ -192,25 +242,17 @@ function tokenize (src: string): Result<Token[]> {
     // 4. Any other characters are tracked as a multi-character token.
     } else {
       // N.B., set the start position for the token if it has not yet been initialized.
-      if (st.tok.text === undefined) {
-        startTracking(st, src[st.i])
+      if (!st.isTracking()) {
+        st.startTracking(src[st.i])
       } else {
-        st.tok.text += src[st.i]
+        st.append(src[st.i])
       }
-      st.i++
-    }
-    // 4. Update our current position based on the token we read.
-    // TODO: do we need to chomp \r\n as a newline for Windows-style files?
-    if (src[st.i] === '\n' || src[st.i] === '\r') {
-      st.pos.line += 1
-      st.pos.column = 0
-    } else {
-      st.pos.column += 1
+      st.advanceColumn()
     }
   }
   // After processing the text, push the last token if we are tracking one
-  if (st.tok.text !== undefined) {
-    result.push(mkToken(st.tok.text, mkLoc(st.tok.start.line, st.tok.start.column)))
+  if (st.isTracking()) {
+    result.push(st.emitToken())
   }
   return ok(result)
 }
