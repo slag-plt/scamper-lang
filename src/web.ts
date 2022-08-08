@@ -73,10 +73,10 @@ export function emitSupportScript (): string {
 </script>`
 }
 
-let outputDivCounter = 0
+let sym: number = 0
 
-function outputDiv (s: string): string {
-  return `<div class="${outputClass}" id="${outputClass}-${outputDivCounter++}">${s}</div>`
+function outputDiv (i: number, s: string): string {
+  return `<div class="${outputClass}" id="${outputClass}-${i}">${s}</div>`
 }
 
 function litToHtml (l: Lit): string {
@@ -104,17 +104,19 @@ export function expToHtml (e: Exp): string {
     case 'cond': return `(cond ${e.branches.map(b => `[${expToHtml(b[0])} ${expToHtml(b[1])}]`).join(' ')})`
     case 'and': return `(and ${e.args.map(expToHtml).join(' ')})`
     case 'or': return `(or ${e.args.map(expToHtml).join(' ')})`
-    case 'obj':
+    case 'obj': {
+      const drawingId = `drawing-${sym++}`
       return e.kind !== 'Drawing'
         ? `[object ${e.kind}]`
-        : `<canvas id="test"></canvas>
+        : `<canvas id="${drawingId}"></canvas>
         <script>
-          const canvas = document.getElementById("test")
+          const canvas = document.getElementById("${drawingId}")
           const drawing = ${JSON.stringify(e.obj)}
           canvas.width = drawing.width
           canvas.height = drawing.height
           renderDrawing(0, 0, drawing, canvas)
         </script>`
+    }
     case 'prim': return `[prim ${e.prim.name}]`
   }
 }
@@ -122,22 +124,22 @@ export function expToHtml (e: Exp): string {
 export function stmtToHtml (s: Stmt, outputBinders: boolean = false): string {
   switch (s.tag) {
     case 'error':
-      return outputDiv(s.errors.map(errorDetailsToString).join('<br/>'))
+      return s.errors.map(errorDetailsToString).join('<br/>')
     case 'value':
-      return outputDiv(expToHtml(s.value))
+      return expToHtml(s.value)
     case 'binding':
-      return outputBinders ? outputDiv(stmtToString(s)) : ''
+      return outputBinders ? stmtToString(s) : ''
     case 'imported':
-      return outputBinders ? outputDiv(stmtToString(s)) : ''
+      return outputBinders ? stmtToString(s) : ''
     case 'import':
-      return outputDiv(stmtToString(s))
+      return stmtToString(s)
     case 'define':
-      return outputDiv(stmtToString(s))
+      return stmtToString(s)
     case 'exp':
-      return outputDiv(expToHtml(s.value))
+      return expToHtml(s.value)
   }
 }
 
 export function programToHtml (program: Program, outputBinders: boolean = false): string {
-  return program.statements.map(s => stmtToHtml(s, outputBinders)).join('\n')
+  return program.statements.map((s, i) => outputDiv(i, stmtToHtml(s, outputBinders))).join('\n')
 }

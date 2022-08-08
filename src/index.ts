@@ -68,7 +68,7 @@ export class ProgramState {
   }
 
   toString (): string {
-    return progToString(this.prog)
+    return progToString(this.prog, true)
   }
 }
 

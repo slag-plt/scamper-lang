@@ -355,8 +355,8 @@ function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
   }
 }
 
-function progToString (prog: Program): string {
-  return `${prog.statements.map(s => stmtToString(s)).join('\n\n')}`
+function progToString (prog: Program, outputBindings: boolean = false): string {
+  return `${prog.statements.map(s => stmtToString(s, outputBindings)).join('\n\n')}`
 }
 
 // #endregion
