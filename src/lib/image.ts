@@ -53,7 +53,7 @@ const rectanglePrim: Prim = (args, app) => {
     return runtimeError(msg('error-arity', 'rectangle', 4, args.length), app)
   } else if (!isInteger(args[0])) {
     return runtimeError(msg('error-type-expected-fun', 'rectangle', 'integer', args[0].tag), app)
-  } else if (!isInteger(args[2])) {
+  } else if (!isInteger(args[1])) {
     return runtimeError(msg('error-type-expected-fun', 'rectangle', 'integer', args[1].tag), app)
   } else if (!isString(args[2])) {
     return runtimeError(msg('error-type-expected-fun', 'rectangle', 'string', args[2].tag), app)

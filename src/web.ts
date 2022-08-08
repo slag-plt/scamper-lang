@@ -58,8 +58,16 @@ export function emitSupportScript (): string {
       }
     }
   }
+
+  function clearDrawing (canvas) {
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = 'white'
+    ctx.strokeStyle = 'black'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+  }
   
   function renderDrawing (x, y, drawing, canvas) {
+    clearDrawing(canvas)
     render(x, y, drawing.width, drawing.height, drawing, canvas)
   }
 </script>`
