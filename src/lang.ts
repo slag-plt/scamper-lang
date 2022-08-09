@@ -1,5 +1,5 @@
-import { Range, noRange } from './loc'
-import { ErrorDetails, Result } from './result'
+import { Range, noRange } from './loc.js'
+import { ErrorDetails, Result } from './result.js'
 
 // #region Names
 

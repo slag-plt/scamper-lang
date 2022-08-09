@@ -1,15 +1,2 @@
-{
-  "phase": "Scope",
-  "message": "Variable x is not defined",
-  "range": {
-    "start": {
-      "line": 0,
-      "column": 3
-    },
-    "end": {
-      "line": 0,
-      "column": 3
-    }
-  },
-  "src": "x"
-}
+:3:0: Scope error:
+    Variable x is not defined

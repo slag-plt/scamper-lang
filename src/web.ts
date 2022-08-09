@@ -1,5 +1,5 @@
 import { Exp, isList, Lit, Program, Stmt, stmtToString, unsafeListToArray } from './lang.js'
-import { errorDetailsToString } from './result'
+import { detailsToCompleteString } from './result.js'
 
 export const outputClass = 'scamper-output'
 
@@ -125,7 +125,7 @@ export function expToHtml (e: Exp): string {
 export function stmtToHtml (s: Stmt, outputBinders: boolean = false): string {
   switch (s.tag) {
     case 'error':
-      return s.errors.map(errorDetailsToString).join('<br/>')
+      return s.errors.map(detailsToCompleteString).join('<br/>')
     case 'value':
       return expToHtml(s.value)
     case 'binding':

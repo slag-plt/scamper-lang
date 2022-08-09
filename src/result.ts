@@ -1,5 +1,6 @@
 import { Range } from './loc.js'
 
+// TODO: at some point, plumb filenames throughout the entire system so we can report them!
 type ErrorDetails = {
   phase: string,
   range?: Range
@@ -9,7 +10,7 @@ type ErrorDetails = {
 }
 
 const errorDetails = (phase: string, message: string, range?: Range, src?: string, hint?: string) => ({
-  phase, message, range, src, hint
+  phase, range, message, src, hint
 })
 
 // TODO: make Error<T> carry an array of ErrorDetails so we can report multiple errors
@@ -21,12 +22,26 @@ type Error<T> = {
   andThen: <U>(f: (_:T) => Result<U>) => Result<U>
 }
 
-function errorDetailsToString (details: ErrorDetails) {
-  return JSON.stringify(details, undefined, 2)
+function detailsToCompleteString (details: ErrorDetails): string {
+  const msg = [`:${details.range ? details.range.start.column : ''}:${details.range ? details.range.start.line : ''}: ${details.phase} error:`, `    ${details.message}`]
+  if (details.hint) {
+    msg.push('\n')
+    msg.push(`    Hint: ${details.hint}`)
+  }
+  return msg.join('\n')
+}
+
+function detailsToMsgString (details: ErrorDetails): string {
+  const msg = [`${details.phase} error: ${details.message}`]
+  if (details.hint) {
+    msg.push('\n')
+    msg.push(`Hint: ${details.hint}`)
+  }
+  return msg.join('\n')
 }
 
 function errorToString <T> (err: Error<T>) {
-  return err.details.map(errorDetailsToString).join('\n')
+  return err.details.map(detailsToCompleteString).join('\n')
 }
 
 type Ok<T> = {
@@ -84,7 +99,7 @@ class ICE extends Error {
 export {
   Result, Error, ErrorDetails,
   errorDetails, error, errors, ok,
-  errorDetailsToString, errorToString,
+  detailsToCompleteString, detailsToMsgString, errorToString,
   rethrow, join, detailsToResult,
   ICE
 }
