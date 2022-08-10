@@ -419,12 +419,16 @@ function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
 }
 
 function progToString (prog: Program, outputBindings: boolean = false): string {
-  return `${prog.statements.map(s => stmtToString(s, outputBindings)).join('\n\n')}`
+  return `${prog.statements.map(s => stmtToString(s, outputBindings)).filter(s => s.length > 0).join('\n\n')}`
 }
 
 // #endregion
 
 // #region Statement and program querying functions
+
+function isOutputEffect (stmt: Stmt): boolean {
+  return stmt.tag === 'error' || stmt.tag === 'value'
+}
 
 function isStmtDone (stmt: Stmt): boolean {
   return stmt.tag === 'error' || stmt.tag === 'binding' || stmt.tag === 'value' || stmt.tag === 'imported'
@@ -452,6 +456,6 @@ export {
   litToString, arrayToList, unsafeListToArray, expToString, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isProcedure,
   asNum_, asBool_, asString_, asList_,
-  Stmt, serror, sbinding, svalue, simported, sdefine, sexp, isStmtDone, stmtToString, simport,
+  Stmt, serror, sbinding, svalue, simported, sdefine, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }

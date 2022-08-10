@@ -1,5 +1,5 @@
 import { ProgramState, compileProgram } from './index.js'
-import { progToString, Program, stmtToString } from './lang.js'
+import { progToString, Program, stmtToString, isOutputEffect } from './lang.js'
 import { errorToString } from './result.js'
 import { tokenize } from './sexp.js'
 
@@ -43,10 +43,13 @@ function traceProgram (prog: Program) {
     st = st.step()
     console.log(`Step ${count++}:`)
     console.log(progToString(st.prog))
-    // console.log(JSON.stringify(st.env, null, 2))
   }
   console.log('===== Output =====')
-  st.prog.statements.forEach(s => console.log(`${stmtToString(s)}`))
+  st.prog.statements.forEach(s => {
+    if (isOutputEffect(s)) {
+      console.log(`${stmtToString(s)}`)
+    }
+  })
 }
 
 fs.readFile(filename, 'utf8', (error, src) => {
