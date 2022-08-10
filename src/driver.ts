@@ -1,5 +1,5 @@
 import { ProgramState, compileProgram } from './index.js'
-import { expToString, progToString, Program, stmtToString } from './lang.js'
+import { progToString, Program, stmtToString } from './lang.js'
 import { errorToString } from './result.js'
 import { tokenize } from './sexp.js'
 

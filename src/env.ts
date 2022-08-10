@@ -1,6 +1,4 @@
-import { Exp } from './lang.js'
-import { Range } from './loc.js'
-
+/*
 export type Entry = { value: Exp, source: string, range?: Range, documentation?: string }
 export const entry = (value: Exp, source: string, range?: Range, documentation?: string): Entry =>
   ({ value, source, range, documentation })
@@ -46,3 +44,4 @@ export class Env {
     return ret
   }
 }
+*/

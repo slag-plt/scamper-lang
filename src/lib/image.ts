@@ -1,8 +1,7 @@
 import { ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim } from '../lang.js'
+import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim } from '../lang.js'
 import { msg } from '../messages.js'
-import { Env, entry } from '../env.js'
 
 type Mode = 'solid' | 'outline'
 
@@ -23,7 +22,7 @@ function isDrawing (e: Exp): boolean {
   return e.tag === 'obj' && e.kind === 'Drawing'
 }
 
-const circlePrim: Prim = (args, app) => {
+const circlePrim: Prim = (_env, args, app) => {
   if (args.length !== 3) {
     return runtimeError(msg('error-arity', 'circle', 3, args.length), app)
   } else if (!isInteger(args[0])) {
@@ -48,7 +47,7 @@ type Rectangle = { tag: 'rectangle', width: number, height: number, mode: Mode, 
 const rectangle = (width: number, height: number, mode: Mode, color: string): Rectangle =>
   ({ tag: 'rectangle', width, height, mode, color })
 
-const rectanglePrim: Prim = (args, app) => {
+const rectanglePrim: Prim = (_env, args, app) => {
   if (args.length !== 4) {
     return runtimeError(msg('error-arity', 'rectangle', 4, args.length), app)
   } else if (!isInteger(args[0])) {
@@ -80,7 +79,7 @@ const beside = (drawings: Drawing[]): Beside => ({
   drawings
 })
 
-const besidePrim: Prim = (args, app) => {
+const besidePrim: Prim = (_env, args, app) => {
   args.forEach(e => {
     if (!isDrawing(e)) {
       return runtimeError(msg('error-type-expected-fun', 'beside', 'drawing', e.tag), app)
@@ -97,7 +96,7 @@ const above = (drawings: Drawing[]): Above => ({
   drawings
 })
 
-const abovePrim: Prim = (args, app) => {
+const abovePrim: Prim = (_env, args, app) => {
   args.forEach(e => {
     if (!isDrawing(e)) {
       return runtimeError(msg('error-type-expected-fun', 'above', 'drawing', e.tag), app)
@@ -114,7 +113,7 @@ const overlay = (drawings: Drawing[]): Overlay => ({
   drawings
 })
 
-const overlayPrim: Prim = (args, app) => {
+const overlayPrim: Prim = (_env, args, app) => {
   args.forEach(e => {
     if (!isDrawing(e)) {
       return runtimeError(msg('error-type-expected-fun', 'overlay', 'drawing', e.tag), app)

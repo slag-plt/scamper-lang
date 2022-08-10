@@ -1,6 +1,6 @@
 import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray } from '../lang.js'
 import { ICE, ok, Result } from '../result.js'
-import { runtimeError } from '../runtime.js'
+import { evaluateExp, runtimeError } from '../runtime.js'
 import { msg } from '../messages.js'
 
 function asNumbers (args: Exp[]): Result<number[]> {
@@ -27,7 +27,7 @@ function asNumbers (args: Exp[]): Result<number[]> {
 //   (eq? x y)
 // ... do I? Do we need these different equivalence notions?
 
-const equalPrim: Prim = (args, app) =>
+const equalPrim: Prim = (_env, args, app) =>
   args.length === 2
     ? ok(nlebool(expEquals(args[0], args[1])))
     : runtimeError(msg('error-arity', 'equal?', '2', args.length), app)
@@ -38,17 +38,17 @@ const equivalencePrimitives: [string, Prim][] = [
 
 // Numbers (6.2)
 
-const numberPrim: Prim = (args, app) =>
+const numberPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isNumber(args[0])))
     : runtimeError(msg('error-arity', 'number?', '1', args.length), app)
 
-const realPrim: Prim = (args, app) =>
+const realPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isReal(args[0])))
     : runtimeError(msg('error-arity', 'real?', '1', args.length), app)
 
-const integerPrim: Prim = (args, app) =>
+const integerPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isInteger(args[0])))
     : runtimeError(msg('error-arity', 'integer?', '1', args.length), app)
@@ -74,41 +74,41 @@ function compareOp (symbol: string, op: (x: number, y: number) => boolean, args:
     : runtimeError(msg('error-arity', `(${symbol})`, '2', args.length), app)
 }
 
-const ltPrim: Prim = (args, app) => compareOp('<', (x, y) => x < y, args, app)
-const leqPrim : Prim = (args, app) => compareOp('<=', (x, y) => x <= y, args, app)
-const gtPrim : Prim = (args, app) => compareOp('>', (x, y) => x > y, args, app)
-const geqPrim : Prim = (args, app) => compareOp('>=', (x, y) => x >= y, args, app)
-const numeqPrim : Prim = (args, app) => compareOp('=', (x, y) => x === y, args, app)
+const ltPrim: Prim = (_env, args, app) => compareOp('<', (x, y) => x < y, args, app)
+const leqPrim : Prim = (_env, args, app) => compareOp('<=', (x, y) => x <= y, args, app)
+const gtPrim : Prim = (_env, args, app) => compareOp('>', (x, y) => x > y, args, app)
+const geqPrim : Prim = (_env, args, app) => compareOp('>=', (x, y) => x >= y, args, app)
+const numeqPrim : Prim = (_env, args, app) => compareOp('=', (x, y) => x === y, args, app)
 
-const zeroPrim : Prim = (args, app) =>
+const zeroPrim : Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'zero?', '1', args.length), app)
     : !isNumber(args[0])
         ? runtimeError(msg('error-type-expected-fun', 'zero?', 'number', args[0].tag), app)
         : ok(nlebool(asNum_(args[0]) === 0))
 
-const positivePrim : Prim = (args, app) =>
+const positivePrim : Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'positive?', '1', args.length), app)
     : !isNumber(args[0])
         ? runtimeError(msg('error-type-expected-fun', 'positive?', 'number', args[0].tag), app)
         : ok(nlebool(asNum_(args[0]) > 0))
 
-const negativePrim : Prim = (args, app) =>
+const negativePrim : Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'negative?', '1', args.length), app)
     : !isNumber(args[0])
         ? runtimeError(msg('error-type-expected-fun', 'negative?', 'number', args[0].tag), app)
         : ok(nlebool(asNum_(args[0]) < 0))
 
-const oddPrim : Prim = (args, app) =>
+const oddPrim : Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'odd?', '1', args.length), app)
     : !isNumber(args[0])
         ? runtimeError(msg('error-type-expected-fun', 'odd?', 'number', args[0].tag), app)
         : ok(nlebool((asNum_(args[0]) & 1) === 1))
 
-const evenPrim : Prim = (args, app) =>
+const evenPrim : Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'even?', '1', args.length), app)
     : !isNumber(args[0])
@@ -132,15 +132,15 @@ function numericNOp (symbol: string, op: (x: number, y: number) => number, args:
     ? runtimeError(msg('error-arity-atleast', `(${symbol})`, '1', args.length), app)
     : asNumbers(args).andThen(vs => ok(nlenumber(vs.reduce((result, v) => op(result, v)))))
 }
-const maxPrim: Prim = (args, app) => numericNOp('max', Math.max, args, app)
-const minPrim: Prim = (args, app) => numericNOp('min', Math.min, args, app)
+const maxPrim: Prim = (_env, args, app) => numericNOp('max', Math.max, args, app)
+const minPrim: Prim = (_env, args, app) => numericNOp('min', Math.min, args, app)
 
-const plusPrim: Prim = (args, app) => numericNOp('+', (x, y) => x + y, args, app)
-const minusPrim: Prim = (args, app) => numericNOp('-', (x, y) => x - y, args, app)
-const timesPrim: Prim = (args, app) => numericNOp('*', (x, y) => x * y, args, app)
-const divPrim: Prim = (args, app) => numericNOp('/', (x, y) => x / y, args, app)
+const plusPrim: Prim = (_env, args, app) => numericNOp('+', (x, y) => x + y, args, app)
+const minusPrim: Prim = (_env, args, app) => numericNOp('-', (x, y) => x - y, args, app)
+const timesPrim: Prim = (_env, args, app) => numericNOp('*', (x, y) => x * y, args, app)
+const divPrim: Prim = (_env, args, app) => numericNOp('/', (x, y) => x / y, args, app)
 
-const absPrim: Prim = (args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
+const absPrim: Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
 
 // TODO: implement:
 //   (floor / n1 n2)
@@ -152,7 +152,7 @@ const absPrim: Prim = (args, app) => numericUOp('abs', (x) => Math.abs(x), args,
 //   (quotient n1 n2)
 //   (remainder n1 n2)
 
-const moduloPrim: Prim = (args, app) => numericBOp('modulo', (x, y) => x % y, args, app)
+const moduloPrim: Prim = (_env, args, app) => numericBOp('modulo', (x, y) => x % y, args, app)
 
 //   (modulo n1 n2)
 
@@ -162,21 +162,21 @@ const moduloPrim: Prim = (args, app) => numericBOp('modulo', (x, y) => x % y, ar
 //   (numerator q)    ...wait, do we need these?
 //   (denominator q)  ...wait, do we need these?
 
-const floorPrim: Prim = (args, app) => numericUOp('floor', (x) => Math.floor(x), args, app)
-const ceilingPrim: Prim = (args, app) => numericUOp('ceiling', (x) => Math.ceil(x), args, app)
-const truncatePrim: Prim = (args, app) => numericUOp('truncate', (x) => Math.trunc(x), args, app)
-const roundPrim: Prim = (args, app) => numericUOp('round', (x) => Math.round(x), args, app)
+const floorPrim: Prim = (_env, args, app) => numericUOp('floor', (x) => Math.floor(x), args, app)
+const ceilingPrim: Prim = (_env, args, app) => numericUOp('ceiling', (x) => Math.ceil(x), args, app)
+const truncatePrim: Prim = (_env, args, app) => numericUOp('truncate', (x) => Math.trunc(x), args, app)
+const roundPrim: Prim = (_env, args, app) => numericUOp('round', (x) => Math.round(x), args, app)
 
 // TODO: implement:
 //   (rationalize x y)
 
-const squarePrim: Prim = (args, app) => numericUOp('square', (x) => Math.pow(x, 2), args, app)
-const sqrtPrim: Prim = (args, app) => numericUOp('sqrt', (x) => Math.sqrt(x), args, app)
+const squarePrim: Prim = (_env, args, app) => numericUOp('square', (x) => Math.pow(x, 2), args, app)
+const sqrtPrim: Prim = (_env, args, app) => numericUOp('sqrt', (x) => Math.sqrt(x), args, app)
 
 // TODO: implement:
 //   (exact-integer-sqrt k)
 
-const exptPrim: Prim = (args, app) => numericBOp('expt', (x, y) => Math.pow(x, y), args, app)
+const exptPrim: Prim = (_env, args, app) => numericBOp('expt', (x, y) => Math.pow(x, y), args, app)
 
 // TODO: implement:
 //   (make-rectangular x1 x2)   ...probably not!
@@ -186,7 +186,7 @@ const exptPrim: Prim = (args, app) => numericBOp('expt', (x, y) => Math.pow(x, y
 //   (magnitude z)              ...probably not!
 //   (angle z)                  ...probably not!
 
-const numberStringPrim: Prim = (args, app) => {
+const numberStringPrim: Prim = (_env, args, app) => {
   // TODO: support (number->string z radix)?
   if (args.length !== 1) { return runtimeError(msg('error-arity', 'number->string', '1', args.length), app) }
   const e = args[0]
@@ -235,14 +235,14 @@ const numericPrimitives: [string, Prim][] = [
 
 // Booleans (6.3)
 
-const notPrim: Prim = (args, app) =>
+const notPrim: Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'not', '1', args.length), app)
     : isBoolean(args[0])
       ? runtimeError(msg('error-type-expected-fun', 'not', 'boolean', args[0].tag), app)
       : ok(nlebool(!asBool_(args[0])))
 
-const booleanPrim: Prim = (args, app) =>
+const booleanPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isBoolean(args[0])))
     : runtimeError(msg('error-arity', 'boolean?', '1', args.length), app)
@@ -254,24 +254,24 @@ const booleanPrimitives: [string, Prim][] = [
 
 // Pairs and Lists (6.4)
 
-const pairPrim: Prim = (args, app) =>
+const pairPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isPair(args[0])))
     : runtimeError(msg('error-arity', 'pair?', '1', args.length), app)
 
-const consPrim: Prim = (args, app) =>
+const consPrim: Prim = (_env, args, app) =>
   args.length === 2
     ? ok(epair(app.range, args[0], args[1]))
     : runtimeError(msg('error-arity', 'cons', '2', args.length), app)
 
-const carPrim : Prim = (args, app) =>
+const carPrim : Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'car', '1', args.length), app)
     : !isPair(args[0])
         ? runtimeError(msg('error-type-expected-fun', 'car', 'pair', args[0].tag), app)
         : ok((args[0] as EPair).e1)
 
-const cdrPrim : Prim = (args, app) =>
+const cdrPrim : Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'cdr', '1', args.length), app)
     : !isPair(args[0])
@@ -283,12 +283,12 @@ const cdrPrim : Prim = (args, app) =>
 
 // TODO: implement caar, cadr, cdar, cddr, caaar, ..., cdddr in some elegant way
 
-const nullPrim : Prim = (args, app) =>
+const nullPrim : Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(args[0].tag === 'nil'))
     : runtimeError(msg('error-arity', 'null?', '1', args.length), app)
 
-const listQPrim : Prim = (args, app) =>
+const listQPrim : Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isList(args[0])))
     : runtimeError(msg('error-arity', 'list?', '1', args.length), app)
@@ -302,11 +302,11 @@ const pairListPrimitives: [string, Prim][] = [
   ['list?', listQPrim]
 ]
 
-const listPrim: Prim = function (args, app) {
+const listPrim: Prim = function (_env, args, app) {
   return ok(arrayToList(args))
 }
 
-const makeListPrim: Prim = function (args, app) {
+const makeListPrim: Prim = function (_env, args, app) {
   // N.B., (make-list k) returns the empty list, but this behavior is weird, so we don't replicate it!
   if (args.length !== 2) {
     return runtimeError(msg('error-arity', 'make-list', '2', args.length), app)
@@ -323,7 +323,7 @@ const makeListPrim: Prim = function (args, app) {
   return ok(ret)
 }
 
-const lengthPrim: Prim = function (args, app) {
+const lengthPrim: Prim = function (_env, args, app) {
   if (args.length !== 1) {
     return runtimeError(msg('error-arity', 'length', '1', args.length), app)
   }
@@ -349,7 +349,7 @@ function appendOne_ (l1: Exp, l2: Exp): Exp {
   }
 }
 
-const appendPrim: Prim = function (args, app) {
+const appendPrim: Prim = function (_env, args, app) {
   if (args.length === 0) {
     return runtimeError(msg('error-arity-atleast', 'append', '1', args.length))
   }
@@ -430,7 +430,7 @@ const listPrimitives: [string, Prim][] = [
 
 // Strings (6.7)
 
-const stringPrim: Prim = (args, app) =>
+const stringPrim: Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'string?', '1', args.length), app)
     : ok(nlebool(isString(args[0])))
@@ -440,14 +440,14 @@ const stringPrim: Prim = (args, app) =>
 //   (make-string k char)
 //   (string char ...)
 
-const stringLengthPrim: Prim = (args, app) =>
+const stringLengthPrim: Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'string-length', '1', args.length), app)
     : isString(args[0])
       ? ok(nlestr(asString_(args[0])))
       : runtimeError(msg('error-type-expected-fun', 'string-length', 'string', args[0].tag), app)
 
-const stringRefPrim: Prim = function (args, app) {
+const stringRefPrim: Prim = function (_env, args, app) {
   if (args.length !== 2) {
     return runtimeError(msg('error-arity', 'string-ref', '2', args.length), app)
   } else if (!isString(args[0])) {
@@ -506,7 +506,7 @@ const stringPrimitives: [string, Prim][] = [
 
 // Control features (6.10)
 
-const procedurePrim: Prim = (args, app) =>
+const procedurePrim: Prim = (_env, args, app) =>
   // TODO: procedure? should also return true for variables that are bound
   // to procedures in the environment. Probably means that we need to thread
   // the environment through primitives, ick!
@@ -514,10 +514,10 @@ const procedurePrim: Prim = (args, app) =>
     ? runtimeError(msg('error-arity', 'procedure?', '1', args.length), app)
     : ok(nlebool(isProcedure(args[0])))
 
-const applyPrim: Prim = (args, app) =>
+const applyPrim: Prim = (env, args, app) =>
   args.length === 0
     ? runtimeError(msg('error-arity-atleast', 'apply', '1', args.length), app)
-    : ok(nlecall(args[0], [...args.slice(1)]))
+    : evaluateExp(env, nlecall(args[0], [...args.slice(1)]))
 
 // TODO: for map, do we expand to [f(x1), f(x2), ...] or do we step through
 // the full transformation? Probably step through the full transformation, but
@@ -527,14 +527,14 @@ const applyPrim: Prim = (args, app) =>
 // TODO: implement:
 //   (string-map fn str1 ... strk)
 
-const mapPrim: Prim = (args, app) =>
+const mapPrim: Prim = (env, args, app) =>
   args.length !== 2
     ? runtimeError(msg('error-arity', 'map', '2', args.length), app)
     : !isProcedure(args[0])
         ? runtimeError(msg('error-type-expected-fun', 'map', 'procedure', args[0].tag), app)
         : !isList(args[1])
             ? runtimeError(msg('error-type-expected-fun', 'map', 'list', args[1].tag), app)
-            : ok(arrayToList(unsafeListToArray(args[1]).map(e => nlecall(args[0], [e]))))
+            : evaluateExp(env, arrayToList(unsafeListToArray(args[1]).map(e => nlecall(args[0], [e]))))
 
 // N.B., (vector-map fn v1 ... vk) not implemented since vectors are not implemented.
 

@@ -1,7 +1,6 @@
-import { ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine } from './lang.js'
+import { entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine } from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails } from './result.js'
 import { msg } from './messages.js'
-import { entry, Env } from './env.js'
 
 import { imageLib } from './lib/image.js'
 import { primMap } from './lib/prelude.js'
@@ -90,58 +89,6 @@ function substituteIfFreeVar (env: Env, e: Exp): Result<Exp> {
   }
 }
 
-/*
-function substituteWithEnv (bvars: string[], env: Env, e: Exp): Result<Exp> {
-  switch (e.tag) {
-    case 'var':
-      return e.value in bvars
-        ? ok(e)
-        : env.has(e.value)
-          ? ok(env.get(e.value)!.value)
-          : runtimeError(msg('error-var-undef', e.value), e)
-    case 'lit':
-      return ok(e)
-    case 'call':
-      return substituteWithEnv(bvars, env, e.head).andThen(head =>
-        join(e.args.map(e => substituteWithEnv(bvars, env, e))).andThen(args =>
-          ok(ecall(e.range, head, args))))
-    case 'lam': {
-      const args = e.args.map(b => b.value)
-      return substituteWithEnv([...bvars, ...args], env, e.body).andThen(body =>
-        ok(elam(e.range, e.args, body)))
-    }
-    case 'if':
-      return substituteWithEnv(bvars, env, e.e1).andThen(e1 =>
-        substituteWithEnv(bvars, env, e.e2).andThen(e2 =>
-          substituteWithEnv(bvars, env, e.e3).andThen(e3 =>
-            ok(eif(e.range, e1, e2, e3)))))
-    case 'nil':
-      return ok(e)
-    case 'pair':
-      return substituteWithEnv(bvars, env, e.e1).andThen(e1 =>
-        substituteWithEnv(bvars, env, e.e2).andThen(e2 =>
-          ok(epair(e.range, e1, e2))))
-    case 'let':
-      return ok(e) // TODO!
-    case 'cond':
-      return join(e.branches.map(b =>
-        substituteWithEnv(bvars, env, b[0]).andThen(e1 =>
-          substituteWithEnv(bvars, env, b[1]).andThen(e2 =>
-            ok([e1, e2] as [Exp, Exp]))))).andThen(branches => ok(econd(e.range, branches)))
-    case 'and':
-      return join(e.args.map(e => substituteWithEnv(bvars, env, e))).andThen(args =>
-        ok(eand(e.range, args)))
-    case 'or':
-      return join(e.args.map(e => substituteWithEnv(bvars, env, e))).andThen(args =>
-        ok(eor(e.range, args)))
-    case 'obj':
-      return ok(e)
-    case 'prim':
-      return ok(e)
-  }
-}
-*/
-
 function stepExp (env: Env, e: Exp): Result<Exp> {
   switch (e.tag) {
     // N.B., at this point, variables should be free variables bound in the
@@ -181,7 +128,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
                   return runtimeError(msg('error-arity', 'lambda', head.args.length, args.length), e)
                 }
               case 'prim':
-                return head.prim(args, e)
+                return head.prim(env, args, e)
               default:
                 return runtimeError(msg('error-type-expected-call', e.head.tag), e)
             }
