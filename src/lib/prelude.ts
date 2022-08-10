@@ -1,4 +1,4 @@
-import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, isLambda, nlecall, Prim } from '../lang.js'
+import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray } from '../lang.js'
 import { ICE, ok, Result } from '../result.js'
 import { runtimeError } from '../runtime.js'
 import { msg } from '../messages.js'
@@ -288,7 +288,7 @@ const nullPrim : Prim = (args, app) =>
     ? ok(nlebool(args[0].tag === 'nil'))
     : runtimeError(msg('error-arity', 'null?', '1', args.length), app)
 
-const listPrim : Prim = (args, app) =>
+const listQPrim : Prim = (args, app) =>
   args.length === 1
     ? ok(nlebool(isList(args[0])))
     : runtimeError(msg('error-arity', 'list?', '1', args.length), app)
@@ -299,8 +299,12 @@ const pairListPrimitives: [string, Prim][] = [
   ['car', carPrim],
   ['cdr', cdrPrim],
   ['null?', nullPrim],
-  ['list?', listPrim]
+  ['list?', listQPrim]
 ]
+
+const listPrim: Prim = function (args, app) {
+  return ok(arrayToList(args))
+}
 
 const makeListPrim: Prim = function (args, app) {
   // N.B., (make-list k) returns the empty list, but this behavior is weird, so we don't replicate it!
@@ -380,6 +384,7 @@ const appendPrim: Prim = function (args, app) {
 //   (list-copy obj)
 
 const listPrimitives: [string, Prim][] = [
+  ['list', listPrim],
   ['make-list', makeListPrim],
   ['length', lengthPrim],
   ['append', appendPrim]
@@ -507,7 +512,7 @@ const procedurePrim: Prim = (args, app) =>
   // the environment through primitives, ick!
   args.length !== 1
     ? runtimeError(msg('error-arity', 'procedure?', '1', args.length), app)
-    : ok(nlebool(isLambda(args[0])))
+    : ok(nlebool(isProcedure(args[0])))
 
 const applyPrim: Prim = (args, app) =>
   args.length === 0
@@ -520,8 +525,16 @@ const applyPrim: Prim = (args, app) =>
 // dependencies, eek!
 
 // TODO: implement:
-//   (map fn l1 ... lk)
 //   (string-map fn str1 ... strk)
+
+const mapPrim: Prim = (args, app) =>
+  args.length !== 2
+    ? runtimeError(msg('error-arity', 'map', '2', args.length), app)
+    : !isProcedure(args[0])
+        ? runtimeError(msg('error-type-expected-fun', 'map', 'procedure', args[0].tag), app)
+        : !isList(args[1])
+            ? runtimeError(msg('error-type-expected-fun', 'map', 'list', args[1].tag), app)
+            : ok(arrayToList(unsafeListToArray(args[1]).map(e => nlecall(args[0], [e]))))
 
 // N.B., (vector-map fn v1 ... vk) not implemented since vectors are not implemented.
 
@@ -540,7 +553,8 @@ const applyPrim: Prim = (args, app) =>
 
 const controlPrimitives: [string, Prim][] = [
   ['procedure?', procedurePrim],
-  ['apply', applyPrim]
+  ['apply', applyPrim],
+  ['map', mapPrim]
 ]
 
 // Exceptions (6.11)

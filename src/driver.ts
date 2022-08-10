@@ -42,9 +42,6 @@ function traceProgram (prog: Program) {
   while (!st.isFullyEvaluated()) {
     st = st.step()
     console.log(`Step ${count++}:`)
-    for (const b of st.env.items()) {
-      console.log(`${b[0]} = ${expToString(b[1].value)}`)
-    }
     console.log(progToString(st.prog))
     // console.log(JSON.stringify(st.env, null, 2))
   }

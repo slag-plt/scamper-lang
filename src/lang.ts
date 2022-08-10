@@ -141,8 +141,16 @@ function litToString (l: Lit): string {
     case 'bool': return l.value ? '#t' : '#f'
     case 'num': return l.value.toString()
     case 'char': return `#${l.value}`
-    case 'str': return l.value
+    case 'str': return `"${l.value}"`
   }
+}
+
+function arrayToList (es: Exp[]): Exp {
+  let ret: Exp = nlenil()
+  for (let i = es.length - 1; i >= 0; i--) {
+    ret = epair(es[i].range, es[i], ret)
+  }
+  return ret
 }
 
 function unsafeListToArray (e:Exp): Exp[] {
@@ -236,8 +244,16 @@ function isList (e:Exp): boolean {
   return e.tag === 'nil'
 }
 
+function isPrim (e:Exp): boolean {
+  return e.tag === 'prim'
+}
+
 function isObj (e: Exp): boolean {
   return e.tag === 'obj'
+}
+
+function isProcedure (e: Exp): boolean {
+  return isLambda(e) || isPrim(e)
 }
 
 function asNum_ (e:Exp): number {
@@ -386,8 +402,8 @@ export {
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor,
   nlebool, nlenumber, nlechar, nlestr,
   nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nleobj, nleprim,
-  litToString, unsafeListToArray, expToString, expEquals,
-  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isObj,
+  litToString, arrayToList, unsafeListToArray, expToString, expEquals,
+  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isProcedure,
   asNum_, asBool_, asString_, asList_,
   Stmt, serror, sbinding, svalue, simported, sdefine, sexp, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString

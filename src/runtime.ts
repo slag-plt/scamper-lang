@@ -79,44 +79,60 @@ function substituteAll (es: Exp[], xs: Name[], e: Exp) {
   return e
 }
 
-function substituteWithEnv (env: Env, e: Exp): Result<Exp> {
+function substituteIfFreeVar (env: Env, e: Exp): Result<Exp> {
   switch (e.tag) {
     case 'var':
       return env.has(e.value)
         ? ok(env.get(e.value)!.value)
         : runtimeError(msg('error-var-undef', e.value), e)
+    default:
+      return ok(e)
+  }
+}
+
+/*
+function substituteWithEnv (bvars: string[], env: Env, e: Exp): Result<Exp> {
+  switch (e.tag) {
+    case 'var':
+      return e.value in bvars
+        ? ok(e)
+        : env.has(e.value)
+          ? ok(env.get(e.value)!.value)
+          : runtimeError(msg('error-var-undef', e.value), e)
     case 'lit':
       return ok(e)
     case 'call':
-      return substituteWithEnv(env, e.head).andThen(head =>
-        join(e.args.map(e => substituteWithEnv(env, e))).andThen(args =>
+      return substituteWithEnv(bvars, env, e.head).andThen(head =>
+        join(e.args.map(e => substituteWithEnv(bvars, env, e))).andThen(args =>
           ok(ecall(e.range, head, args))))
-    case 'lam':
-      return substituteWithEnv(env.without(e.args.map(b => b.value)), e.body).andThen(body =>
+    case 'lam': {
+      const args = e.args.map(b => b.value)
+      return substituteWithEnv([...bvars, ...args], env, e.body).andThen(body =>
         ok(elam(e.range, e.args, body)))
+    }
     case 'if':
-      return substituteWithEnv(env, e.e1).andThen(e1 =>
-        substituteWithEnv(env, e.e2).andThen(e2 =>
-          substituteWithEnv(env, e.e3).andThen(e3 =>
+      return substituteWithEnv(bvars, env, e.e1).andThen(e1 =>
+        substituteWithEnv(bvars, env, e.e2).andThen(e2 =>
+          substituteWithEnv(bvars, env, e.e3).andThen(e3 =>
             ok(eif(e.range, e1, e2, e3)))))
     case 'nil':
       return ok(e)
     case 'pair':
-      return substituteWithEnv(env, e.e1).andThen(e1 =>
-        substituteWithEnv(env, e.e2).andThen(e2 =>
+      return substituteWithEnv(bvars, env, e.e1).andThen(e1 =>
+        substituteWithEnv(bvars, env, e.e2).andThen(e2 =>
           ok(epair(e.range, e1, e2))))
     case 'let':
       return ok(e) // TODO!
     case 'cond':
       return join(e.branches.map(b =>
-        substituteWithEnv(env, b[0]).andThen(e1 =>
-          substituteWithEnv(env, b[1]).andThen(e2 =>
+        substituteWithEnv(bvars, env, b[0]).andThen(e1 =>
+          substituteWithEnv(bvars, env, b[1]).andThen(e2 =>
             ok([e1, e2] as [Exp, Exp]))))).andThen(branches => ok(econd(e.range, branches)))
     case 'and':
-      return join(e.args.map(e => substituteWithEnv(env, e))).andThen(args =>
+      return join(e.args.map(e => substituteWithEnv(bvars, env, e))).andThen(args =>
         ok(eand(e.range, args)))
     case 'or':
-      return join(e.args.map(e => substituteWithEnv(env, e))).andThen(args =>
+      return join(e.args.map(e => substituteWithEnv(bvars, env, e))).andThen(args =>
         ok(eor(e.range, args)))
     case 'obj':
       return ok(e)
@@ -124,6 +140,7 @@ function substituteWithEnv (env: Env, e: Exp): Result<Exp> {
       return ok(e)
   }
 }
+*/
 
 function stepExp (env: Env, e: Exp): Result<Exp> {
   switch (e.tag) {
@@ -139,7 +156,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       // NOTE: we allow variables in head position so that (f x) works
       // where f is a top-level binding. If we change the infrastructure
       // of variables and substitution, we'll need to revisit this choice.
-      if (!isValue(e.head) && !(e.head.tag === 'var')) {
+      if (!isValue(e.head)) {
         return stepExp(env, e.head).andThen(headp => stepExp(env, ecall(e.range, headp, e.args)))
       } else {
         // Try to stepExp one of the call's arguments
@@ -154,8 +171,8 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
         }
         // If we did not stepExp any arguments, then evaluate the full call.
         // First, substitute away free variables before resolving the call.
-        return substituteWithEnv(env, e.head).andThen(head =>
-          join(e.args.map(x => substituteWithEnv(env, x))).andThen(args => {
+        return substituteIfFreeVar(env, e.head).andThen(head =>
+          join(e.args.map(x => substituteIfFreeVar(env, x))).andThen(args => {
             switch (head.tag) {
               case 'lam':
                 if (args.length === head.args.length) {
