@@ -256,6 +256,15 @@ function evaluateExp (env: Env, e:Exp) : Result<Exp> {
   return ok(e)
 }
 
+function resultToStmt (result: Result<Stmt>): Stmt {
+  switch (result.tag) {
+    case 'error':
+      return serror(result.details)
+    case 'ok':
+      return result.value
+  }
+}
+
 function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
   switch (s.tag) {
     case 'error':
@@ -270,27 +279,19 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       if (isValue(s.value)) {
         return [env.append(s.name.value, entry(s.value, 'binding', s.name.range)), sbinding(s.name.value, s.value)]
       } else {
-        const result = stepExp(env, s.value)
-        switch (result.tag) {
-          case 'error':
-            return [env, serror(result.details)]
-          case 'ok':
-            return [env, sdefine(s.name, result.value)]
-        }
+        return [env, resultToStmt(stepExp(env, s.value).andThen(e => ok(sdefine(s.name, e))))]
       }
       /* eslint-disable no-fallthrough */
-    case 'exp':
-      if (isValue(s.value)) {
-        return [env, svalue(s.value)]
-      } else {
-        const result = stepExp(env, s.value)
-        switch (result.tag) {
-          case 'error':
-            return [env, serror(result.details)]
-          case 'ok':
-            return [env, sexp(result.value)]
-        }
-      }
+    // N.B., as a last step, substitute free variables away when they are values.
+    case 'exp': {
+      const result = isValue(s.value)
+        ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(svalue(vp))))
+        : resultToStmt(stepExp(env, s.value).andThen(v =>
+            isValue(v)
+              ? substituteIfFreeVar(env, v).andThen(vp => ok(svalue(vp)))
+              : ok(sexp(v)) as Result<Stmt>))
+      return [env, result]
+    }
     case 'import':
       if (internalLibs.has(s.source)) {
         return [

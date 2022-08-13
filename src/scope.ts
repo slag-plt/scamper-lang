@@ -3,7 +3,7 @@ import { Env, Exp, Program } from './lang.js'
 import { primMap } from './lib/prelude.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
-import { internalLibs } from './runtime.js'
+import { internalLibs, preludeEnv } from './runtime.js'
 
 function undefinedVariableError (x: string, range: Range): ErrorDetails {
   return errorDetails(
@@ -90,15 +90,15 @@ function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
 }
 
 function mkInitialBVars (env: Env): string[] {
-  return Array.from(env.names()).concat(Array.from(primMap.keys()))
+  return Array.from(env.names())
 }
 
-function scopeCheckExp (env: Env, e: Exp): ErrorDetails[] {
+function scopeCheckExp (e: Exp, env: Env = preludeEnv): ErrorDetails[] {
   return checkExp(mkInitialBVars(env), e)
 }
 
-function scopeCheckProgram (prog: Program): ErrorDetails[] {
-  return checkProgram(mkInitialBVars(new Env()), prog)
+function scopeCheckProgram (prog: Program, env: Env = preludeEnv): ErrorDetails[] {
+  return checkProgram(mkInitialBVars(env), prog)
 }
 
 export { scopeCheckExp, scopeCheckProgram }

@@ -1,5 +1,5 @@
 import { evaluateExp, preludeEnv, stepExp, stepStmt } from './runtime.js'
-import { Env, Exp, Stmt, isStmtDone, Program, indexOfCurrentStmt, progToString } from './lang.js'
+import { Env, Exp, Stmt, isStmtDone, Program, indexOfCurrentStmt, progToString, serror } from './lang.js'
 import { parseExp, parseProgram } from './parser.js'
 import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'
@@ -16,7 +16,7 @@ export function compileProgram (src: string): Result<Program> {
 
 export function compileExpr (env: Env, src: string): Result<Exp> {
   return parseExp(src).andThen(e =>
-    detailsToResult(scopeCheckExp(env, e)).andThen(_ =>
+    detailsToResult(scopeCheckExp(e, env)).andThen(_ =>
       ok(e)))
 }
 
@@ -135,7 +135,23 @@ export class ProgramTrace {
     return this.states[this.pos]
   }
 
-  addStmt (s: Stmt): void {
-    this.states.forEach(st => st.prog.statements.push(s))
+  addStmt (src: string): void {
+    // N.B., evaluate the program completely so we compute the final set of bindings
+    this.evaluateProg()
+    const result = parseProgram(src).andThen(prog =>
+      detailsToResult(scopeCheckProgram(prog, this.states[this.states.length - 1].env)).andThen(_ => {
+        this.states.forEach(st => {
+          st.prog.statements = st.prog.statements.concat(prog.statements)
+        })
+        return ok(null)
+      }))
+    switch (result.tag) {
+      case 'ok':
+        return
+      case 'error':
+        this.states.forEach(st => {
+          st.prog.statements.push(serror(result.details))
+        })
+    }
   }
 }

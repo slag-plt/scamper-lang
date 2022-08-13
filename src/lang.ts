@@ -220,7 +220,7 @@ function expToString (e:Exp): string {
     case 'pair':
       return isList(e)
         ? parens(['list'].concat(unsafeListToArray(e).map(expToString)))
-        : parens([expToString(e.e1), '.', expToString(e.e2)])
+        : parens(['cons', expToString(e.e1), expToString(e.e2)])
     case 'let': return parens(['let', parens(e.bindings.map(([x, e]) => `(${x} ${expToString(e)})`)), expToString(e.body)])
     case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))

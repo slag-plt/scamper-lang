@@ -2,6 +2,7 @@ import { ProgramState, compileProgram } from './index.js'
 import { progToString, Program, stmtToString, isOutputEffect } from './lang.js'
 import { errorToString } from './result.js'
 import { tokenize } from './sexp.js'
+import * as Pretty from './pretty.js'
 
 import * as fs from 'fs'
 
@@ -35,19 +36,19 @@ function runProgram (prog: Program) {
 function traceProgram (prog: Program) {
   let st = new ProgramState(prog)
   console.log('===== Program =====')
-  console.log(progToString(st.prog))
+  console.log(Pretty.progToString(0, st.prog))
   console.log()
   console.log('===== Evaluation =====')
   let count = 1
   while (!st.isFullyEvaluated()) {
     st = st.step()
     console.log(`Step ${count++}:`)
-    console.log(progToString(st.prog))
+    console.log(Pretty.progToString(0, st.prog, true))
   }
   console.log('===== Output =====')
   st.prog.statements.forEach(s => {
     if (isOutputEffect(s)) {
-      console.log(`${stmtToString(s)}`)
+      console.log(`${Pretty.stmtToString(0, s)}`)
     }
   })
 }
