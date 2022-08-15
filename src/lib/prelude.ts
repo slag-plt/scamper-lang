@@ -1,7 +1,9 @@
-import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray } from '../lang.js'
+import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray, Env } from '../lang.js'
 import { ICE, ok, Result } from '../result.js'
 import { evaluateExp, runtimeError } from '../runtime.js'
 import { msg } from '../messages.js'
+
+export const preludeLib = new Env()
 
 function asNumbers (args: Exp[]): Result<number[]> {
   const result = new Array(args.length)
@@ -31,6 +33,16 @@ const equalPrim: Prim = (_env, args, app) =>
   args.length === 2
     ? ok(nlebool(expEquals(args[0], args[1])))
     : runtimeError(msg('error-arity', 'equal?', '2', args.length), app)
+
+const equalDoc: string = `
+(equal? v1 v2): boolean
+
+@param v1: any
+@param v2: any
+
+@returns #t if and only v1 and v2 are (structurally) equal values
+
+`.trim()
 
 const equivalencePrimitives: [string, Prim][] = [
   ['equal?', equalPrim]

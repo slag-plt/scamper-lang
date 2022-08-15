@@ -105,6 +105,65 @@ class LexerState {
   }
 }
 
+function tokenizeLineComment (src: string, st: LexerState): Token {
+  if (src[st.i] !== ';') {
+    throw new ICE('tokenizeLineComment', `Beginning character is not a semicolon: ${src[st.i]}`)
+  } else {
+    st.startTracking('"')
+    st.advanceColumn() 
+    while (st.i < src.length) {
+      // A newline character ends this comment
+      if (src[st.i] === '\n') {
+        st.advanceLine()
+        return st.emitToken()
+
+      // Any other character is sucked into the comment
+      } else {
+        st.append(src[st.i])
+        st.advanceColumn()
+      }
+    }
+  }
+  // If we hit the end of the file, then this final token is a comment
+  return st.emitToken()
+}
+
+function tokenizeBlockComment (src: string, st: LexerState): Result<Token> {
+  if (st.i >= src.length - 1 || src[st.i] !== '#' || src[st.i + 1] !== '|') {
+    throw new ICE('tokenizeBlockComment', `Beginning characters do not start a block comment: ${src[st.i]}${src[st.i + 1]}`)
+  } else {
+    let blockLevel = 0
+    st.startTracking('#|')
+    st.advanceColumn()
+    st.advanceColumn()
+    while (st.i < src.length - 1) {
+      // A '|#' sequence ends the current block comment. Block comments can be
+      // nested, so ensure that we stop only when we've closed the outermost
+      // block.
+      if (src[st.i] === '|' && src[st.i + 1] === '#') {
+        blockLevel -= 1
+        if (blockLevel < 0) {
+          st.advanceColumn()
+          st.advanceColumn()
+          return ok(st.emitToken())
+        }
+      } else if (src[st.i] === '#' && src[st.i + 1] === '|') {
+        blockLevel += 1
+        st.advanceColumn()
+        st.advanceColumn()
+      } else if (src[st.i] === '\n') {
+        st.append('\n')
+        st.advanceLine()
+      } else {
+        st.append(src[st.i])
+        st.advanceColumn()
+      }
+    }
+    // We did not terminate the block comment; raise an error!
+    return lexerError(msg('error-eof-block-comment'))
+  }
+}
+
 function tokenizeStringLiteral (src: string, st: LexerState): Result<Token> {
   if (src[st.i] !== '"') {
     throw new ICE('tokenizeStringLiteral', `Beginning character is not a quote: ${src[st.i]}`)
@@ -239,7 +298,25 @@ function tokenize (src: string): Result<Token[]> {
         case 'ok':
           result.push(lit.value)
       }
-    // 4. Any other characters are tracked as a multi-character token.
+    // 4. Check if we hit a semicolon. If so, then parse a line comment
+    } else if (src[st.i] === ';') {
+      if (st.isTracking()) {
+        result.push(st.emitToken())
+      }
+      // N.B., ignore the comment for now!
+      const _comment = tokenizeLineComment(src, st)
+      // result.push(comment)
+    // 5. Check if we hit '#|. If so, then parse a block comment
+    } else if (st.i < src.length - 1 && src[st.i] === '#' && src[st.i + 1] === '|') {
+      // N.B., ignore the comment for now!
+      const _comment = tokenizeBlockComment(src, st)
+      switch (_comment.tag) {
+        case 'error':
+          return rethrow(_comment)
+        case 'ok':
+          // result.push(comment)
+      }
+    // 6. Any other characters are tracked as a multi-character token.
     } else {
       // N.B., set the start position for the token if it has not yet been initialized.
       if (!st.isTracking()) {
@@ -255,6 +332,29 @@ function tokenize (src: string): Result<Token[]> {
     result.push(st.emitToken())
   }
   return ok(result)
+}
+
+function consumeCommentTokens (toks: Token[]): Token[] {
+  const result: Token[] = new Array()
+  while (toks.length > 0) {
+    if (toks[0].value.startsWith(';')) {
+      result.push(toks.shift()!)
+    } else if (toks[0].value.startsWith('#|') && toks[0].value.endsWith('|#')) {
+      result.push(toks.shift()!)
+    } else {
+      return toks
+    }
+  }
+  return toks
+}
+
+function coalseCommentTokens (toks: Token[]): Token {
+  const value = toks.map(t => t.value.slice(1)).join(' ')
+  const range = mkRange(
+    mkLoc(toks[0].range.start.line, toks[0].range.start.column),
+    mkLoc(toks[toks.length - 1].range.start.line, toks[toks.length - 1].range.start.column),
+  )
+  return { value, range }
 }
 
 //
