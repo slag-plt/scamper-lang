@@ -1,6 +1,5 @@
 import { ErrorDetails, errorDetails } from './result.js'
 import { Env, Exp, Program } from './lang.js'
-import { primMap } from './lib/prelude.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
 import { internalLibs, preludeEnv } from './runtime.js'

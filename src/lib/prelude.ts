@@ -1,9 +1,8 @@
-import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray, Env } from '../lang.js'
+import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray, Env, entry, nleprim } from '../lang.js'
 import { ICE, ok, Result } from '../result.js'
 import { evaluateExp, runtimeError } from '../runtime.js'
 import { msg } from '../messages.js'
-
-export const preludeLib = new Env()
+import { Doc } from './docs.js'
 
 function asNumbers (args: Exp[]): Result<number[]> {
   const result = new Array(args.length)
@@ -22,6 +21,8 @@ function asNumbers (args: Exp[]): Result<number[]> {
   return ok(result)
 }
 
+const preludeEntry = (prim: Prim, docs?: string) => entry(nleprim(prim), 'prelude', undefined, docs)
+
 // Equivalence predicates (6.1)
 
 // TODO: implement:
@@ -29,36 +30,55 @@ function asNumbers (args: Exp[]): Result<number[]> {
 //   (eq? x y)
 // ... do I? Do we need these different equivalence notions?
 
+const equalDoc: Doc = new Doc(
+  '(equal? v1 v2): boolean', [
+    'v1: any',
+    'v2: any',
+  ],
+  'Returns `#t` if and only `v1` and `v2` are (structurally) equal values.'
+)
+
 const equalPrim: Prim = (_env, args, app) =>
   args.length === 2
     ? ok(nlebool(expEquals(args[0], args[1])))
     : runtimeError(msg('error-arity', 'equal?', '2', args.length), app)
 
-const equalDoc: string = `
-(equal? v1 v2): boolean
-
-@param v1: any
-@param v2: any
-
-@returns #t if and only v1 and v2 are (structurally) equal values
-
-`.trim()
-
-const equivalencePrimitives: [string, Prim][] = [
-  ['equal?', equalPrim]
+const equivalencePrimitives: [string, Prim, Doc | undefined][] = [
+  ['equal?', equalPrim, equalDoc]
 ]
 
 // Numbers (6.2)
+
+const numberDoc: Doc = new Doc(
+  '(number? v): boolean', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is a number.'
+)
 
 const numberPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isNumber(args[0])))
     : runtimeError(msg('error-arity', 'number?', '1', args.length), app)
 
+const realDoc: Doc = new Doc(
+  '(real? v): boolean', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is a real number.'
+)
+
 const realPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isReal(args[0])))
     : runtimeError(msg('error-arity', 'real?', '1', args.length), app)
+
+const integerDoc: Doc = new Doc(
+  '(integer? v): boolean', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is an integer.'
+)
 
 const integerPrim: Prim = (_env, args, app) =>
   args.length === 1
@@ -213,36 +233,36 @@ const numberStringPrim: Prim = (_env, args, app) => {
 //   (string->number s)
 //   (string->number s radix)
 
-const numericPrimitives: [string, Prim][] = [
-  ['number?', numberPrim],
-  ['real?', realPrim],
-  ['integer?', integerPrim],
-  ['<', ltPrim],
-  ['<=', leqPrim],
-  ['>', gtPrim],
-  ['>=', geqPrim],
-  ['=', numeqPrim],
-  ['zero?', zeroPrim],
-  ['positive?', positivePrim],
-  ['negative?', negativePrim],
-  ['odd?', oddPrim],
-  ['even?', evenPrim],
-  ['max', maxPrim],
-  ['min', minPrim],
-  ['+', plusPrim],
-  ['-', minusPrim],
-  ['*', timesPrim],
-  ['/', divPrim],
-  ['abs', absPrim],
-  ['modulo', moduloPrim],
-  ['floor', floorPrim],
-  ['ceiling', ceilingPrim],
-  ['truncate', truncatePrim],
-  ['round', roundPrim],
-  ['square', squarePrim],
-  ['sqrt', sqrtPrim],
-  ['expt', exptPrim],
-  ['number->string', numberStringPrim]
+const numericPrimitives: [string, Prim, Doc | undefined][] = [
+  ['number?', numberPrim, numberDoc],
+  ['real?', realPrim, realDoc],
+  ['integer?', integerPrim, integerDoc],
+  ['<', ltPrim, undefined],
+  ['<=', leqPrim, undefined],
+  ['>', gtPrim, undefined],
+  ['>=', geqPrim, undefined],
+  ['=', numeqPrim, undefined],
+  ['zero?', zeroPrim, undefined],
+  ['positive?', positivePrim, undefined],
+  ['negative?', negativePrim, undefined],
+  ['odd?', oddPrim, undefined],
+  ['even?', evenPrim, undefined],
+  ['max', maxPrim, undefined],
+  ['min', minPrim, undefined],
+  ['+', plusPrim, undefined],
+  ['-', minusPrim, undefined],
+  ['*', timesPrim, undefined],
+  ['/', divPrim, undefined],
+  ['abs', absPrim, undefined],
+  ['modulo', moduloPrim, undefined],
+  ['floor', floorPrim, undefined],
+  ['ceiling', ceilingPrim, undefined],
+  ['truncate', truncatePrim, undefined],
+  ['round', roundPrim, undefined],
+  ['square', squarePrim, undefined],
+  ['sqrt', sqrtPrim, undefined],
+  ['expt', exptPrim, undefined],
+  ['number->string', numberStringPrim, undefined]
 ]
 
 // Booleans (6.3)
@@ -259,9 +279,9 @@ const booleanPrim: Prim = (_env, args, app) =>
     ? ok(nlebool(isBoolean(args[0])))
     : runtimeError(msg('error-arity', 'boolean?', '1', args.length), app)
 
-const booleanPrimitives: [string, Prim][] = [
-  ['not', notPrim],
-  ['boolean?', booleanPrim]
+const booleanPrimitives: [string, Prim, Doc | undefined][] = [
+  ['not', notPrim, undefined],
+  ['boolean?', booleanPrim, undefined]
 ]
 
 // Pairs and Lists (6.4)
@@ -305,13 +325,13 @@ const listQPrim : Prim = (_env, args, app) =>
     ? ok(nlebool(isList(args[0])))
     : runtimeError(msg('error-arity', 'list?', '1', args.length), app)
 
-const pairListPrimitives: [string, Prim][] = [
-  ['pair?', pairPrim],
-  ['cons', consPrim],
-  ['car', carPrim],
-  ['cdr', cdrPrim],
-  ['null?', nullPrim],
-  ['list?', listQPrim]
+const pairListPrimitives: [string, Prim, Doc | undefined][] = [
+  ['pair?', pairPrim, undefined],
+  ['cons', consPrim, undefined],
+  ['car', carPrim, undefined],
+  ['cdr', cdrPrim, undefined],
+  ['null?', nullPrim, undefined],
+  ['list?', listQPrim, undefined]
 ]
 
 const listPrim: Prim = function (_env, args, app) {
@@ -395,11 +415,11 @@ const appendPrim: Prim = function (_env, args, app) {
 //   (assoc obj alist compare)
 //   (list-copy obj)
 
-const listPrimitives: [string, Prim][] = [
-  ['list', listPrim],
-  ['make-list', makeListPrim],
-  ['length', lengthPrim],
-  ['append', appendPrim]
+const listPrimitives: [string, Prim, Doc | undefined][] = [
+  ['list', listPrim, undefined],
+  ['make-list', makeListPrim, undefined],
+  ['length', lengthPrim, undefined],
+  ['append', appendPrim, undefined]
 ]
 
 // Symbols (6.5)
@@ -502,10 +522,10 @@ const stringRefPrim: Prim = function (_env, args, app) {
 
 // N.B., string-copy! and string-fill! are unimplemented since they are effectful.
 
-const stringPrimitives: [string, Prim][] = [
-  ['string?', stringPrim],
-  ['string-length', stringLengthPrim],
-  ['string-ref', stringRefPrim]
+const stringPrimitives: [string, Prim, Doc | undefined][] = [
+  ['string?', stringPrim, undefined],
+  ['string-length', stringLengthPrim, undefined],
+  ['string-ref', stringRefPrim, undefined]
 ]
 
 // Vectors (6.8)
@@ -563,10 +583,10 @@ const mapPrim: Prim = (env, args, app) =>
 //   (call-with-values producer consumer)
 //   (dynamic-wind before thunk after)
 
-const controlPrimitives: [string, Prim][] = [
-  ['procedure?', procedurePrim],
-  ['apply', applyPrim],
-  ['map', mapPrim]
+const controlPrimitives: [string, Prim, Doc | undefined][] = [
+  ['procedure?', procedurePrim, undefined],
+  ['apply', applyPrim, undefined],
+  ['map', mapPrim, undefined]
 ]
 
 // Exceptions (6.11)
@@ -585,7 +605,7 @@ const controlPrimitives: [string, Prim][] = [
 
 // N.B., not implemented, all operating system-specific stuff.
 
-const preludeMap = new Map<string, Prim>([
+export const preludeEnv = new Env([
   ...equivalencePrimitives,
   ...numericPrimitives,
   ...booleanPrimitives,
@@ -593,6 +613,4 @@ const preludeMap = new Map<string, Prim>([
   ...listPrimitives,
   ...stringPrimitives,
   ...controlPrimitives
-])
-
-export { preludeMap as primMap }
+].map(v => [v[0], entry(nleprim(v[1]), 'prelude', undefined, v[2] ? v[2].docToMarkdown() : '')]))

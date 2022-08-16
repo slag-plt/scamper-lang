@@ -1,9 +1,8 @@
 import { entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine } from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails } from './result.js'
 import { msg } from './messages.js'
-
+import { preludeEnv } from './lib/prelude.js'
 import { imageLib } from './lib/image.js'
-import { primMap } from './lib/prelude.js'
 
 function runtimeError <T> (message: string, s?: Exp, hint?: string): Result<T> {
   return s
@@ -309,8 +308,6 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       }
   }
 }
-
-const preludeEnv: Env = new Env(Array.from(primMap.entries()).map(b => [b[0], entry(nleprim(b[1]), 'Prelude')]))
 
 const internalLibs: Map<string, Env> = new Map([
   ['image', imageLib]

@@ -1,8 +1,8 @@
 (define fact
   (lambda (n)
     (if (zero? n)
-        1 ; base case
-        (* n (fact (- n 1)))))) ; recursive case
+        1
+        (* n (fact (- n 1))))))
 
 (fact 0)
 
