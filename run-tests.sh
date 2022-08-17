@@ -22,7 +22,7 @@ do
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
-    echo -e ${DIFF}
+    echo -e "${DIFF}"
     ((failures += 1))
   else
     echo -e "${GREEN}success!${CLEAR}"
@@ -38,7 +38,7 @@ do
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
-    echo -e ${DIFF}
+    echo -e "${DIFF}"
     ((failures += 1))
   else
     echo -e "${GREEN}success!${CLEAR}"

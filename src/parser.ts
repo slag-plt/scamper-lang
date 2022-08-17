@@ -86,20 +86,16 @@ function tryParseString (s: string): string | undefined {
   }
 }
 
+const intRegex = /^[+-]?\d+$/
+const floatRegex = /^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/
+
 function sexpToExp (s: Sexp): Result<Exp> {
   switch (s.tag) {
     case 'atom': {
-      // TODO: check to see if the atom is a number, character, boolean, or string
-      // TODO: number parsing is complicated, this is a quick hack to move forward
-      // BUG: need to parse a double, too!
-      // TODO: just need to regex this... -_-
-      const asInt = parseInt(s.single, 10)
-      if (!isNaN(asInt)) {
-        return ok(enumber(s.range, asInt))
-      }
-      const asFloat = parseFloat(s.single)
-      if (!isNaN(asFloat)) {
-        return ok(enumber(s.range, asFloat))
+      if (intRegex.test(s.single)) {
+        return ok(enumber(s.range, parseInt(s.single, 10)))
+      } else if (floatRegex.test(s.single)) {
+        return ok(enumber(s.range, parseFloat(s.single)))
       } else if (s.single.startsWith('"')) {
         const result = tryParseString(s.single)
         return result
