@@ -1,6 +1,6 @@
 import { ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim } from '../lang.js'
+import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc } from '../lang.js'
 import { msg } from '../messages.js'
 
 type Mode = 'solid' | 'outline'
@@ -175,7 +175,7 @@ function renderDrawing (x: number, y: number, drawing: Drawing, canvas: HTMLCanv
   render(x, y, drawing.width, drawing.height, drawing, canvas)
 }
 
-const imageEntry = (prim: Prim, docs?: string) => entry(nleprim(prim), 'image', undefined, docs)
+const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
 
 const imageLib: Env = new Env([
   ['circle', imageEntry(circlePrim)],
