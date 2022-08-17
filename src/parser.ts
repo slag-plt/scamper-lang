@@ -81,8 +81,7 @@ function tryParseString (s: string): string | undefined {
     return undefined
   } else {
     // N.B., escape codes for strings are expanded in the lexer/sexp.ts.
-    const src = s.slice(1, s.length - 1)
-    return src
+    return s.slice(1, s.length - 1)
   }
 }
 
