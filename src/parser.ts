@@ -80,7 +80,8 @@ function tryParseString (s: string): string | undefined {
   if (s.length < 2 || !s.startsWith('"') || !s.endsWith('"')) {
     return undefined
   } else {
-    // TODO: for now, we only support simple string literals with no escape codes.
+    // N.B., escape codes for strings are expanded in the lexer/sexp.ts.
+    console.log(`>> ${s} <<`)
     const src = s.slice(1, s.length - 1)
     return src
   }
