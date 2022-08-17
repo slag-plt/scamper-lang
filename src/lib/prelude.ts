@@ -476,7 +476,7 @@ const stringLengthPrim: Prim = (_env, args, app) =>
   args.length !== 1
     ? runtimeError(msg('error-arity', 'string-length', '1', args.length), app)
     : isString(args[0])
-      ? ok(nlestr(asString_(args[0])))
+      ? ok(nlenumber(asString_(args[0]).length))
       : runtimeError(msg('error-type-expected-fun', 'string-length', 'string', args[0].tag), app)
 
 const stringRefPrim: Prim = function (_env, args, app) {

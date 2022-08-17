@@ -80,7 +80,7 @@ function tryParseString (s: string): string | undefined {
   if (s.length < 2 || !s.startsWith('"') || !s.endsWith('"')) {
     return undefined
   } else {
-    // TODO: for now, we only support simple string literals with no escape codes.
+    // N.B., escape codes for strings are expanded in the lexer/sexp.ts.
     const src = s.slice(1, s.length - 1)
     return src
   }
@@ -98,7 +98,8 @@ function sexpToExp (s: Sexp): Result<Exp> {
         return ok(enumber(s.range, parseFloat(s.single)))
       } else if (s.single.startsWith('"')) {
         const result = tryParseString(s.single)
-        return result
+        // N.B., '' is false in Javascript, so need an explicit undefined check.
+        return result !== undefined
           ? ok(estr(s.range, result))
           : parserError(msg('error-invalid-string-literal'), s)
       } else if (s.single === 'null') {
