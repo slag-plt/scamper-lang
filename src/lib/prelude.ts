@@ -1,8 +1,8 @@
-import { asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray, Env, entry, nleprim } from '../lang.js'
+import { Doc, asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray, Env, entry, nleprim } from '../lang.js'
 import { ICE, ok, Result } from '../result.js'
 import { evaluateExp, runtimeError } from '../runtime.js'
 import { msg } from '../messages.js'
-import { Doc } from './docs.js'
+import * as Docs from './docs.js'
 
 function asNumbers (args: Exp[]): Result<number[]> {
   const result = new Array(args.length)
@@ -21,7 +21,7 @@ function asNumbers (args: Exp[]): Result<number[]> {
   return ok(result)
 }
 
-const preludeEntry = (prim: Prim, docs?: string) => entry(nleprim(prim), 'prelude', undefined, docs)
+const preludeEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'prelude', undefined, docs)
 
 // Equivalence predicates (6.1)
 
@@ -30,55 +30,26 @@ const preludeEntry = (prim: Prim, docs?: string) => entry(nleprim(prim), 'prelud
 //   (eq? x y)
 // ... do I? Do we need these different equivalence notions?
 
-const equalDoc: Doc = new Doc(
-  '(equal? v1 v2): boolean', [
-    'v1: any',
-    'v2: any',
-  ],
-  'Returns `#t` if and only `v1` and `v2` are (structurally) equal values.'
-)
-
 const equalPrim: Prim = (_env, args, app) =>
   args.length === 2
     ? ok(nlebool(expEquals(args[0], args[1])))
     : runtimeError(msg('error-arity', 'equal?', '2', args.length), app)
 
 const equivalencePrimitives: [string, Prim, Doc | undefined][] = [
-  ['equal?', equalPrim, equalDoc]
+  ['equal?', equalPrim, Docs.equal]
 ]
 
 // Numbers (6.2)
-
-const numberDoc: Doc = new Doc(
-  '(number? v): boolean', [
-    'v: any'
-  ],
-  'Returns `#t` if and only `v` is a number.'
-)
 
 const numberPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isNumber(args[0])))
     : runtimeError(msg('error-arity', 'number?', '1', args.length), app)
 
-const realDoc: Doc = new Doc(
-  '(real? v): boolean', [
-    'v: any'
-  ],
-  'Returns `#t` if and only `v` is a real number.'
-)
-
 const realPrim: Prim = (_env, args, app) =>
   args.length === 1
     ? ok(nlebool(isReal(args[0])))
     : runtimeError(msg('error-arity', 'real?', '1', args.length), app)
-
-const integerDoc: Doc = new Doc(
-  '(integer? v): boolean', [
-    'v: any'
-  ],
-  'Returns `#t` if and only `v` is an integer.'
-)
 
 const integerPrim: Prim = (_env, args, app) =>
   args.length === 1
@@ -234,9 +205,9 @@ const numberStringPrim: Prim = (_env, args, app) => {
 //   (string->number s radix)
 
 const numericPrimitives: [string, Prim, Doc | undefined][] = [
-  ['number?', numberPrim, numberDoc],
-  ['real?', realPrim, realDoc],
-  ['integer?', integerPrim, integerDoc],
+  ['number?', numberPrim, Docs.number],
+  ['real?', realPrim, Docs.real],
+  ['integer?', integerPrim, Docs.integer],
   ['<', ltPrim, undefined],
   ['<=', leqPrim, undefined],
   ['>', gtPrim, undefined],
@@ -613,4 +584,4 @@ export const preludeEnv = new Env([
   ...listPrimitives,
   ...stringPrimitives,
   ...controlPrimitives
-].map(v => [v[0], entry(nleprim(v[1]), 'prelude', undefined, v[2] ? v[2].docToMarkdown() : '')]))
+].map(v => [v[0], entry(nleprim(v[1]), 'prelude', undefined, v[2])]))

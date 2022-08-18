@@ -1,28 +1,30 @@
-/**
- * A `Doc` is a convenience class for constructing docstrings for library
- * primitives.
- */
-export class Doc {
-  /**
-   * 
-   * @param sig A docstring corresponding to the signature of the function.
-   * @param args An array of docstrings for each of the function's arguments.
-   * @param desc A prose description of the behavior of the function.
-   */
-  constructor (public sig: string, public args: string[], public desc: string) { }
+import { Doc } from '../lang.js'
 
-  /**
-   * @returns A string containing the docstring formatted in Markdown.
-   */
-  public docToMarkdown(): string {
-  return `
-~~~
-${this.sig.trim()}
+export const equal: Doc = new Doc(
+  '(equal? v1 v2): boolean', [
+    'v1: any',
+    'v2: any',
+  ],
+  'Returns `#t` if and only `v1` and `v2` are (structurally) equal values.'
+)
 
-${this.args.map(arg => '  ' + arg.trim()).join('\n')}
-~~~
+export const number: Doc = new Doc(
+  '(number? v): boolean', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is a number.'
+)
 
-${this.desc.trim()}
-  `.trim()
-  }
-}
+export const real: Doc = new Doc(
+  '(real? v): boolean', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is a real number.'
+)
+
+export const integer: Doc = new Doc(
+  '(integer? v): boolean', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is an integer.'
+)
