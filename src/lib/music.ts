@@ -104,7 +104,7 @@ const restPrim: L.Prim = (_env, args, app) => {
   } else if (!L.isObjKind(args[0], 'Duration')) {
     return runtimeError(msg('error-type-expected-fun', 'rest', 'duration', args[0]), app)
   } else {
-    const dur = L.fromObj_<Duration>(args[2])
+    const dur = L.fromObj_<Duration>(args[0])
     return ok(L.nleobj('Composition', rest(dur)))
   }
 }
