@@ -328,6 +328,10 @@ function isObj (e: Exp): boolean {
   return e.tag === 'obj'
 }
 
+function isObjKind (e: Exp, kind: string): boolean {
+  return e.tag === 'obj' && e.kind === kind
+}
+
 function isProcedure (e: Exp): boolean {
   return isLambda(e) || isPrim(e)
 }
@@ -346,6 +350,14 @@ function asString_ (e: Exp): string {
 
 function asList_ (e: Exp): Exp[] {
   return unsafeListToArray(e)
+}
+
+function asObj_ (e: Exp): object {
+  return (e as EObj).obj
+}
+
+function fromObj_ <T> (e: Exp): T {
+  return ((e as EObj).obj as unknown) as T
 }
 
 function nameEquals (n1: Name, n2: Name): boolean {
@@ -483,8 +495,8 @@ export {
   nlebool, nlenumber, nlechar, nlestr,
   nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nleobj, nleprim,
   litToString, arrayToList, unsafeListToArray, expToString, expEquals,
-  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isProcedure,
-  asNum_, asBool_, asString_, asList_,
+  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isObjKind, isProcedure,
+  asNum_, asBool_, asString_, asList_, asObj_, fromObj_,
   Stmt, serror, sbinding, svalue, simported, sdefine, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }

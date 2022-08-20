@@ -3,6 +3,7 @@ import { Result, error, join, ok, rethrow, errorDetails } from './result.js'
 import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
 import { imageLib } from './lib/image.js'
+import { musicLib } from './lib/music.js'
 
 function runtimeError <T> (message: string, s?: Exp, hint?: string): Result<T> {
   return s
@@ -310,7 +311,8 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
 }
 
 const internalLibs: Map<string, Env> = new Map([
-  ['image', imageLib]
+  ['image', imageLib],
+  ['music', musicLib]
 ])
 
 export {

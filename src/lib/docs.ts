@@ -28,3 +28,13 @@ export const integer: Doc = new Doc(
   ],
   'Returns `#t` if and only `v` is an integer.'
 )
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+export const pitch: Doc = new Doc(
+  '(pitch? v): boolean', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is a valid pitch, a string denoting a pitch class, e.g., `"Ab"`.'
+)

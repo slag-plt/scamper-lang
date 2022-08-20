@@ -1,33 +1,18 @@
-import { ICE } from '../result.js'
+import * as L from '../lang.js'
+import { msg } from '../messages.js'
+import { ok } from '../result.js'
+import { runtimeError } from '../runtime.js'
+import * as Docs from './docs.js'
 
 type PitchClass = string
 type Octave = number
-type Duration = { numerator: number, denominator: number }
+type Duration = { num: number, den: number }
 
-const pitches = [
-  'A',
-  'B',
-  'C',
-  'D',
-  'E',
-  'F',
-  'G'
-]
+const isPitchClass = (s: string): boolean =>
+    /^[A-Ga-g][#b]{0,2}$/.test(s)
 
-const accidentals = [
-  'bb',
-  'b',
-  '',
-  '#',
-  '##'
-]
-
-const pitchClasses: PitchClass[] =
-  pitches.flatMap(pitch =>
-    accidentals.map(accidental => `${pitch}${accidental}`))
-
-const isOctave = (octave: number): boolean =>
-  octave >= 0 && octave <= 10
+const isOctave = (n: number): boolean =>
+  n >= 0 && n <= 10
 
 type Note = { tag: 'note', pitch: PitchClass, octave: Octave, duration: Duration }
 const note = (pitch: PitchClass, octave: Octave, duration: Duration): Note => ({
@@ -60,30 +45,97 @@ const mod = (note: Composition, mod: ModKind): Mod => ({ tag: 'mod', note, mod }
 
 type Composition = Note | Rest | Par | Seq | Mod
 
-function pitchToBaseMIDIValue (pitch: PitchClass): number {
-  switch (pitch) {
-    case 'A': return 21
-    case 'A#': return 22
-    case 'Bb': return 22
-    case 'B': return 23
-    case 'C': return 24
-    case 'C#': return 25
-    case 'Db': return 25
-    case 'D': return 26
-    case 'D#': return 27
-    case 'Eb': return 27
-    case 'E': return 28
-    case 'F': return 29
-    case 'F#': return 30
-    case 'Gb': return 30
-    case 'G': return 31
-    case 'G#': return 32
-    case 'Ab': return 32
-    default:
-      throw new ICE('pitchToBaseMIDIValue', `Unknown pitch ${pitch}`)
+const pitchPrim: L.Prim = (_env, args, app) =>
+  args.length !== 1
+    ? runtimeError(msg('error-arity', 'pitch?', 1, args.length), app)
+    : ok(L.nlebool(L.isString(args[0]) && isPitchClass(L.asString_(args[0]))))
+
+const octavePrim: L.Prim = (_env, args, app) =>
+  args.length !== 1
+    ? runtimeError(msg('error-arity', 'octave?', 1, args.length), app)
+    : ok(L.nlebool(L.isInteger(args[0]) && isOctave(L.asNum_(args[0]))))
+
+const durQPrim: L.Prim = (_env, args, app) =>
+  args.length !== 1
+    ? runtimeError(msg('error-arity', 'dur?', 1, args.length), app)
+    : ok(L.nlebool(args[0].tag == 'obj' && args[0].kind == 'dur'))
+
+const durPrim: L.Prim = (_env, args, app) => {
+  if (args.length !== 2) {
+    return runtimeError(msg('error-arity', 'dur', 2, args.length), app)
+  } else if (!L.isInteger(args[0])) {
+    return runtimeError(msg('error-type-expected-fun', 'dur', 'integer', args[0].tag), app)
+  } else if (!L.isInteger(args[1])) {
+    return runtimeError(msg('error-type-expected-fun', 'dur', 'integer', args[1].tag), app)
+  } else {
+    return ok(L.nleobj('Duration', {
+      num: L.asNum_(args[0]),
+      den: L.asNum_(args[1])
+    }))
   }
 }
 
-export function noteToMIDIValue (note: Note): number {
-  return 12 * (note.octave + 1) + pitchToBaseMIDIValue(note.pitch)
+const notePrim: L.Prim = (_env, args, app) => {
+  if (args.length !== 3) {
+    return runtimeError(msg('error-arity', 'note', 3, args.length), app)
+  } else if (!L.isString(args[0])) {
+    return runtimeError(msg('error-type-expected-fun', 'note', 'string', args[0]), app)
+  } else if (!L.isInteger(args[1])) {
+    return runtimeError(msg('error-type-expected-fun', 'note', 'integer', args[0]), app)
+  } else if (!L.isObjKind(args[2], 'Duration')) {
+    return runtimeError(msg('error-type-expected-fun', 'note', 'duration', args[0]), app)
+  } else {
+    const pitch = L.asString_(args[0])
+    const octave = L.asNum_(args[1])
+    const dur = L.fromObj_<Duration>(args[2])
+    if (!isPitchClass(pitch)) {
+      return runtimeError(msg('error-type-expected-fun', 'note', 'pitch', args[0].tag), app)
+    } else if  (!isOctave(octave)) {
+      return runtimeError(msg('error-type-expected-fun', 'note', 'octave', args[1].tag), app)
+    } else {
+      return ok(L.nleobj('Composition', note(pitch, octave, dur)))
+    }
+  }
 }
+
+const restPrim: L.Prim = (_env, args, app) => {
+  if (args.length !== 1) {
+    return runtimeError(msg('error-arity', 'rest', 1, args.length), app)
+  } else if (!L.isObjKind(args[0], 'Duration')) {
+    return runtimeError(msg('error-type-expected-fun', 'rest', 'duration', args[0]), app)
+  } else {
+    const dur = L.fromObj_<Duration>(args[2])
+    return ok(L.nleobj('Composition', rest(dur)))
+  }
+}
+
+const parPrim: L.Prim = (_env, args, app) => {
+  args.forEach(e => {
+    if (!L.isObjKind(e, 'Composition')) {
+      return runtimeError(msg('error-type-expected-fun', 'par', 'composition', e.tag), app)
+    }
+  })
+  return ok(L.nleobj('Composition', par(args.map(e => L.fromObj_<Composition>(e)))))
+}
+
+const seqPrim: L.Prim = (_env, args, app) => {
+  args.forEach(e => {
+    if (!L.isObjKind(e, 'Composition')) {
+      return runtimeError(msg('error-type-expected-fun', 'par', 'composition', e.tag), app)
+    }
+  })
+  return ok(L.nleobj('Composition', seq(args.map(e => L.fromObj_<Composition>(e)))))
+}
+
+const musicEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'music', undefined, docs)
+
+export const musicLib: L.Env = new L.Env([
+  ['pitch?', musicEntry(pitchPrim, Docs.pitch)],
+  ['octave?', musicEntry(octavePrim)],
+  ['dur?', musicEntry(durQPrim)],
+  ['dur', musicEntry(durPrim)],
+  ['note', musicEntry(notePrim)],
+  ['rest', musicEntry(restPrim)],
+  ['par', musicEntry(parPrim)],
+  ['seq', musicEntry(seqPrim)]
+])
