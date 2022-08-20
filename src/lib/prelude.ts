@@ -208,32 +208,32 @@ const numericPrimitives: [string, Prim, Doc | undefined][] = [
   ['number?', numberPrim, Docs.number],
   ['real?', realPrim, Docs.real],
   ['integer?', integerPrim, Docs.integer],
-  ['<', ltPrim, undefined],
-  ['<=', leqPrim, undefined],
-  ['>', gtPrim, undefined],
-  ['>=', geqPrim, undefined],
-  ['=', numeqPrim, undefined],
-  ['zero?', zeroPrim, undefined],
-  ['positive?', positivePrim, undefined],
-  ['negative?', negativePrim, undefined],
-  ['odd?', oddPrim, undefined],
-  ['even?', evenPrim, undefined],
-  ['max', maxPrim, undefined],
-  ['min', minPrim, undefined],
-  ['+', plusPrim, undefined],
-  ['-', minusPrim, undefined],
-  ['*', timesPrim, undefined],
-  ['/', divPrim, undefined],
-  ['abs', absPrim, undefined],
-  ['modulo', moduloPrim, undefined],
-  ['floor', floorPrim, undefined],
-  ['ceiling', ceilingPrim, undefined],
-  ['truncate', truncatePrim, undefined],
-  ['round', roundPrim, undefined],
-  ['square', squarePrim, undefined],
-  ['sqrt', sqrtPrim, undefined],
-  ['expt', exptPrim, undefined],
-  ['number->string', numberStringPrim, undefined]
+  ['<', ltPrim, Docs.lt],
+  ['<=', leqPrim, Docs.leq],
+  ['>', gtPrim, Docs.gt],
+  ['>=', geqPrim, Docs.geq],
+  ['=', numeqPrim, Docs.numeq],
+  ['zero?', zeroPrim, Docs.zero],
+  ['positive?', positivePrim, Docs.positive],
+  ['negative?', negativePrim, Docs.negative],
+  ['odd?', oddPrim, Docs.odd],
+  ['even?', evenPrim, Docs.even],
+  ['max', maxPrim, Docs.max],
+  ['min', minPrim, Docs.min],
+  ['+', plusPrim, Docs.plus],
+  ['-', minusPrim, Docs.minus],
+  ['*', timesPrim, Docs.times],
+  ['/', divPrim, Docs.div],
+  ['abs', absPrim, Docs.abs],
+  ['modulo', moduloPrim, Docs.modulo],
+  ['floor', floorPrim, Docs.floor],
+  ['ceiling', ceilingPrim, Docs.ceiling],
+  ['truncate', truncatePrim, Docs.truncate],
+  ['round', roundPrim, Docs.round],
+  ['square', squarePrim, Docs.square],
+  ['sqrt', sqrtPrim, Docs.sqrt],
+  ['expt', exptPrim, Docs.expt],
+  ['number->string', numberStringPrim, Docs.numberString],
 ]
 
 // Booleans (6.3)
@@ -251,8 +251,8 @@ const booleanPrim: Prim = (_env, args, app) =>
     : runtimeError(msg('error-arity', 'boolean?', '1', args.length), app)
 
 const booleanPrimitives: [string, Prim, Doc | undefined][] = [
-  ['not', notPrim, undefined],
-  ['boolean?', booleanPrim, undefined]
+  ['not', notPrim, Docs.not],
+  ['boolean?', booleanPrim, Docs.boolean]
 ]
 
 // Pairs and Lists (6.4)
@@ -297,12 +297,12 @@ const listQPrim : Prim = (_env, args, app) =>
     : runtimeError(msg('error-arity', 'list?', '1', args.length), app)
 
 const pairListPrimitives: [string, Prim, Doc | undefined][] = [
-  ['pair?', pairPrim, undefined],
-  ['cons', consPrim, undefined],
-  ['car', carPrim, undefined],
-  ['cdr', cdrPrim, undefined],
-  ['null?', nullPrim, undefined],
-  ['list?', listQPrim, undefined]
+  ['pair?', pairPrim, Docs.pair],
+  ['cons', consPrim, Docs.cons],
+  ['car', carPrim, Docs.car],
+  ['cdr', cdrPrim, Docs.cdr],
+  ['null?', nullPrim, Docs.nullQ],
+  ['list?', listQPrim, Docs.listQ]
 ]
 
 const listPrim: Prim = function (_env, args, app) {
@@ -387,10 +387,10 @@ const appendPrim: Prim = function (_env, args, app) {
 //   (list-copy obj)
 
 const listPrimitives: [string, Prim, Doc | undefined][] = [
-  ['list', listPrim, undefined],
-  ['make-list', makeListPrim, undefined],
-  ['length', lengthPrim, undefined],
-  ['append', appendPrim, undefined]
+  ['list', listPrim, Docs.list],
+  ['make-list', makeListPrim, Docs.makeList],
+  ['length', lengthPrim, Docs.length],
+  ['append', appendPrim, Docs.append]
 ]
 
 // Symbols (6.5)
@@ -494,9 +494,9 @@ const stringRefPrim: Prim = function (_env, args, app) {
 // N.B., string-copy! and string-fill! are unimplemented since they are effectful.
 
 const stringPrimitives: [string, Prim, Doc | undefined][] = [
-  ['string?', stringPrim, undefined],
-  ['string-length', stringLengthPrim, undefined],
-  ['string-ref', stringRefPrim, undefined]
+  ['string?', stringPrim, Docs.stringQ],
+  ['string-length', stringLengthPrim, Docs.stringLength],
+  ['string-ref', stringRefPrim, Docs.stringRef]
 ]
 
 // Vectors (6.8)
@@ -555,9 +555,9 @@ const mapPrim: Prim = (env, args, app) =>
 //   (dynamic-wind before thunk after)
 
 const controlPrimitives: [string, Prim, Doc | undefined][] = [
-  ['procedure?', procedurePrim, undefined],
-  ['apply', applyPrim, undefined],
-  ['map', mapPrim, undefined]
+  ['procedure?', procedurePrim, Docs.procedure],
+  ['apply', applyPrim, Docs.apply],
+  ['map', mapPrim, Docs.map]
 ]
 
 // Exceptions (6.11)
