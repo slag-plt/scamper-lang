@@ -169,8 +169,9 @@ export function emitSupportScript (): string {
     return id
   }
 
+  const synth = JZZ.synth.Tiny()
+
   function emitCompositionWidget(node) {
-    const synth = JZZ.synth.Tiny()
     const composition = JSON.parse(node.textContent)
     node.textContent = ''  // N.B., clear the contents of the node for the buttons
     const playButton = document.createElement('button')
@@ -209,7 +210,7 @@ function litToHtml (l: Lit): string {
     case 'bool': return l.value ? '#t' : '#f'
     case 'num': return l.value.toString()
     case 'char': return `#${l.value}`
-    case 'str': return l.value
+    case 'str': return `"${l.value}"`
   }
 }
 

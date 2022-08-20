@@ -7,7 +7,7 @@ import { scopeCheckExp, scopeCheckProgram } from './scope.js'
 export { Env, EnvEntry } from './lang.js'
 export * from './result.js'
 export { preludeEnv, internalLibs } from './runtime.js'
-export { expToString, stmtToString, progToString } from './lang.js'
+export * from './pretty.js'
 export * from './web.js'
 
 export function compileProgram (src: string): Result<Program> {
