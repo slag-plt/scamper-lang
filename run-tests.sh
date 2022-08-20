@@ -8,7 +8,7 @@ GREEN="\033[32m"
 CLEAR="\033[0m"
 
 LEXING_TESTS=$(ls tests/lexing/*.scm)
-RUNTIME_TESTS=$(ls tests/runtime/*.scm)
+RUNTIME_TESTS=$(find tests/runtime -name "*.scm")
 
 total=0
 failures=0
@@ -22,7 +22,7 @@ do
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
-    echo ${DIFF}
+    echo -e "${DIFF}"
     ((failures += 1))
   else
     echo -e "${GREEN}success!${CLEAR}"
@@ -38,7 +38,7 @@ do
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
-    echo ${DIFF}
+    echo -e "${DIFF}"
     ((failures += 1))
   else
     echo -e "${GREEN}success!${CLEAR}"

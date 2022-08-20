@@ -80,23 +80,25 @@ function tryParseString (s: string): string | undefined {
   if (s.length < 2 || !s.startsWith('"') || !s.endsWith('"')) {
     return undefined
   } else {
-    // TODO: for now, we only support simple string literals with no escape codes.
-    const src = s.slice(1, s.length - 1)
-    return src
+    // N.B., escape codes for strings are expanded in the lexer/sexp.ts.
+    return s.slice(1, s.length - 1)
   }
 }
+
+const intRegex = /^[+-]?\d+$/
+const floatRegex = /^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/
 
 function sexpToExp (s: Sexp): Result<Exp> {
   switch (s.tag) {
     case 'atom': {
-      // TODO: check to see if the atom is a number, character, boolean, or string
-      // TODO: number parsing is complicated, this is a quick hack to move forward
-      const asInt = parseInt(s.single, 10)
-      if (!isNaN(asInt)) {
-        return ok(enumber(s.range, asInt))
+      if (intRegex.test(s.single)) {
+        return ok(enumber(s.range, parseInt(s.single, 10)))
+      } else if (floatRegex.test(s.single)) {
+        return ok(enumber(s.range, parseFloat(s.single)))
       } else if (s.single.startsWith('"')) {
         const result = tryParseString(s.single)
-        return result
+        // N.B., '' is false in Javascript, so need an explicit undefined check.
+        return result !== undefined
           ? ok(estr(s.range, result))
           : parserError(msg('error-invalid-string-literal'), s)
       } else if (s.single === 'null') {

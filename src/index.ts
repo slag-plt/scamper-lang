@@ -4,8 +4,10 @@ import { parseExp, parseProgram } from './parser.js'
 import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'
 
+export { Env, EnvEntry } from './lang.js'
 export * from './result.js'
-export { expToString, stmtToString, progToString } from './lang.js'
+export { preludeEnv, internalLibs } from './runtime.js'
+export * from './pretty.js'
 export * from './web.js'
 
 export function compileProgram (src: string): Result<Program> {

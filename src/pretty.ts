@@ -27,6 +27,24 @@ function isSimpleExp (e: L.Exp): boolean {
   }
 }
 
+function nestingDepth (e: L.Exp): number {
+  switch (e.tag) {
+    case 'var': return 0
+    case 'lit': return 0
+    case 'call': return 1 + Math.max(...e.args.map(nestingDepth))
+    case 'lam': return 1 + nestingDepth(e.body)
+    case 'if': return 1 + Math.max(nestingDepth(e.e1), nestingDepth(e.e2), nestingDepth(e.e3))
+    case 'nil': return 0
+    case 'pair': return 1 + Math.max(nestingDepth(e.e1), nestingDepth(e.e2))
+    case 'let': return 0 // TODO
+    case 'cond': return 0 // TODO
+    case 'and': return 0 // TODO
+    case 'or': return 0 // TODO
+    case 'obj': return 0
+    case 'prim': return 0
+  }
+}
+
 function parens(ss: string[]): string {
   return `(${ss.join(' ')})`
 }
@@ -35,77 +53,92 @@ function indent(col: number, s: string): string {
   return `${' '.repeat(col)}${s}`
 }
 
-export function expToString (col: number, e: L.Exp): string {
+export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false): string {
   switch (e.tag) {
     case 'var':
       return e.value
     case 'lit':
       return litToString(e.value)
-    case 'call':
-      return parens([e.head].concat(e.args).map(arg => expToString(col, arg)))
+    case 'call': {
+      const allExps = [e.head, ...e.args]
+      if (allExps.every(isSimpleExp) && allExps.every(e => nestingDepth(e) <= 4) && e.args.length <= 5) {
+        return parens([e.head].concat(e.args).map(arg => expToString(col, arg, htmlOutput)))
+      } else {
+        return [
+          `(${expToString(col, e.head, htmlOutput)}`,
+          ...e.args.map(arg => `${indent(col + 2, expToString(col + 2, arg, htmlOutput))}`)
+        ].join('\n') + ')'
+      }
+    }
     case 'lam': {
       const preamble = `(lambda ${parens(e.args.map(n => n.value))}`
       if (isSimpleExp(e.body)) {
-        return [preamble, `${expToString(col, e.body)})`].join(' ')
+        return [preamble, `${expToString(col, e.body, htmlOutput)})`].join(' ')
       } else {
-        return [preamble, `${indent(col + 2, expToString(col + 2, e.body))}`].join('\n')
+        return [preamble, `${indent(col + 2, expToString(col + 2, e.body, htmlOutput))}`].join('\n')
       }
     }
     case 'if': {
       return [
-        `(if ${expToString(col, e.e1)}`, 
-        `${indent(col + 2, expToString(col + 2, e.e2))}`,
-        `${indent(col + 2, expToString(col + 2, e.e3))})`,
+        `(if ${expToString(col, e.e1, htmlOutput)}`, 
+        `${indent(col + 2, expToString(col + 2, e.e2, htmlOutput))}`,
+        `${indent(col + 2, expToString(col + 2, e.e3, htmlOutput))})`,
       ].join('\n')
     }
     case 'nil':
       return 'null'
     case 'pair':
       return L.isList(e)
-        ? parens(['list'].concat(L.unsafeListToArray(e).map(arg => expToString(col, arg))))
-        : parens(['cons', expToString(col, e.e1), expToString(col, e.e2)])
+        ? parens(['list'].concat(L.unsafeListToArray(e).map(arg => expToString(col, arg, htmlOutput))))
+        : parens(['cons', expToString(col, e.e1, htmlOutput), expToString(col, e.e2, htmlOutput)])
     case 'let': {
       const preamble = '(let '
-      const firstBinding = `${indent(col + 2, `([${e.bindings[0][0]} ${expToString(col + 2 + e.bindings[0][0].value.length + 1, e.bindings[0][1])}]`)}`
+      const firstBinding = `${indent(col + 2, `([${e.bindings[0][0]} ${expToString(col + 2 + e.bindings[0][0].value.length + 1, e.bindings[0][1], htmlOutput)}]`)}`
       const bindings = e.bindings.length == 1
         ? firstBinding + ')'
-        : [firstBinding, ...e.bindings.map(b => `${indent(col + 2 + 1, `[${b[0]} ${expToString(col + 2 + 1 + b[0].value.length + 1, b[1])}]`)}`)].join('\n') + ')'
-      const body = `${indent(col + 2, `(${expToString(col + 2, e.body)})`)}`
+        : [firstBinding, ...e.bindings.map(b => `${indent(col + 2 + 1, `[${b[0]} ${expToString(col + 2 + 1 + b[0].value.length + 1, b[1], htmlOutput)}]`)}`)].join('\n') + ')'
+      const body = `${indent(col + 2, `(${expToString(col + 2, e.body, htmlOutput)})`)}`
       return [preamble, bindings, body].join('\n') + ')'
     }
     case 'cond': {
       const preamble = '(cond '
-      const bindings = e.branches.map(b => indent(col + 2, `[${expToString(col + 2, b[0])} ${expToString(col + 2, b[1])}]`))
+      const bindings = e.branches.map(b => indent(col + 2, `[${expToString(col + 2, b[0], htmlOutput)} ${expToString(col + 2, b[1], htmlOutput)}]`))
       return [preamble, ...bindings].join('\n') + ')'
     }
     case 'and':
-      return parens(['and', ...e.args.map(arg => expToString(col + 2, arg))])
+      return parens(['and', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
     case 'or':
-      return parens(['or', ...e.args.map(arg => expToString(col + 2, arg))])
+      return parens(['or', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
     case 'obj':
-      return `[object ${e.kind}]`
+      if (htmlOutput && e.kind === 'Drawing') {
+        return `<span class="drawing">${JSON.stringify(e.obj)}</span>`
+      } else if (htmlOutput && e.kind === 'Composition') {
+        return `<span class="composition">${JSON.stringify(e.obj)}</span>`
+      } else {
+        return `[object ${e.kind}]`
+      }
     case 'prim':
       return `[prim ${e.prim.name}]`
   }
 }
 
-export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean = false): string {
+export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean = false, htmlOutput: boolean = false): string {
   switch (stmt.tag) {
     case 'define': {
       const preamble = `(define ${stmt.name.value}`
       return isSimpleExp(stmt.value)
-        ? `${preamble} ${expToString(col, stmt.value)}`
-        : `${preamble}\n${indent(col + 2, expToString(col + 2, stmt.value))}`
+        ? `${preamble} ${expToString(col, stmt.value, htmlOutput)}`
+        : `${preamble}\n${indent(col + 2, expToString(col + 2, stmt.value, htmlOutput))}`
     }
-    case 'exp': return expToString(col, stmt.value)
+    case 'exp': return expToString(col, stmt.value, htmlOutput)
     case 'import': return `(import ${stmt.source})`
-    case 'error': return stmt.errors.map(err => `<<error: ${err.message}>>`).join('\n')
-    case 'binding': return outputBindings ? `<<${stmt.name} bound>>` : ''
-    case 'value': return expToString(col, stmt.value)
-    case 'imported': return outputBindings ? `<<[${stmt.source} imported>>` : ''
+    case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
+    case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
+    case 'value': return expToString(col, stmt.value, htmlOutput)
+    case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
   }
 }
 
-export function progToString(col: number, prog: L.Program, outputBindings: boolean = false): string {
-  return prog.statements.map(s => stmtToString(col, s, outputBindings)).filter(s => s.length > 0).join('\n\n')
+export function progToString(col: number, prog: L.Program, outputBindings: boolean = false, htmlOutput: boolean = false): string {
+  return prog.statements.map(s => stmtToString(col, s, outputBindings, htmlOutput)).filter(s => s.length > 0).join('\n\n')
 }
