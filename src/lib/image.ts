@@ -2,6 +2,7 @@ import { ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
 import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc } from '../lang.js'
 import { msg } from '../messages.js'
+import * as Docs from './docs.js'
 
 type Mode = 'solid' | 'outline'
 
@@ -178,11 +179,11 @@ function renderDrawing (x: number, y: number, drawing: Drawing, canvas: HTMLCanv
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
 
 const imageLib: Env = new Env([
-  ['circle', imageEntry(circlePrim)],
-  ['rectangle', imageEntry(rectanglePrim)],
-  ['beside', imageEntry(besidePrim)],
-  ['above', imageEntry(abovePrim)],
-  ['overlay', imageEntry(overlayPrim)]
+  ['circle', imageEntry(circlePrim, Docs.circle)],
+  ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
+  ['beside', imageEntry(besidePrim, Docs.beside)],
+  ['above', imageEntry(abovePrim, Docs.above)],
+  ['overlay', imageEntry(overlayPrim, Docs.overlay)]
 ])
 
 export { renderDrawing, imageLib }

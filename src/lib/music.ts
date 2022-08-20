@@ -131,11 +131,11 @@ const musicEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'mus
 
 export const musicLib: L.Env = new L.Env([
   ['pitch?', musicEntry(pitchPrim, Docs.pitch)],
-  ['octave?', musicEntry(octavePrim)],
-  ['dur?', musicEntry(durQPrim)],
-  ['dur', musicEntry(durPrim)],
-  ['note', musicEntry(notePrim)],
-  ['rest', musicEntry(restPrim)],
-  ['par', musicEntry(parPrim)],
-  ['seq', musicEntry(seqPrim)]
+  ['octave?', musicEntry(octavePrim, Docs.octave)],
+  ['dur?', musicEntry(durQPrim, Docs.durQ)],
+  ['dur', musicEntry(durPrim, Docs.dur)],
+  ['note', musicEntry(notePrim, Docs.note)],
+  ['rest', musicEntry(restPrim, Docs.rest)],
+  ['par', musicEntry(parPrim, Docs.par)],
+  ['seq', musicEntry(seqPrim, Docs.seq)]
 ])
