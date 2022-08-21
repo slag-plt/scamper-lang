@@ -31,7 +31,7 @@ const circlePrim: Prim = (_env, args, app) => {
   const mode = asString_(args[1])
   const color = asString_(args[2])
   if (mode !== 'solid' && mode !== 'outline') {
-    return runtimeError(msg('error-precondition-not-met', 'circle', '"solid" or "outline"', mode), app)
+    return runtimeError(msg('error-precondition-not-met', 'circle', '2', '"solid" or "outline"', mode), app)
   } else {
     return ok(nleobj('Drawing', circle(radius, mode, color)))
   }
@@ -49,7 +49,7 @@ const rectanglePrim: Prim = (_env, args, app) => {
   const mode = asString_(args[2])
   const color = asString_(args[3])
   if (mode !== 'solid' && mode !== 'outline') {
-    return runtimeError(msg('error-precondition-not-met', 'rectangle', '"solid" or "outline"', mode), app)
+    return runtimeError(msg('error-precondition-not-met', 'rectangle', '3', '"solid" or "outline"', mode), app)
   } else {
     return ok(nleobj('Drawing', rectangle(width, height, mode, color)))
   }

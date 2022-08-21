@@ -475,6 +475,31 @@ export const map: Doc = new Doc(
   'Returns a new list containing the results of applying `f` to each element of `l`.'
 )
 
+export const filter: Doc = new Doc(
+  '(filter f l): list?', [
+    'f: procedure?, a predicate',
+    'l: list?',
+  ],
+  'Returns a new list containing the elements of `l` for which `f` returns `#t`.'
+)
+
+export const fold: Doc = new Doc(
+  '(fold f v l): any', [
+    'f: procedure?, a binary function',
+    'v: any',
+    'l: list?',
+  ],
+  'Returns the result of accumulating the result of applying `f` to each element of `l`, starting with initial value `v`.'
+)
+
+export const reduce: Doc = new Doc(
+  '(reduce f l): any', [
+    'f: procedure?, a binary function',
+    'l: list?, non-empty',
+  ],
+  'Like `fold` but uses the first element of `l` as the initial value.'
+)
+
 ///// image ////////////////////////////////////////////////////////////////////
 
 export const circle: Doc = new Doc(

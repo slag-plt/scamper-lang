@@ -1,4 +1,5 @@
 import * as L from './lang.js'
+import { detailsToCompleteString } from './result.js'
 
 function litToString (l: L.Lit): string {
   switch (l.tag) {
@@ -132,7 +133,7 @@ export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean 
     }
     case 'exp': return expToString(col, stmt.value, htmlOutput)
     case 'import': return `(import ${stmt.source})`
-    case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
+    case 'error': return stmt.errors.map(err => detailsToCompleteString(err)).join('\n')
     case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
     case 'value': return expToString(col, stmt.value, htmlOutput)
     case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''

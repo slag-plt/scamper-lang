@@ -4,6 +4,7 @@ import { evaluateExp, runtimeError } from '../runtime.js'
 import * as Utils from './utils.js'
 import { msg } from '../messages.js'
 import * as Docs from './docs.js'
+import * as Pretty from '../pretty.js'
 
 function asNumbers (args: L.Exp[]): Result<number[]> {
   const result = new Array(args.length)
@@ -566,10 +567,6 @@ const applyPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('apply', ['procedure?'], 'any', args, app).andThen(_ =>
     evaluateExp(env, L.nlecall(args[0], [...args.slice(1)])))
 
-// TODO: for map, do we expand to [f(x1), f(x2), ...] or do we step through
-// the full transformation? Probably step through the full transformation, but
-// then we also need to be able to step, creating a circularity in our
-// dependencies, eek!
 
 // TODO: implement:
 //   (string-map fn str1 ... strk)
@@ -577,6 +574,57 @@ const applyPrim: L.Prim = (env, args, app) =>
 const mapPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('map', ['procedure?', 'list?'], 'any', args, app).andThen(_ =>
     evaluateExp(env, L.arrayToList(L.unsafeListToArray(args[1]).map(e => L.nlecall(args[0], [e])))))
+
+// Additional list pipeline functions from racket/base
+
+const filterPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('filter', ['procedure?', 'list?'], undefined, args, app).andThen(_ => {
+    const fn = args[0]
+    const list = L.asList_(args[1])
+    const result = []
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i]
+      const res = evaluateExp(env, L.nlecall(fn, [e]))
+      if (res.tag === 'error') {
+        return res
+      } else if (!L.isBoolean(res.value)) {
+        return runtimeError(msg('error-type-filter-bool', res.value.tag), args[0])
+      } else if (L.asBool_(res.value)) {
+        result.push(e)
+      }
+    }
+    return ok(L.arrayToList(result))
+  })
+
+const foldPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('fold', ['procedure?', 'any', 'list?'], undefined, args, app).andThen(_ => {
+    const fn = args[0]
+    let result = args[1]
+    const list = L.asList_(args[2])
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i]
+      const res = evaluateExp(env, L.nlecall(fn, [result, e]))
+      if (res.tag === 'error') {
+        return res
+      } else {
+        result = res.value
+      }
+    }
+    return ok(result)
+  })
+
+const reducePrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('reduce', ['procedure?', 'list?'], undefined, args, app).andThen(_ => {
+    const fn = args[0]
+    const list = L.asList_(args[1])
+
+    if (list.length === 0) {
+      return runtimeError(msg('error-precondition-not-met', 'reduce', '2', 'list is non-empty', L.expToString(args[1])), app)
+    } else {
+      return evaluateExp(env,
+        L.nlecall(L.nlevar('fold'), [args[0], list[0], L.arrayToList(list.slice(1))]))
+    }
+  })
 
 // N.B., (vector-map fn v1 ... vk) not implemented since vectors are not implemented.
 
@@ -596,7 +644,10 @@ const mapPrim: L.Prim = (env, args, app) =>
 const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['procedure?', procedurePrim, Docs.procedure],
   ['apply', applyPrim, Docs.apply],
-  ['map', mapPrim, Docs.map]
+  ['map', mapPrim, Docs.map],
+  ['filter', filterPrim, Docs.filter],
+  ['fold', foldPrim, Docs.fold],
+  ['reduce', reducePrim, Docs.reduce]
 ]
 
 // Exceptions (6.11)

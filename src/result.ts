@@ -28,6 +28,10 @@ function detailsToCompleteString (details: ErrorDetails): string {
     msg.push('\n')
     msg.push(`    Hint: ${details.hint}`)
   }
+  if (details.src) {
+    msg.push('\n')
+    msg.push(`    In program: ${details.src}`)
+  }
   return msg.join('\n')
 }
 
