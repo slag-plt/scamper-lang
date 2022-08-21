@@ -235,6 +235,36 @@ export const boolean: Doc = new Doc(
   'Returns `#t` if and only `v` is a boolean.'
 )
 
+export const nand: Doc = new Doc(
+  '(nand v1 v2 ...): boolean?', [
+    'v: boolean?',
+  ],
+  'Equivalent to `(not (and v1 v2 ...))`.'
+)
+
+export const nor: Doc = new Doc(
+  '(nor v1 v2 ...): boolean?', [
+    'v: boolean?',
+  ],
+  'Equivalent to `(not (or v1 v2 ...))`.'
+)
+
+export const implies: Doc = new Doc(
+  '(implies v1 v2): boolean?', [
+    'v1: boolean?',
+    'v2: boolean?',
+  ],
+  'Equivalent to `(if v1 v2 #t)`.'
+)
+
+export const xor: Doc = new Doc(
+  '(xor v1 v2): boolean?', [
+    'v1: boolean?',
+    'v2: boolean?',
+  ],
+  'Equivalent to `(or (and v1 (not v2)) (and (not v1) v2))`.'
+)
+
 export const pair: Doc = new Doc(
   '(pair? v): boolean?', [
     'v: any',

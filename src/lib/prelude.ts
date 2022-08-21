@@ -1,11 +1,11 @@
-import { Doc, asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray, Env, entry, nleprim } from '../lang.js'
+import * as L from '../lang.js'
 import { ICE, ok, Result, rethrow } from '../result.js'
 import { evaluateExp, runtimeError } from '../runtime.js'
 import * as Utils from './utils.js'
 import { msg } from '../messages.js'
 import * as Docs from './docs.js'
 
-function asNumbers (args: Exp[]): Result<number[]> {
+function asNumbers (args: L.Exp[]): Result<number[]> {
   const result = new Array(args.length)
   for (let i = 0; i < args.length; i++) {
     const e = args[i]
@@ -22,7 +22,7 @@ function asNumbers (args: Exp[]): Result<number[]> {
   return ok(result)
 }
 
-const preludeEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'prelude', undefined, docs)
+const preludeEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'prelude', undefined, docs)
 
 // Equivalence predicates (6.1)
 
@@ -31,27 +31,27 @@ const preludeEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'prelude',
 //   (eq? x y)
 // ... do I? Do we need these different equivalence notions?
 
-const equalPrim: Prim = (_env, args, app) =>
+const equalPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('equal?', ['any', 'any'], undefined, args, app).andThen(_ =>
-    ok(nlebool(expEquals(args[0], args[1]))))
+    ok(L.nlebool(L.expEquals(args[0], args[1]))))
 
-const equivalencePrimitives: [string, Prim, Doc | undefined][] = [
+const equivalencePrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['equal?', equalPrim, Docs.equal]
 ]
 
 // Numbers (6.2)
 
-const numberPrim: Prim = (_env, args, app) =>
+const numberPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('number?', ['any'], undefined, args, app).andThen(_ =>
-    ok(nlebool(isNumber(args[0]))))
+    ok(L.nlebool(L.isNumber(args[0]))))
 
-const realPrim: Prim = (_env, args, app) =>
+const realPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('real?', ['any'], undefined, args, app).andThen(_ =>
-    ok(nlebool(isReal(args[0]))))
+    ok(L.nlebool(L.isReal(args[0]))))
 
-const integerPrim: Prim = (_env, args, app) =>
+const integerPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('integer?', ['any'], undefined, args, app).andThen(_ =>
-    ok(nlebool(isInteger(args[0]))))
+    ok(L.nlebool(L.isInteger(args[0]))))
 
 // TODO: implement:
 //   (complex? obj)
@@ -68,63 +68,63 @@ const integerPrim: Prim = (_env, args, app) =>
 //   (infinite? z)
 //   (nan? z)
 
-function compareOp (symbol: string, op: (x: number, y: number) => boolean, args: Exp[], app: Exp): Result<Exp> {
+function compareOp (symbol: string, op: (x: number, y: number) => boolean, args: L.Exp[], app: L.Exp): Result<L.Exp> {
   return Utils.checkArgsResult(symbol, ['number?', 'number?'], undefined, args, app).andThen(_ =>
     asNumbers(args).andThen(
-      vs => ok(nlebool(op(vs[0], vs[1]))))
+      vs => ok(L.nlebool(op(vs[0], vs[1]))))
   )
 }
 
-const ltPrim: Prim = (_env, args, app) => compareOp('<', (x, y) => x < y, args, app)
-const leqPrim : Prim = (_env, args, app) => compareOp('<=', (x, y) => x <= y, args, app)
-const gtPrim : Prim = (_env, args, app) => compareOp('>', (x, y) => x > y, args, app)
-const geqPrim : Prim = (_env, args, app) => compareOp('>=', (x, y) => x >= y, args, app)
-const numeqPrim : Prim = (_env, args, app) => compareOp('=', (x, y) => x === y, args, app)
+const ltPrim: L.Prim = (_env, args, app) => compareOp('<', (x, y) => x < y, args, app)
+const leqPrim : L.Prim = (_env, args, app) => compareOp('<=', (x, y) => x <= y, args, app)
+const gtPrim : L.Prim = (_env, args, app) => compareOp('>', (x, y) => x > y, args, app)
+const geqPrim : L.Prim = (_env, args, app) => compareOp('>=', (x, y) => x >= y, args, app)
+const numeqPrim : L.Prim = (_env, args, app) => compareOp('=', (x, y) => x === y, args, app)
 
-const zeroPrim : Prim = (_env, args, app) =>
+const zeroPrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('zero?', ['number?'], undefined, args, app).andThen(_ =>
-    ok(nlebool(asNum_(args[0]) === 0)))
+    ok(L.nlebool(L.asNum_(args[0]) === 0)))
 
-const positivePrim : Prim = (_env, args, app) =>
+const positivePrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('positive?', ['number?'], undefined, args, app).andThen(_ =>
-    ok(nlebool(asNum_(args[0]) > 0)))
+    ok(L.nlebool(L.asNum_(args[0]) > 0)))
 
-const negativePrim : Prim = (_env, args, app) =>
+const negativePrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('negative?', ['number?'], undefined, args, app).andThen(_ =>
-    ok(nlebool(asNum_(args[0]) < 0)))
+    ok(L.nlebool(L.asNum_(args[0]) < 0)))
 
-const oddPrim : Prim = (_env, args, app) =>
+const oddPrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('odd?', ['number?'], undefined, args, app).andThen(_ =>
-    ok(nlebool((asNum_(args[0]) & 1) === 1)))
+    ok(L.nlebool((L.asNum_(args[0]) & 1) === 1)))
 
-const evenPrim : Prim = (_env, args, app) =>
+const evenPrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('even?', ['number?'], undefined, args, app).andThen(_ =>
-    ok(nlebool((asNum_(args[0]) & 1) !== 1)))
+    ok(L.nlebool((L.asNum_(args[0]) & 1) !== 1)))
 
-function numericUOp (symbol: string, op: (x: number) => number, args: Exp[], app: Exp): Result<Exp> {
+function numericUOp (symbol: string, op: (x: number) => number, args: L.Exp[], app: L.Exp): Result<L.Exp> {
   return Utils.checkArgsResult(symbol, ['number?'], undefined, args, app).andThen(_ =>
-    asNumbers(args).andThen(vs => ok(nlenumber(op(vs[0])))))
+    asNumbers(args).andThen(vs => ok(L.nlenumber(op(vs[0])))))
 }
 
-function numericBOp (symbol: string, op: (x: number, y: number) => number, args: Exp[], app: Exp): Result<Exp> {
+function numericBOp (symbol: string, op: (x: number, y: number) => number, args: L.Exp[], app: L.Exp): Result<L.Exp> {
   return Utils.checkArgsResult(symbol, ['number?', 'number?'], undefined, args, app).andThen(_ =>
-    asNumbers(args).andThen(vs => ok(nlenumber(op(vs[0], vs[1])))))
+    asNumbers(args).andThen(vs => ok(L.nlenumber(op(vs[0], vs[1])))))
 }
 
-function numericNOp (symbol: string, op: (x: number, y: number) => number, args: Exp[], app: Exp): Result<Exp> {
+function numericNOp (symbol: string, op: (x: number, y: number) => number, args: L.Exp[], app: L.Exp): Result<L.Exp> {
   return Utils.checkArgsResult(symbol, ['number?'], 'number?', args, app).andThen(_ =>
-    asNumbers(args).andThen(vs => ok(nlenumber(vs.reduce(op)))))
+    asNumbers(args).andThen(vs => ok(L.nlenumber(vs.reduce(op)))))
 }
 
-const maxPrim: Prim = (_env, args, app) => numericNOp('max', Math.max, args, app)
-const minPrim: Prim = (_env, args, app) => numericNOp('min', Math.min, args, app)
+const maxPrim: L.Prim = (_env, args, app) => numericNOp('max', Math.max, args, app)
+const minPrim: L.Prim = (_env, args, app) => numericNOp('min', Math.min, args, app)
 
-const plusPrim: Prim = (_env, args, app) => numericNOp('+', (x, y) => x + y, args, app)
-const minusPrim: Prim = (_env, args, app) => numericNOp('-', (x, y) => x - y, args, app)
-const timesPrim: Prim = (_env, args, app) => numericNOp('*', (x, y) => x * y, args, app)
-const divPrim: Prim = (_env, args, app) => numericNOp('/', (x, y) => x / y, args, app)
+const plusPrim: L.Prim = (_env, args, app) => numericNOp('+', (x, y) => x + y, args, app)
+const minusPrim: L.Prim = (_env, args, app) => numericNOp('-', (x, y) => x - y, args, app)
+const timesPrim: L.Prim = (_env, args, app) => numericNOp('*', (x, y) => x * y, args, app)
+const divPrim: L.Prim = (_env, args, app) => numericNOp('/', (x, y) => x / y, args, app)
 
-const absPrim: Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
+const absPrim: L.Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
 
 // TODO: implement:
 //   (floor / n1 n2)
@@ -136,7 +136,7 @@ const absPrim: Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x),
 //   (quotient n1 n2)
 //   (remainder n1 n2)
 
-const moduloPrim: Prim = (_env, args, app) => numericBOp('modulo', (x, y) => x % y, args, app)
+const moduloPrim: L.Prim = (_env, args, app) => numericBOp('modulo', (x, y) => x % y, args, app)
 
 //   (modulo n1 n2)
 
@@ -146,21 +146,21 @@ const moduloPrim: Prim = (_env, args, app) => numericBOp('modulo', (x, y) => x %
 //   (numerator q)    ...wait, do we need these?
 //   (denominator q)  ...wait, do we need these?
 
-const floorPrim: Prim = (_env, args, app) => numericUOp('floor', (x) => Math.floor(x), args, app)
-const ceilingPrim: Prim = (_env, args, app) => numericUOp('ceiling', (x) => Math.ceil(x), args, app)
-const truncatePrim: Prim = (_env, args, app) => numericUOp('truncate', (x) => Math.trunc(x), args, app)
-const roundPrim: Prim = (_env, args, app) => numericUOp('round', (x) => Math.round(x), args, app)
+const floorPrim: L.Prim = (_env, args, app) => numericUOp('floor', (x) => Math.floor(x), args, app)
+const ceilingPrim: L.Prim = (_env, args, app) => numericUOp('ceiling', (x) => Math.ceil(x), args, app)
+const truncatePrim: L.Prim = (_env, args, app) => numericUOp('truncate', (x) => Math.trunc(x), args, app)
+const roundPrim: L.Prim = (_env, args, app) => numericUOp('round', (x) => Math.round(x), args, app)
 
 // TODO: implement:
 //   (rationalize x y)
 
-const squarePrim: Prim = (_env, args, app) => numericUOp('square', (x) => Math.pow(x, 2), args, app)
-const sqrtPrim: Prim = (_env, args, app) => numericUOp('sqrt', (x) => Math.sqrt(x), args, app)
+const squarePrim: L.Prim = (_env, args, app) => numericUOp('square', (x) => Math.pow(x, 2), args, app)
+const sqrtPrim: L.Prim = (_env, args, app) => numericUOp('sqrt', (x) => Math.sqrt(x), args, app)
 
 // TODO: implement:
 //   (exact-integer-sqrt k)
 
-const exptPrim: Prim = (_env, args, app) => numericBOp('expt', (x, y) => Math.pow(x, y), args, app)
+const exptPrim: L.Prim = (_env, args, app) => numericBOp('expt', (x, y) => Math.pow(x, y), args, app)
 
 // TODO: implement:
 //   (make-rectangular x1 x2)   ...probably not!
@@ -170,18 +170,18 @@ const exptPrim: Prim = (_env, args, app) => numericBOp('expt', (x, y) => Math.po
 //   (magnitude z)              ...probably not!
 //   (angle z)                  ...probably not!
 
-const numberStringPrim: Prim = (_env, args, app) => {
+const numberStringPrim: L.Prim = (_env, args, app) => {
   // TODO: support (number->string z radix)?
   const argErr = Utils.checkArgsResult('number->string', ['number?'], undefined, args, app)
   const e = args[0]
-  return ok(nlestr(asNum_(e).toString()))
+  return ok(L.nlestr(L.asNum_(e).toString()))
 }
 
 // TODO: implement:
 //   (string->number s)
 //   (string->number s radix)
 
-const numericPrimitives: [string, Prim, Doc | undefined][] = [
+const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['number?', numberPrim, Docs.number],
   ['real?', realPrim, Docs.real],
   ['integer?', integerPrim, Docs.integer],
@@ -215,51 +215,76 @@ const numericPrimitives: [string, Prim, Doc | undefined][] = [
 
 // Booleans (6.3)
 
-const notPrim: Prim = (_env, args, app) =>
+const notPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('not', ['boolean?'], 'boolean?', args, app).andThen(_ =>
-    ok(nlebool(!asBool_(args[0]))))
+    ok(L.nlebool(!L.asBool_(args[0]))))
 
-const booleanPrim: Prim = (_env, args, app) =>
+const booleanPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('boolean?', ['any'], 'boolean?', args, app).andThen(_ =>
-    runtimeError(msg('error-arity', 'boolean?', '1', args.length), app))
+    ok(L.nlebool(L.isBoolean(args[0]))))
 
-const booleanPrimitives: [string, Prim, Doc | undefined][] = [
+// From racket/base
+
+const nandPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('nand', [], 'boolean?', args, app).andThen(_ =>
+    evaluateExp(env, L.nlecall(L.nlevar('not'), [L.nleand(args)])))
+
+const norPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('nand', [], 'boolean?', args, app).andThen(_ =>
+    evaluateExp(env, L.nlecall(L.nlevar('not'), [L.nleor(args)])))
+
+const impliesPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('implies', ['boolean?', 'boolean?'], undefined, args, app).andThen(_ =>
+    evaluateExp(env, L.nleif(args[0], args[1], L.nlebool(true))))
+   
+const xorPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('xor', ['boolean?', 'boolean?'], undefined, args, app).andThen(_ =>    
+    evaluateExp(env, L.nleor([
+      L.nleand([args[0], L.nlecall(L.nlevar('not'), [args[1]])]),
+      L.nleand([L.nlecall(L.nlevar('not'), [args[0]]), args[1]]),
+    ])))
+
+const booleanPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['not', notPrim, Docs.not],
-  ['boolean?', booleanPrim, Docs.boolean]
+  ['boolean?', booleanPrim, Docs.boolean],
+  ['nand', nandPrim, Docs.nand],
+  ['nor', norPrim, Docs.nor],
+  ['implies', impliesPrim, Docs.implies],
+  ['xor', xorPrim, Docs.xor],
 ]
 
 // Pairs and Lists (6.4)
 
-const pairPrim: Prim = (_env, args, app) =>
+const pairPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('pair?', ['any'], 'boolean?', args, app).andThen(_ =>
-    ok(nlebool(isPair(args[0]))))
+    ok(L.nlebool(L.isPair(args[0]))))
 
-const consPrim: Prim = (_env, args, app) =>
+const consPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('cons', ['any', 'any'], 'pair?', args, app).andThen(_ =>
-    ok(epair(app.range, args[0], args[1])))
+    ok(L.epair(app.range, args[0], args[1])))
 
-const carPrim : Prim = (_env, args, app) =>
+const carPrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('car', ['pair?'], 'any', args, app).andThen(_ =>
-    ok((args[0] as EPair).e1))
+    ok((args[0] as L.EPair).e1))
 
-const cdrPrim : Prim = (_env, args, app) =>
+const cdrPrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('cdr', ['pair?'], 'any', args, app).andThen(_ =>
-    ok((args[0] as EPair).e2))
+    ok((args[0] as L.EPair).e2))
 
 // N.B., set-car! and set-cdr! are unimplemented since we only implement the
 // pure, functional subset of Scheme.
 
 // TODO: implement caar, cadr, cdar, cddr, caaar, ..., cdddr in some elegant way
 
-const nullPrim : Prim = (_env, args, app) =>
+const nullPrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('null?', ['any'], 'boolean?', args, app).andThen(_ =>
-    ok(nlebool(args[0].tag === 'nil')))
+    ok(L.nlebool(args[0].tag === 'nil')))
 
-const listQPrim : Prim = (_env, args, app) =>
+const listQPrim : L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('list?', ['any'], 'boolean?', args, app).andThen(_ => 
-    ok(nlebool(isList(args[0]))))
+    ok(L.nlebool(L.isList(args[0]))))
 
-const pairListPrimitives: [string, Prim, Doc | undefined][] = [
+const pairListPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['pair?', pairPrim, Docs.pair],
   ['cons', consPrim, Docs.cons],
   ['car', carPrim, Docs.car],
@@ -268,49 +293,49 @@ const pairListPrimitives: [string, Prim, Doc | undefined][] = [
   ['list?', listQPrim, Docs.listQ]
 ]
 
-const listPrim: Prim = function (_env, args, app) {
-  return ok(arrayToList(args))
+const listPrim: L.Prim = function (_env, args, app) {
+  return ok(L.arrayToList(args))
 }
 
-const makeListPrim: Prim = function (_env, args, app) {
+const makeListPrim: L.Prim = function (_env, args, app) {
   // N.B., (make-list k) returns the empty list, but this behavior is weird, so we don't replicate it!
   const argErr = Utils.checkArgs('make-list', ['number?', 'any'], undefined, args, app)
   if (argErr) { return argErr }
-  const n = asNum_(args[0])
+  const n = L.asNum_(args[0])
   const fill = args[1]
-  let ret: Exp = nlenil()
+  let ret: L.Exp = L.nlenil()
   for (let i = 0; i < n; i++) {
-    ret = nlepair(fill, ret)
+    ret = L.nlepair(fill, ret)
   }
   return ok(ret)
 }
 
-const lengthPrim: Prim = function (_env, args, app) {
+const lengthPrim: L.Prim = function (_env, args, app) {
   const argErr = Utils.checkArgs('length', ['list?'], undefined, args, app)
   if (argErr) { return argErr }
   const length = 0
-  let e: Exp = args[0]
+  let e: L.Exp = args[0]
   while (e.tag !== 'nil') {
     if (e.tag === 'pair') {
       e = e.e2
     } else {
-      throw new ICE('lengthPrim', `Processing a non-list that we thought was a list: ${expToString(app)}`)
+      throw new ICE('lengthPrim', `Processing a non-list that we thought was a list: ${L.expToString(app)}`)
     }
   }
-  return ok(nlenumber(length))
+  return ok(L.nlenumber(length))
 }
 
-function appendOne_ (l1: Exp, l2: Exp): Exp {
+function appendOne_ (l1: L.Exp, l2: L.Exp): L.Exp {
   if (l1.tag === 'nil') {
     return l2
   } else if (l1.tag === 'pair') {
-    return nlepair(l1.e1, appendOne_(l1.e2, l2))
+    return L.nlepair(l1.e1, appendOne_(l1.e2, l2))
   } else {
-    throw new ICE('appendOne', `Non-list passed: ${expToString(l1)}`)
+    throw new ICE('appendOne', `Non-list passed: ${L.expToString(l1)}`)
   }
 }
 
-const appendPrim: Prim = function (_env, args, app) {
+const appendPrim: L.Prim = function (_env, args, app) {
   const argErr = Utils.checkArgs('append', ['list?'], 'list?', args, app)
   let ret = args[0]
   for (let i = 1; i < args.length; i++) {
@@ -337,7 +362,7 @@ const appendPrim: Prim = function (_env, args, app) {
 //   (assoc obj alist compare)
 //   (list-copy obj)
 
-const listPrimitives: [string, Prim, Doc | undefined][] = [
+const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['list', listPrim, Docs.list],
   ['make-list', makeListPrim, Docs.makeList],
   ['length', lengthPrim, Docs.length],
@@ -384,26 +409,26 @@ const listPrimitives: [string, Prim, Doc | undefined][] = [
 
 // Strings (6.7)
 
-const stringPrim: Prim = (_env, args, app) =>
+const stringPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('string?', ['any'], 'boolean?', args, app).andThen(_ =>
-    ok(nlebool(isString(args[0]))))
+    ok(L.nlebool(L.isString(args[0]))))
 
 // TODO: implement:
 //   (make-string k)
 //   (make-string k char)
 //   (string char ...)
 
-const stringLengthPrim: Prim = (_env, args, app) =>
+const stringLengthPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('string-length', ['string?'], undefined, args, app).andThen(_ =>
-    ok(nlenumber(asString_(args[0]).length)))
+    ok(L.nlenumber(L.asString_(args[0]).length)))
 
-const stringRefPrim: Prim = function (_env, args, app) {
+const stringRefPrim: L.Prim = function (_env, args, app) {
   const argErr = Utils.checkArgs('string-ref', ['string?', 'integer?'], undefined, args, app)
   if (argErr) { return argErr }
-  const str = asString_(args[0])
-  const i = asNum_(args[1])
+  const str = L.asString_(args[0])
+  const i = L.asNum_(args[1])
   if (i >= 0 && i < str.length) {
-    return ok(nlechar(str[i]))
+    return ok(L.nlechar(str[i]))
   } else {
     return runtimeError(msg('error-index-string', i, str), app)
   }
@@ -435,7 +460,7 @@ const stringRefPrim: Prim = function (_env, args, app) {
 
 // N.B., string-copy! and string-fill! are unimplemented since they are effectful.
 
-const stringPrimitives: [string, Prim, Doc | undefined][] = [
+const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['string?', stringPrim, Docs.stringQ],
   ['string-length', stringLengthPrim, Docs.stringLength],
   ['string-ref', stringRefPrim, Docs.stringRef]
@@ -451,14 +476,14 @@ const stringPrimitives: [string, Prim, Doc | undefined][] = [
 
 // Control features (6.10)
 
-const procedurePrim: Prim = (_env, args, app) =>
+const procedurePrim: L.Prim = (_env, args, app) =>
   // N.B., once we add non-function primitives, this will need to change.
   Utils.checkArgsResult('procedure?', ['any'], 'boolean?', args, app).andThen(_ =>
-    ok(nlebool(isProcedure(args[0]))))
+    ok(L.nlebool(L.isProcedure(args[0]))))
 
-const applyPrim: Prim = (env, args, app) =>
+const applyPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('apply', ['procedure?'], 'any', args, app).andThen(_ =>
-    evaluateExp(env, nlecall(args[0], [...args.slice(1)])))
+    evaluateExp(env, L.nlecall(args[0], [...args.slice(1)])))
 
 // TODO: for map, do we expand to [f(x1), f(x2), ...] or do we step through
 // the full transformation? Probably step through the full transformation, but
@@ -468,9 +493,9 @@ const applyPrim: Prim = (env, args, app) =>
 // TODO: implement:
 //   (string-map fn str1 ... strk)
 
-const mapPrim: Prim = (env, args, app) =>
+const mapPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('map', ['procedure?', 'list?'], 'any', args, app).andThen(_ =>
-    evaluateExp(env, arrayToList(unsafeListToArray(args[1]).map(e => nlecall(args[0], [e])))))
+    evaluateExp(env, L.arrayToList(L.unsafeListToArray(args[1]).map(e => L.nlecall(args[0], [e])))))
 
 // N.B., (vector-map fn v1 ... vk) not implemented since vectors are not implemented.
 
@@ -487,7 +512,7 @@ const mapPrim: Prim = (env, args, app) =>
 //   (call-with-values producer consumer)
 //   (dynamic-wind before thunk after)
 
-const controlPrimitives: [string, Prim, Doc | undefined][] = [
+const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['procedure?', procedurePrim, Docs.procedure],
   ['apply', applyPrim, Docs.apply],
   ['map', mapPrim, Docs.map]
@@ -509,7 +534,7 @@ const controlPrimitives: [string, Prim, Doc | undefined][] = [
 
 // N.B., not implemented, all operating system-specific stuff.
 
-export const preludeEnv = new Env([
+export const preludeEnv = new L.Env([
   ...equivalencePrimitives,
   ...numericPrimitives,
   ...booleanPrimitives,
@@ -517,4 +542,4 @@ export const preludeEnv = new Env([
   ...listPrimitives,
   ...stringPrimitives,
   ...controlPrimitives
-].map(v => [v[0], entry(nleprim(v[1]), 'prelude', undefined, v[2])]))
+].map(v => [v[0], L.entry(L.nleprim(v[1]), 'prelude', undefined, v[2])]))

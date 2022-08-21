@@ -147,7 +147,7 @@ type Exp
 
 type EVar = { tag: 'var', range: Range, value: string }
 const evar = (range: Range, value: string): EVar => ({ tag: 'var', range, value })
-const nlevar = (range: Range, value: string): EVar => evar(noRange(), value)
+const nlevar = (value: string): EVar => evar(noRange(), value)
 
 type ELit = { tag: 'lit', range: Range, value: Lit }
 const elit = (range: Range, value: Lit): ELit => ({ tag: 'lit', range, value })
