@@ -1,6 +1,7 @@
 import { Doc, asBool_, asNum_, nlebool, nlenumber, EPair, Exp, expEquals, isBoolean, isList, isNumber, isPair, isReal, isInteger, epair, nlestr, nlenil, nlepair, expToString, isString, asString_, nlechar, nlecall, Prim, isProcedure, arrayToList, unsafeListToArray, Env, entry, nleprim } from '../lang.js'
-import { ICE, ok, Result } from '../result.js'
+import { ICE, ok, Result, rethrow } from '../result.js'
 import { evaluateExp, runtimeError } from '../runtime.js'
+import * as Utils from './utils.js'
 import { msg } from '../messages.js'
 import * as Docs from './docs.js'
 
@@ -12,10 +13,10 @@ function asNumbers (args: Exp[]): Result<number[]> {
       if (e.value.tag === 'num') {
         result[i] = e.value.value
       } else {
-        return runtimeError(msg('error-type-expected', 'number', e.value.tag), e)
+        return runtimeError(msg('error-type-expected', 'number?', e.value.tag), e)
       }
     } else {
-      return runtimeError(msg('error-type-expected', 'number', e.tag))
+      return runtimeError(msg('error-type-expected', 'number?', e.tag))
     }
   }
   return ok(result)
@@ -31,9 +32,8 @@ const preludeEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'prelude',
 // ... do I? Do we need these different equivalence notions?
 
 const equalPrim: Prim = (_env, args, app) =>
-  args.length === 2
-    ? ok(nlebool(expEquals(args[0], args[1])))
-    : runtimeError(msg('error-arity', 'equal?', '2', args.length), app)
+  Utils.checkArgsResult('equal?', ['any', 'any'], undefined, args, app).andThen(_ =>
+    ok(nlebool(expEquals(args[0], args[1]))))
 
 const equivalencePrimitives: [string, Prim, Doc | undefined][] = [
   ['equal?', equalPrim, Docs.equal]
@@ -42,19 +42,16 @@ const equivalencePrimitives: [string, Prim, Doc | undefined][] = [
 // Numbers (6.2)
 
 const numberPrim: Prim = (_env, args, app) =>
-  args.length === 1
-    ? ok(nlebool(isNumber(args[0])))
-    : runtimeError(msg('error-arity', 'number?', '1', args.length), app)
+  Utils.checkArgsResult('number?', ['any'], undefined, args, app).andThen(_ =>
+    ok(nlebool(isNumber(args[0]))))
 
 const realPrim: Prim = (_env, args, app) =>
-  args.length === 1
-    ? ok(nlebool(isReal(args[0])))
-    : runtimeError(msg('error-arity', 'real?', '1', args.length), app)
+  Utils.checkArgsResult('real?', ['any'], undefined, args, app).andThen(_ =>
+    ok(nlebool(isReal(args[0]))))
 
 const integerPrim: Prim = (_env, args, app) =>
-  args.length === 1
-    ? ok(nlebool(isInteger(args[0])))
-    : runtimeError(msg('error-arity', 'integer?', '1', args.length), app)
+  Utils.checkArgsResult('integer?', ['any'], undefined, args, app).andThen(_ =>
+    ok(nlebool(isInteger(args[0]))))
 
 // TODO: implement:
 //   (complex? obj)
@@ -72,9 +69,10 @@ const integerPrim: Prim = (_env, args, app) =>
 //   (nan? z)
 
 function compareOp (symbol: string, op: (x: number, y: number) => boolean, args: Exp[], app: Exp): Result<Exp> {
-  return args.length === 2
-    ? asNumbers(args).andThen(vs => ok(nlebool(op(vs[0], vs[1]))))
-    : runtimeError(msg('error-arity', `(${symbol})`, '2', args.length), app)
+  return Utils.checkArgsResult(symbol, ['number?', 'number?'], undefined, args, app).andThen(_ =>
+    asNumbers(args).andThen(
+      vs => ok(nlebool(op(vs[0], vs[1]))))
+  )
 }
 
 const ltPrim: Prim = (_env, args, app) => compareOp('<', (x, y) => x < y, args, app)
@@ -84,57 +82,40 @@ const geqPrim : Prim = (_env, args, app) => compareOp('>=', (x, y) => x >= y, ar
 const numeqPrim : Prim = (_env, args, app) => compareOp('=', (x, y) => x === y, args, app)
 
 const zeroPrim : Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'zero?', '1', args.length), app)
-    : !isNumber(args[0])
-        ? runtimeError(msg('error-type-expected-fun', 'zero?', 'number', args[0].tag), app)
-        : ok(nlebool(asNum_(args[0]) === 0))
+  Utils.checkArgsResult('zero?', ['number?'], undefined, args, app).andThen(_ =>
+    ok(nlebool(asNum_(args[0]) === 0)))
 
 const positivePrim : Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'positive?', '1', args.length), app)
-    : !isNumber(args[0])
-        ? runtimeError(msg('error-type-expected-fun', 'positive?', 'number', args[0].tag), app)
-        : ok(nlebool(asNum_(args[0]) > 0))
+  Utils.checkArgsResult('positive?', ['number?'], undefined, args, app).andThen(_ =>
+    ok(nlebool(asNum_(args[0]) > 0)))
 
 const negativePrim : Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'negative?', '1', args.length), app)
-    : !isNumber(args[0])
-        ? runtimeError(msg('error-type-expected-fun', 'negative?', 'number', args[0].tag), app)
-        : ok(nlebool(asNum_(args[0]) < 0))
+  Utils.checkArgsResult('negative?', ['number?'], undefined, args, app).andThen(_ =>
+    ok(nlebool(asNum_(args[0]) < 0)))
 
 const oddPrim : Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'odd?', '1', args.length), app)
-    : !isNumber(args[0])
-        ? runtimeError(msg('error-type-expected-fun', 'odd?', 'number', args[0].tag), app)
-        : ok(nlebool((asNum_(args[0]) & 1) === 1))
+  Utils.checkArgsResult('odd?', ['number?'], undefined, args, app).andThen(_ =>
+    ok(nlebool((asNum_(args[0]) & 1) === 1)))
 
 const evenPrim : Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'even?', '1', args.length), app)
-    : !isNumber(args[0])
-        ? runtimeError(msg('error-type-expected-fun', 'even?', 'number', args[0].tag), app)
-        : ok(nlebool((asNum_(args[0]) & 1) !== 1))
+  Utils.checkArgsResult('even?', ['number?'], undefined, args, app).andThen(_ =>
+    ok(nlebool((asNum_(args[0]) & 1) !== 1)))
 
 function numericUOp (symbol: string, op: (x: number) => number, args: Exp[], app: Exp): Result<Exp> {
-  return args.length !== 1
-    ? runtimeError(msg('error-arity', `(${symbol})`, '1', args.length), app)
-    : asNumbers(args).andThen(vs => ok(nlenumber(op(vs[0]))))
+  return Utils.checkArgsResult(symbol, ['number?'], undefined, args, app).andThen(_ =>
+    asNumbers(args).andThen(vs => ok(nlenumber(op(vs[0])))))
 }
 
 function numericBOp (symbol: string, op: (x: number, y: number) => number, args: Exp[], app: Exp): Result<Exp> {
-  return args.length !== 2
-    ? runtimeError(msg('error-arity', `(${symbol})`, '2', args.length), app)
-    : asNumbers(args).andThen(vs => ok(nlenumber(op(vs[0], vs[1]))))
+  return Utils.checkArgsResult(symbol, ['number?', 'number?'], undefined, args, app).andThen(_ =>
+    asNumbers(args).andThen(vs => ok(nlenumber(op(vs[0], vs[1])))))
 }
 
 function numericNOp (symbol: string, op: (x: number, y: number) => number, args: Exp[], app: Exp): Result<Exp> {
-  return args.length === 0
-    ? runtimeError(msg('error-arity-atleast', `(${symbol})`, '1', args.length), app)
-    : asNumbers(args).andThen(vs => ok(nlenumber(vs.reduce((result, v) => op(result, v)))))
+  return Utils.checkArgsResult(symbol, ['number?'], 'number?', args, app).andThen(_ =>
+    asNumbers(args).andThen(vs => ok(nlenumber(vs.reduce(op)))))
 }
+
 const maxPrim: Prim = (_env, args, app) => numericNOp('max', Math.max, args, app)
 const minPrim: Prim = (_env, args, app) => numericNOp('min', Math.min, args, app)
 
@@ -191,13 +172,9 @@ const exptPrim: Prim = (_env, args, app) => numericBOp('expt', (x, y) => Math.po
 
 const numberStringPrim: Prim = (_env, args, app) => {
   // TODO: support (number->string z radix)?
-  if (args.length !== 1) { return runtimeError(msg('error-arity', 'number->string', '1', args.length), app) }
+  const argErr = Utils.checkArgsResult('number->string', ['number?'], undefined, args, app)
   const e = args[0]
-  if (e.tag === 'lit' && e.value.tag === 'num') {
-    return ok(nlestr(e.value.value.toString()))
-  } else {
-    return runtimeError(msg('error-type-expected-fun', 'number->string', 'number', e.tag), app)
-  }
+  return ok(nlestr(asNum_(e).toString()))
 }
 
 // TODO: implement:
@@ -239,16 +216,12 @@ const numericPrimitives: [string, Prim, Doc | undefined][] = [
 // Booleans (6.3)
 
 const notPrim: Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'not', '1', args.length), app)
-    : isBoolean(args[0])
-      ? runtimeError(msg('error-type-expected-fun', 'not', 'boolean', args[0].tag), app)
-      : ok(nlebool(!asBool_(args[0])))
+  Utils.checkArgsResult('not', ['boolean?'], 'boolean?', args, app).andThen(_ =>
+    ok(nlebool(!asBool_(args[0]))))
 
 const booleanPrim: Prim = (_env, args, app) =>
-  args.length === 1
-    ? ok(nlebool(isBoolean(args[0])))
-    : runtimeError(msg('error-arity', 'boolean?', '1', args.length), app)
+  Utils.checkArgsResult('boolean?', ['any'], 'boolean?', args, app).andThen(_ =>
+    runtimeError(msg('error-arity', 'boolean?', '1', args.length), app))
 
 const booleanPrimitives: [string, Prim, Doc | undefined][] = [
   ['not', notPrim, Docs.not],
@@ -258,28 +231,20 @@ const booleanPrimitives: [string, Prim, Doc | undefined][] = [
 // Pairs and Lists (6.4)
 
 const pairPrim: Prim = (_env, args, app) =>
-  args.length === 1
-    ? ok(nlebool(isPair(args[0])))
-    : runtimeError(msg('error-arity', 'pair?', '1', args.length), app)
+  Utils.checkArgsResult('pair?', ['any'], 'boolean?', args, app).andThen(_ =>
+    ok(nlebool(isPair(args[0]))))
 
 const consPrim: Prim = (_env, args, app) =>
-  args.length === 2
-    ? ok(epair(app.range, args[0], args[1]))
-    : runtimeError(msg('error-arity', 'cons', '2', args.length), app)
+  Utils.checkArgsResult('cons', ['any', 'any'], 'pair?', args, app).andThen(_ =>
+    ok(epair(app.range, args[0], args[1])))
 
 const carPrim : Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'car', '1', args.length), app)
-    : !isPair(args[0])
-        ? runtimeError(msg('error-type-expected-fun', 'car', 'pair', args[0].tag), app)
-        : ok((args[0] as EPair).e1)
+  Utils.checkArgsResult('car', ['pair?'], 'any', args, app).andThen(_ =>
+    ok((args[0] as EPair).e1))
 
 const cdrPrim : Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'cdr', '1', args.length), app)
-    : !isPair(args[0])
-        ? runtimeError(msg('error-type-expected-fun', 'cdr', 'pair', args[0].tag), app)
-        : ok((args[0] as EPair).e2)
+  Utils.checkArgsResult('cdr', ['pair?'], 'any', args, app).andThen(_ =>
+    ok((args[0] as EPair).e2))
 
 // N.B., set-car! and set-cdr! are unimplemented since we only implement the
 // pure, functional subset of Scheme.
@@ -287,14 +252,12 @@ const cdrPrim : Prim = (_env, args, app) =>
 // TODO: implement caar, cadr, cdar, cddr, caaar, ..., cdddr in some elegant way
 
 const nullPrim : Prim = (_env, args, app) =>
-  args.length === 1
-    ? ok(nlebool(args[0].tag === 'nil'))
-    : runtimeError(msg('error-arity', 'null?', '1', args.length), app)
+  Utils.checkArgsResult('null?', ['any'], 'boolean?', args, app).andThen(_ =>
+    ok(nlebool(args[0].tag === 'nil')))
 
 const listQPrim : Prim = (_env, args, app) =>
-  args.length === 1
-    ? ok(nlebool(isList(args[0])))
-    : runtimeError(msg('error-arity', 'list?', '1', args.length), app)
+  Utils.checkArgsResult('list?', ['any'], 'boolean?', args, app).andThen(_ => 
+    ok(nlebool(isList(args[0]))))
 
 const pairListPrimitives: [string, Prim, Doc | undefined][] = [
   ['pair?', pairPrim, Docs.pair],
@@ -311,12 +274,8 @@ const listPrim: Prim = function (_env, args, app) {
 
 const makeListPrim: Prim = function (_env, args, app) {
   // N.B., (make-list k) returns the empty list, but this behavior is weird, so we don't replicate it!
-  if (args.length !== 2) {
-    return runtimeError(msg('error-arity', 'make-list', '2', args.length), app)
-  }
-  if (!isNumber(args[0])) {
-    return runtimeError(msg('error-type-expected-fun', 'make-list', 'integer', args[0].tag), app)
-  }
+  const argErr = Utils.checkArgs('make-list', ['number?', 'any'], undefined, args, app)
+  if (argErr) { return argErr }
   const n = asNum_(args[0])
   const fill = args[1]
   let ret: Exp = nlenil()
@@ -327,16 +286,15 @@ const makeListPrim: Prim = function (_env, args, app) {
 }
 
 const lengthPrim: Prim = function (_env, args, app) {
-  if (args.length !== 1) {
-    return runtimeError(msg('error-arity', 'length', '1', args.length), app)
-  }
+  const argErr = Utils.checkArgs('length', ['list?'], undefined, args, app)
+  if (argErr) { return argErr }
   const length = 0
   let e: Exp = args[0]
   while (e.tag !== 'nil') {
     if (e.tag === 'pair') {
       e = e.e2
     } else {
-      return runtimeError(msg('error-type-expected-fun', 'length', 'list', e.tag), app)
+      throw new ICE('lengthPrim', `Processing a non-list that we thought was a list: ${expToString(app)}`)
     }
   }
   return ok(nlenumber(length))
@@ -353,14 +311,7 @@ function appendOne_ (l1: Exp, l2: Exp): Exp {
 }
 
 const appendPrim: Prim = function (_env, args, app) {
-  if (args.length === 0) {
-    return runtimeError(msg('error-arity-atleast', 'append', '1', args.length))
-  }
-  args.forEach(e => {
-    if (!isList(e)) {
-      return runtimeError(msg('error-type-expected-fun', 'append', 'list', e.tag), e)
-    }
-  })
+  const argErr = Utils.checkArgs('append', ['list?'], 'list?', args, app)
   let ret = args[0]
   for (let i = 1; i < args.length; i++) {
     ret = appendOne_(ret, args[i])
@@ -434,9 +385,8 @@ const listPrimitives: [string, Prim, Doc | undefined][] = [
 // Strings (6.7)
 
 const stringPrim: Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'string?', '1', args.length), app)
-    : ok(nlebool(isString(args[0])))
+  Utils.checkArgsResult('string?', ['any'], 'boolean?', args, app).andThen(_ =>
+    ok(nlebool(isString(args[0]))))
 
 // TODO: implement:
 //   (make-string k)
@@ -444,20 +394,12 @@ const stringPrim: Prim = (_env, args, app) =>
 //   (string char ...)
 
 const stringLengthPrim: Prim = (_env, args, app) =>
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'string-length', '1', args.length), app)
-    : isString(args[0])
-      ? ok(nlenumber(asString_(args[0]).length))
-      : runtimeError(msg('error-type-expected-fun', 'string-length', 'string', args[0].tag), app)
+  Utils.checkArgsResult('string-length', ['string?'], undefined, args, app).andThen(_ =>
+    ok(nlenumber(asString_(args[0]).length)))
 
 const stringRefPrim: Prim = function (_env, args, app) {
-  if (args.length !== 2) {
-    return runtimeError(msg('error-arity', 'string-ref', '2', args.length), app)
-  } else if (!isString(args[0])) {
-    return runtimeError(msg('error-type-expected-fun', 'string-ref', 'string', args[0].tag), args[0])
-  } else if (!isInteger(args[1])) {
-    return runtimeError(msg('error-type-expected-fun', 'string-ref', 'integer', args[1].tag), args[1])
-  }
+  const argErr = Utils.checkArgs('string-ref', ['string?', 'integer?'], undefined, args, app)
+  if (argErr) { return argErr }
   const str = asString_(args[0])
   const i = asNum_(args[1])
   if (i >= 0 && i < str.length) {
@@ -510,17 +452,13 @@ const stringPrimitives: [string, Prim, Doc | undefined][] = [
 // Control features (6.10)
 
 const procedurePrim: Prim = (_env, args, app) =>
-  // TODO: procedure? should also return true for variables that are bound
-  // to procedures in the environment. Probably means that we need to thread
-  // the environment through primitives, ick!
-  args.length !== 1
-    ? runtimeError(msg('error-arity', 'procedure?', '1', args.length), app)
-    : ok(nlebool(isProcedure(args[0])))
+  // N.B., once we add non-function primitives, this will need to change.
+  Utils.checkArgsResult('procedure?', ['any'], 'boolean?', args, app).andThen(_ =>
+    ok(nlebool(isProcedure(args[0]))))
 
 const applyPrim: Prim = (env, args, app) =>
-  args.length === 0
-    ? runtimeError(msg('error-arity-atleast', 'apply', '1', args.length), app)
-    : evaluateExp(env, nlecall(args[0], [...args.slice(1)]))
+  Utils.checkArgsResult('apply', ['procedure?'], 'any', args, app).andThen(_ =>
+    evaluateExp(env, nlecall(args[0], [...args.slice(1)])))
 
 // TODO: for map, do we expand to [f(x1), f(x2), ...] or do we step through
 // the full transformation? Probably step through the full transformation, but
@@ -531,13 +469,8 @@ const applyPrim: Prim = (env, args, app) =>
 //   (string-map fn str1 ... strk)
 
 const mapPrim: Prim = (env, args, app) =>
-  args.length !== 2
-    ? runtimeError(msg('error-arity', 'map', '2', args.length), app)
-    : !isProcedure(args[0])
-        ? runtimeError(msg('error-type-expected-fun', 'map', 'procedure', args[0].tag), app)
-        : !isList(args[1])
-            ? runtimeError(msg('error-type-expected-fun', 'map', 'list', args[1].tag), app)
-            : evaluateExp(env, arrayToList(unsafeListToArray(args[1]).map(e => nlecall(args[0], [e]))))
+  Utils.checkArgsResult('map', ['procedure?', 'list?'], 'any', args, app).andThen(_ =>
+    evaluateExp(env, arrayToList(unsafeListToArray(args[1]).map(e => nlecall(args[0], [e])))))
 
 // N.B., (vector-map fn v1 ... vk) not implemented since vectors are not implemented.
 
