@@ -14,6 +14,7 @@ const templates: Messages = new Map([
   ['error-import-not-found', (vs) => `Import ${vs[0]} not found`],
   ['error-index-string', (vs) => `${vs[0]} is not a valid index into string "${vs[1]}"`],
   ['error-invalid-string-literal', (_) => 'Invalid string literal encountered'],
+  ['error-runtime-parsing', (vs) => `${vs[0]} expects that its input string ${vs[1]} is a valid ${vs[2]} but it is not.`],
   ['error-precondition-not-met', (vs) => `${vs[0]} expects that the argument obeys the following property: ${vs[1]} but ${vs[2]} was given.`],
   ['error-missing-parens', (_) => 'Missing closing parentheses'],
   ['error-unmatched-parens', (_) => 'Unmatched parentheses encountered'],

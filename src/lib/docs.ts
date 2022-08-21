@@ -31,6 +31,13 @@ export const integer: Doc = new Doc(
   'Returns `#t` if and only `v` is an integer.'
 )
 
+export const nanQ: Doc = new Doc(
+  '(nan? v): boolean?', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is the number `NaN`.'
+)
+
 export const lt: Doc = new Doc(
   '(< v1 v2): boolean?', [
     'v1: number?',
@@ -156,12 +163,28 @@ export const abs: Doc = new Doc(
   'Returns the absolute value of `v`.'
 )
 
+export const quotient: Doc = new Doc(
+  '(quotient v1 v2): number?', [
+    'v1: integer?',
+    'v2: integer?',
+  ],
+  'Returns the quotient of `v1` and `v2`, _i.e._, the whole number part of `v1 / v2`.'
+)
+
+export const remainder: Doc = new Doc(
+  '(remainder v1 v2): number?', [
+    'v1: integer?',
+    'v2: integer?',
+  ],
+  'Returns the remainder of `v1` and `v2`, _i.e._, the remainder of `v1 / v2`.'
+)
+
 export const modulo: Doc = new Doc(
   '(modulo v1 v2): number?', [
     'v1: number?',
     'v2: number?',
   ],
-  'Returns the remainder of `v1` divided by `v2`.'
+  'Returns \`k = n - d * q\` where `q` is the integer such that `k` has the same sign as the divisor `d` while being as close to 0 as possible. (Source: [MDN docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Remainder).)'
 )
 
 export const floor: Doc = new Doc(
@@ -219,6 +242,69 @@ export const numberString: Doc = new Doc(
     'v: number?',
   ],
   'Returns the string representation of `v`.'
+)
+
+export const stringNumber: Doc = new Doc(
+  '(string->number s): number?', [
+    's: string?, presumed to be a number',
+  ],
+  'Returns the number denoted by `s` as a `number`.'
+)
+
+export const exp: Doc = new Doc(
+  '(exp v): number?', [
+    'v: number?',
+  ],
+  'Returns the exponential of `v`.'
+)
+
+export const log: Doc = new Doc(
+  '(log v): number?', [
+    'v: number?',
+  ],
+  'Returns the natural logarithm of `v`.'
+)
+
+export const sin: Doc = new Doc(
+  '(sin v): number?', [
+    'v: number?',
+  ],
+  'Returns the sine of `v`.'
+)
+
+export const cos: Doc = new Doc(
+  '(cos v): number?', [
+    'v: number?',
+  ],
+  'Returns the cosine of `v`.'
+)
+
+export const tan: Doc = new Doc(
+  '(tan v): number?', [
+    'v: number?',
+  ],
+  'Returns the tangent of `v`.'
+)
+
+export const asin: Doc = new Doc(
+  '(asin v): number?', [
+    'v: number?',
+  ],
+  'Returns the arc sine of `v`.'
+)
+
+export const acos: Doc = new Doc(
+  '(acos v): number?', [
+    'v: number?',
+  ],
+  'Returns the arc cosine of `v`.'
+)
+
+export const atan: Doc = new Doc(
+  '(atan v): number?', [
+    'v: number?',
+  ],
+  'Returns the arc tangent of `v`.'
 )
 
 export const not: Doc = new Doc(
@@ -335,6 +421,13 @@ export const append: Doc = new Doc(
     'l: list?',
   ],
   'Returns a new list containing the elements of lists `l1`, `l2`, ... in sequence.'
+)
+
+export const reverse: Doc = new Doc(
+  '(reverse l): list?', [
+    'l: list?',
+  ],
+  'Returns a new list containing the elements of `l` in reverse order.'
 )
 
 export const stringQ: Doc = new Doc(

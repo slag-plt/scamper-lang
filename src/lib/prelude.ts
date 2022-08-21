@@ -26,10 +26,11 @@ const preludeEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'p
 
 // Equivalence predicates (6.1)
 
-// TODO: implement:
+// N.B., don't need these functions:
 //   (eqv? x y)
 //   (eq? x y)
-// ... do I? Do we need these different equivalence notions?
+// Since we don't have effects beside vectors. Therefore, value vs. reference
+// equality is not an issue!
 
 const equalPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('equal?', ['any', 'any'], undefined, args, app).andThen(_ =>
@@ -53,20 +54,21 @@ const integerPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('integer?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.isInteger(args[0]))))
 
-// TODO: implement:
+// N.B., we don't implement the following functions:
 //   (complex? obj)
 //   (rational? obj)
-//
-// ...probably only implement the subset of these that make sense for the Javascript numeric stack:
-//   number -> real -> integer
-
-// TODO: implement:
 //   (exact? z)
 //   (inexact? z)
 //   (exact->integer? z)
 //   (finite? z)
 //   (infinite? z)
-//   (nan? z)
+
+// Because we only implement the subset of numbers corresponding to the
+// Javascript numeric stack: number -> real -> integer
+
+const nanPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('nan?', ['any'], undefined, args, app).andThen(_ =>
+    ok(L.nlebool(Number.isNaN(L.asNum_(args[0])))))
 
 function compareOp (symbol: string, op: (x: number, y: number) => boolean, args: L.Exp[], app: L.Exp): Result<L.Exp> {
   return Utils.checkArgsResult(symbol, ['number?', 'number?'], undefined, args, app).andThen(_ =>
@@ -126,52 +128,62 @@ const divPrim: L.Prim = (_env, args, app) => numericNOp('/', (x, y) => x / y, ar
 
 const absPrim: L.Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
 
-// TODO: implement:
+// N.B., not implementing the composite division functions:
 //   (floor / n1 n2)
 //   (floor-quotient n1 n2)
 //   (floor-remainder n1 n2)
 //   (truncate/ n1 n2)
 //   (truncate-quotient n1 n2)
 //   (truncate-remainder n1 n2)
-//   (quotient n1 n2)
-//   (remainder n1 n2)
+// To avoid clutter in the documentation.
 
-const moduloPrim: L.Prim = (_env, args, app) => numericBOp('modulo', (x, y) => x % y, args, app)
+const quotientPrim: L.Prim = (_env, args, app) =>
+  numericBOp('quotient', (x, y) => Math.floor(x / y), args, app)
 
-//   (modulo n1 n2)
+const remainderPrim: L.Prim = (_env, args, app) =>
+  numericBOp('remainder', (x, y) => x % y, args, app)
+
+const moduloPrim: L.Prim = (_env, args, app) =>
+  numericBOp('modulo', (x, y) => ((x % y) + y) % y, args, app)
 
 // TODO: implement:
 //   (gcd n1 ...)
 //   (lcm n1 ...)
-//   (numerator q)    ...wait, do we need these?
-//   (denominator q)  ...wait, do we need these?
+
+// N.B., we don't implement:
+//   (numerator q)
+//   (denominator q)
+// Since we don't implement rationals.
 
 const floorPrim: L.Prim = (_env, args, app) => numericUOp('floor', (x) => Math.floor(x), args, app)
 const ceilingPrim: L.Prim = (_env, args, app) => numericUOp('ceiling', (x) => Math.ceil(x), args, app)
 const truncatePrim: L.Prim = (_env, args, app) => numericUOp('truncate', (x) => Math.trunc(x), args, app)
 const roundPrim: L.Prim = (_env, args, app) => numericUOp('round', (x) => Math.round(x), args, app)
 
-// TODO: implement:
+// N.B., we don't implement:
 //   (rationalize x y)
+// Because we don't implement rationals.
 
 const squarePrim: L.Prim = (_env, args, app) => numericUOp('square', (x) => Math.pow(x, 2), args, app)
 const sqrtPrim: L.Prim = (_env, args, app) => numericUOp('sqrt', (x) => Math.sqrt(x), args, app)
 
-// TODO: implement:
+// N.B., we don't implement:
 //   (exact-integer-sqrt k)
+// To avoid polluting the documentation.
 
 const exptPrim: L.Prim = (_env, args, app) => numericBOp('expt', (x, y) => Math.pow(x, y), args, app)
 
-// TODO: implement:
+// N.B., we don't implement:
 //   (make-rectangular x1 x2)   ...probably not!
 //   (make-polar x3 x4)         ...probably not!
 //   (real-part z)              ...probably not!
 //   (imag-part z)              ...probably not!
 //   (magnitude z)              ...probably not!
 //   (angle z)                  ...probably not!
+// Because we don't implement complex numbers.
 
 const numberStringPrim: L.Prim = (_env, args, app) => {
-  // TODO: support (number->string z radix)?
+  // N.B., we don't support (number->string z radix)---no need at this opint.
   const argErr = Utils.checkArgsResult('number->string', ['number?'], undefined, args, app)
   const e = args[0]
   return ok(L.nlestr(L.asNum_(e).toString()))
@@ -181,10 +193,50 @@ const numberStringPrim: L.Prim = (_env, args, app) => {
 //   (string->number s)
 //   (string->number s radix)
 
+const stringNumberPrim: L.Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('string->number', ['string?'], undefined, args, app)
+  if (argErr) { return argErr }
+  const s = L.asString_(args[0])
+  if (/^[+-]?\d+$/.test(s) ) {
+    return ok(L.nlenumber(parseInt(s)))
+  } else if (/^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/.test(s)) {
+    return ok(L.nlenumber(parseFloat(s)))
+  } else {
+    return runtimeError(msg('error-runtime-parsing', 'string->number', L.expToString(args[0]), 'number'), app)
+  }
+}
+
+// Additional functions from racket/base
+
+const expPrim: L.Prim = (_env, args, app) =>
+  numericUOp('exp', (x) => Math.exp(x), args, app)
+
+const logPrim: L.Prim = (_env, args, app) =>
+  numericUOp('log', (x) => Math.log(x), args, app)
+
+const sinPrim: L.Prim = (_env, args, app) =>
+  numericUOp('sin', (x) => Math.sin(x), args, app)
+
+const cosPrim: L.Prim = (_env, args, app) =>
+  numericUOp('cos', (x) => Math.cos(x), args, app)
+
+const tanPrim: L.Prim = (_env, args, app) =>
+  numericUOp('tan', (x) => Math.tan(x), args, app)
+
+const asinPrim: L.Prim = (_env, args, app) =>
+  numericUOp('asin', (x) => Math.asin(x), args, app)
+
+const acosPrim: L.Prim = (_env, args, app) =>
+  numericUOp('acos', (x) => Math.acos(x), args, app)
+
+const atanPrim: L.Prim = (_env, args, app) =>
+  numericUOp('atan', (x) => Math.atan(x), args, app)
+
 const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['number?', numberPrim, Docs.number],
   ['real?', realPrim, Docs.real],
   ['integer?', integerPrim, Docs.integer],
+  ['nan?', nanPrim, Docs.nanQ],
   ['<', ltPrim, Docs.lt],
   ['<=', leqPrim, Docs.leq],
   ['>', gtPrim, Docs.gt],
@@ -202,6 +254,8 @@ const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['*', timesPrim, Docs.times],
   ['/', divPrim, Docs.div],
   ['abs', absPrim, Docs.abs],
+  ['quotient', quotientPrim, Docs.quotient],
+  ['remainder', remainderPrim, Docs.remainder],
   ['modulo', moduloPrim, Docs.modulo],
   ['floor', floorPrim, Docs.floor],
   ['ceiling', ceilingPrim, Docs.ceiling],
@@ -211,6 +265,15 @@ const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['sqrt', sqrtPrim, Docs.sqrt],
   ['expt', exptPrim, Docs.expt],
   ['number->string', numberStringPrim, Docs.numberString],
+  ['string->number', stringNumberPrim, Docs.stringNumber],
+  ['exp', expPrim, Docs.exp],
+  ['log', logPrim, Docs.log],
+  ['sin', sinPrim, Docs.sin],
+  ['cos', cosPrim, Docs.cos],
+  ['tan', tanPrim, Docs.tan],
+  ['asin', asinPrim, Docs.asin],
+  ['acos', acosPrim, Docs.acos],
+  ['atan', atanPrim, Docs.atan]
 ]
 
 // Booleans (6.3)
@@ -344,8 +407,25 @@ const appendPrim: L.Prim = function (_env, args, app) {
   return ok(ret)
 }
 
+const reversePrim: L.Prim = function (_env, args, app) {
+  const argErr = Utils.checkArgs('reverse', ['list?'], 'list?', args, app)
+  if (argErr) { return argErr }
+  const queue = []
+  let e = args[0]
+  while (e.tag !== 'nil') {
+    queue.push(e)
+    e = (e as L.EPair).e2
+  }
+  queue.reverse()
+  let ret: L.Exp = L.nlenil()
+  while (queue.length > 0) {
+    const next = queue.pop() as L.EPair
+    ret = L.nlepair(next.e1, ret)
+  }
+  return ok(ret)
+}
+
 // TODO: implement:
-//   (reverse list)
 //   (list-tail list k)
 //   (list-ref list k)
 
@@ -366,7 +446,8 @@ const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['list', listPrim, Docs.list],
   ['make-list', makeListPrim, Docs.makeList],
   ['length', lengthPrim, Docs.length],
-  ['append', appendPrim, Docs.append]
+  ['append', appendPrim, Docs.append],
+  ['reverse', reversePrim, Docs.reverse]
 ]
 
 // Symbols (6.5)
