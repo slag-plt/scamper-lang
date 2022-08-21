@@ -23,14 +23,15 @@ type Error<T> = {
 }
 
 function detailsToCompleteString (details: ErrorDetails): string {
-  const msg = [`:${details.range ? details.range.start.column : ''}:${details.range ? details.range.start.line : ''}: ${details.phase} error:`, `    ${details.message}`]
-  if (details.hint) {
-    msg.push('\n')
-    msg.push(`    Hint: ${details.hint}`)
-  }
+  const msg = [
+    `:${details.range ? details.range.start.column : ''}:${details.range ? details.range.start.line : ''}: ${details.phase} error:`, 
+    `    ${details.message}`
+  ]
   if (details.src) {
-    msg.push('\n')
     msg.push(`    In program: ${details.src}`)
+  }
+  if (details.hint) {
+    msg.push(`    Hint: ${details.hint}`)
   }
   return msg.join('\n')
 }
