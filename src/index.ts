@@ -9,6 +9,7 @@ export * from './result.js'
 export { preludeEnv, internalLibs } from './runtime.js'
 export * from './pretty.js'
 export * from './web.js'
+export * as Formatter from './formatter.js'
 
 export function compileProgram (src: string): Result<Program> {
   return parseProgram(src).andThen(prog =>

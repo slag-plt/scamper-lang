@@ -1,4 +1,4 @@
-import { ProgramState, compileProgram, progToString, stmtToString } from './index.js'
+import { ProgramState, compileProgram, progToString, stmtToString, Formatter } from './index.js'
 import { Program, isOutputEffect } from './lang.js'
 import { errorToString } from './result.js'
 import { tokenize } from './sexp.js'
@@ -14,12 +14,16 @@ function lex (src: string): void {
     console.log(errorToString(result))
   } else {
     result.value.forEach(tok => {
-    // N.B., we 0-index line/col numbers to align with vscode, but for testing
-    // purposes, it is much easier to work with 1-indexed numbers that align
-    // with what editors actually report.
+      // N.B., we 0-index line/col numbers to align with vscode, but for testing
+      // purposes, it is much easier to work with 1-indexed numbers that align
+      // with what editors actually report.
       console.log(`${tok.value}: (${tok.range.start.line + 1}, ${tok.range.start.column + 1}) => (${tok.range.end.line + 1}, ${tok.range.end.column + 1})`)
     })
   }
+}
+
+function formatProgram (src: string): void {
+  return console.log(Formatter.format(src))
 }
 
 function runProgram (prog: Program) {
@@ -69,6 +73,9 @@ fs.readFile(filename, 'utf8', (error, src) => {
             break
           case 'trace':
             traceProgram(result.value)
+            break
+          case 'format':
+            formatProgram(src)
             break
           default:
             console.log(`Unrecognized driver command: ${mode}`)
