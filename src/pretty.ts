@@ -94,11 +94,11 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
         : parens(['cons', expToString(col, e.e1, htmlOutput), expToString(col, e.e2, htmlOutput)])
     case 'let': {
       const preamble = '(let '
-      const firstBinding = `${indent(col + 2, `([${e.bindings[0][0]} ${expToString(col + 2 + e.bindings[0][0].value.length + 1, e.bindings[0][1], htmlOutput)}]`)}`
+      const firstBinding = `${indent(col + 2, `([${e.bindings[0][0].value} ${expToString(col + 2 + e.bindings[0][0].value.length + 1, e.bindings[0][1], htmlOutput)}]`)}`
       const bindings = e.bindings.length == 1
         ? firstBinding + ')'
-        : [firstBinding, ...e.bindings.map(b => `${indent(col + 2 + 1, `[${b[0]} ${expToString(col + 2 + 1 + b[0].value.length + 1, b[1], htmlOutput)}]`)}`)].join('\n') + ')'
-      const body = `${indent(col + 2, `(${expToString(col + 2, e.body, htmlOutput)})`)}`
+        : [firstBinding, ...e.bindings.slice(1).map(b => `${indent(col + 2 + 1, `[${b[0].value} ${expToString(col + 2 + 1 + b[0].value.length + 1, b[1], htmlOutput)}]`)}`)].join('\n') + ')'
+      const body = `${indent(col + 2, `${expToString(col + 2, e.body, htmlOutput)}`)}`
       return [preamble, bindings, body].join('\n') + ')'
     }
     case 'cond': {
