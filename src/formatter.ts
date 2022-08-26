@@ -16,7 +16,7 @@ function formatWhitespace(text: string[]): string[] {
 }
 
 function findNextNonWhitespace(text: string[], i: number): number {
-  while (i < text.length && ![' ', '\t'].includes(text[i])) { i++ }
+  while (i < text.length && [' ', '\t'].includes(text[i])) { i++ }
   return i
 }
 
@@ -27,7 +27,7 @@ function formatIndentation(text: string[]): string[] {
     if (text[i] === '\n') {
       // N.B., we "-1" to account for the i++ at the top of the loop.
       i = findNextNonWhitespace(text, i + 1) - 1 
-      result.push(`\n${' '.repeat(level * 2)}`)
+      result.push(`\n${' '.repeat(level >= 0 ? level * 2 : 0)}`)
     } else if (text[i] === '(') {
       level++
       result.push(text[i])
