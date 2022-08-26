@@ -3,6 +3,8 @@ import { ErrorDetails, Result } from './result.js'
 
 // #region Names
 
+export type BracketKind = '(' | '[' | '{'
+
 type Name = { value: string, range: Range }
 const name = (value: string, range: Range): Name => ({ value, range })
 const nlname = (value: string): Name => name(value, noRange())
@@ -162,40 +164,48 @@ const nlenumber = (value: number): ELit => elit(noRange(), lnum(value))
 const nlechar = (c: string): ELit => elit(noRange(), lchar(c))
 const nlestr = (s: string): ELit => elit(noRange(), lstr(s))
 
-type ECall = { tag: 'call', range: Range, head: Exp, args: Exp[] }
-const ecall = (range: Range, head: Exp, args: Exp[]): ECall => ({ tag: 'call', range, head, args })
+type ECall = { tag: 'call', range: Range, head: Exp, args: Exp[], bracket: BracketKind }
+const ecall = (range: Range, head: Exp, args: Exp[], bracket: BracketKind = '('): ECall =>
+  ({ tag: 'call', range, head, args, bracket })
 const nlecall = (head: Exp, args: Exp[]): ECall => ecall(noRange(), head, args)
 
-type ELam = { tag: 'lam', range: Range, args: Name[], body: Exp }
-const elam = (range: Range, args: Name[], body: Exp): ELam => ({ tag: 'lam', range, args, body })
+type ELam = { tag: 'lam', range: Range, args: Name[], body: Exp, bracket: BracketKind }
+const elam = (range: Range, args: Name[], body: Exp, bracket: BracketKind = '('): ELam =>
+  ({ tag: 'lam', range, args, body, bracket })
 const nlelam = (args: string[], body: Exp): ELam => elam(noRange(), args.map(nlname), body)
 
-type EIf = { tag: 'if', range: Range, e1: Exp, e2: Exp, e3: Exp }
-const eif = (range: Range, e1: Exp, e2: Exp, e3: Exp): EIf => ({ tag: 'if', range, e1, e2, e3 })
+type EIf = { tag: 'if', range: Range, e1: Exp, e2: Exp, e3: Exp, bracket: BracketKind }
+const eif = (range: Range, e1: Exp, e2: Exp, e3: Exp, bracket: BracketKind = '('): EIf =>
+  ({ tag: 'if', range, e1, e2, e3, bracket })
 const nleif = (e1: Exp, e2: Exp, e3: Exp): EIf => eif(noRange(), e1, e2, e3)
 
 type ENil = { tag: 'nil', range: Range }
 const enil = (range: Range): ENil => ({ tag: 'nil', range })
 const nlenil = (): ENil => enil(noRange())
 
-type EPair = { tag: 'pair', range: Range, e1: Exp, e2: Exp }
-const epair = (range: Range, e1: Exp, e2: Exp): EPair => ({ tag: 'pair', range, e1, e2 })
+type EPair = { tag: 'pair', range: Range, e1: Exp, e2: Exp, bracket: BracketKind }
+const epair = (range: Range, e1: Exp, e2: Exp, bracket: BracketKind = '('): EPair =>
+  ({ tag: 'pair', range, e1, e2, bracket })
 const nlepair = (e1: Exp, e2: Exp): EPair => epair(noRange(), e1, e2)
 
-type ELet = { tag: 'let', range: Range, bindings: [Name, Exp][], body: Exp }
-const elet = (range: Range, bindings: [Name, Exp][], body: Exp): ELet => ({ tag: 'let', range, bindings, body })
+type ELet = { tag: 'let', range: Range, bindings: [Name, Exp][], body: Exp, bracket: BracketKind }
+// TODO: need to record individual BracketKinds for bindings
+const elet = (range: Range, bindings: [Name, Exp][], body: Exp, bracket: BracketKind = '('): ELet =>
+  ({ tag: 'let', range, bindings, body, bracket })
 const nlelet = (bindings: [string, Exp][], body: Exp): ELet => elet(noRange(), bindings.map(b => [nlname(b[0]), b[1]]), body)
 
-type ECond = { tag: 'cond', range: Range, branches: [Exp, Exp][] }
-const econd = (range: Range, branches: [Exp, Exp][]): ECond => ({ tag: 'cond', range, branches })
+type ECond = { tag: 'cond', range: Range, branches: [Exp, Exp][], bracket: BracketKind }
+// TODO: need to record individual BracketKinds for branches
+const econd = (range: Range, branches: [Exp, Exp][], bracket: BracketKind = '('): ECond =>
+  ({ tag: 'cond', range, branches, bracket })
 const nlecond = (branches: [Exp, Exp][]): ECond => econd(noRange(), branches)
 
-type EAnd = { tag: 'and', range: Range, args: Exp[] }
-const eand = (range: Range, args: Exp[]): EAnd => ({ tag: 'and', range, args })
+type EAnd = { tag: 'and', range: Range, args: Exp[], bracket: BracketKind }
+const eand = (range: Range, args: Exp[], bracket: BracketKind = '('): EAnd => ({ tag: 'and', range, args, bracket })
 const nleand = (args: Exp[]): EAnd => eand(noRange(), args)
 
-type EOr = { tag: 'or', range: Range, args: Exp[] }
-const eor = (range: Range, args: Exp[]): EOr => ({ tag: 'or', range, args })
+type EOr = { tag: 'or', range: Range, args: Exp[], bracket: BracketKind }
+const eor = (range: Range, args: Exp[], bracket: BracketKind = '('): EOr => ({ tag: 'or', range, args, bracket })
 const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 
 type EObj = { tag: 'obj', range: Range, kind: string, obj: object }

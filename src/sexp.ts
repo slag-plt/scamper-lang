@@ -3,6 +3,8 @@ import { Loc, mkLoc, Range, mkRange, noRange } from './loc.js'
 import { msg } from './messages.js'
 
 /* eslint-disable no-use-before-define */
+type BracketKind = '(' | '[' | '{'
+
 type Sexp = Atom | SList
 
 /** A single atom */
@@ -17,12 +19,13 @@ function atom (range: Range, single: string): Atom {
 }
 
 /** An list of sexps */
-type SList = { tag: 'slist'; list: Sexp[]; range: Range; toString: () => string }
-function slist (range: Range, list: Sexp[]): SList {
+type SList = { tag: 'slist'; list: Sexp[]; range: Range; bracket: BracketKind, toString: () => string }
+function slist (range: Range, bracket: BracketKind, list: Sexp[]): SList {
   return {
     tag: 'slist',
     list,
     range,
+    bracket,
     toString: () => `(${list.map(s => s.toString()).join(' ')})`
   }
 }
@@ -392,13 +395,13 @@ function tokensToSexp (toks: Token[]): Result<Sexp> {
     switch (head.value) {
       case '(':
         return tokensToSListArgs(')', toks).andThen((args) =>
-          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), args)))
+          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '(', args)))
       case '[':
         return tokensToSListArgs(']', toks).andThen((args) =>
-          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), args)))
+          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '[', args)))
       case '{':
         return tokensToSListArgs('}', toks).andThen((args) =>
-          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), args)))
+          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '{', args)))
       case ',':
         return tokensToSexp(toks)
       case ')':
