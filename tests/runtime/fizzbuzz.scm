@@ -1,10 +1,10 @@
 (define fizzbuzz
   (lambda (n)
     (cond
-      ((and (zero? (modulo n 3)) (zero? (modulo n 5))) "fizzbuzz")
-      ((zero? (modulo n 3)) "fizz")
-      ((zero? (modulo n 5)) "buzz")
-      (#t (number->string n)))))
+      [(and (zero? (modulo n 3)) (zero? (modulo n 5))) "fizzbuzz"]
+      [(zero? (modulo n 3)) "fizz"]
+      [(zero? (modulo n 5)) "buzz"]
+      [#t (number->string n)])))
 
 (fizzbuzz 1)
 (fizzbuzz 2)

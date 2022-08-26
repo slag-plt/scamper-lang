@@ -28,10 +28,10 @@ function formatIndentation(text: string[]): string[] {
       // N.B., we "-1" to account for the i++ at the top of the loop.
       i = findNextNonWhitespace(text, i + 1) - 1 
       result.push(`\n${' '.repeat(level >= 0 ? level * 2 : 0)}`)
-    } else if (text[i] === '(') {
+    } else if (text[i] === '(' || text[i] === '[' || text[i] === '{') {
       level++
       result.push(text[i])
-    } else if (text[i] === ')') {
+    } else if (text[i] === ')' || text[i] === ']' || text[i] === '}') {
       level--
       result.push(text[i])
     } else {
