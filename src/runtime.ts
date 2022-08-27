@@ -1,4 +1,4 @@
-import { entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine } from './lang.js'
+import { asObj_, entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, isObjKind, EnvEntry, nlestruct, asStruct_, isStructKind } from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails } from './result.js'
 import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
@@ -39,6 +39,8 @@ function substitute (e1: Exp, x: string, e2: Exp): Exp {
       return eand(e2.range, e2.args.map(e => substitute(e1, x, e)))
     case 'or':
       return eor(e2.range, e2.args.map(e => substitute(e1, x, e)))
+    case 'struct':
+      return e2
     case 'obj':
       return e2
     case 'prim':
@@ -235,6 +237,8 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
             ok(nleor([headp, ...e.args.slice(1)])))
         }
       }
+    case 'struct':
+      return ok(e)
     case 'obj':
       return ok(e)
     case 'prim':
@@ -277,11 +281,57 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       return [env, s]
     case 'define':
       if (isValue(s.value)) {
-        return [env.append(s.name.value, entry(s.value, 'binding', s.name.range)), sbinding(s.name.value, s.value)]
+        return [
+          env.append(s.name.value, entry(s.value, 'binding', s.name.range)),
+          sbinding(s.name.value)
+        ]
       } else {
-        return [env, resultToStmt(stepExp(env, s.value).andThen(e => ok(sdefine(s.name, e))))]
+        return [
+          env,
+          resultToStmt(stepExp(env, s.value).andThen(e => ok(sdefine(s.name, e))))
+        ]
       }
-      /* eslint-disable no-fallthrough */
+    case 'struct': {
+      const name = s.id.value
+      const predName = `${name}?`
+      // primitive for type-testing predicate: id?
+      const predPrim: Prim = (env, args, app) =>
+        args.length !== 1
+          ? runtimeError(msg('error-arity', predName, 1, args.length), app)
+          : ok(nlebool(isStructKind(args[0], name)))
+      // field-accessing primitives: id-field?
+      const fieldPrims: [string, EnvEntry][] = s.fields.map(f => {
+        const fieldName = `${name}-${f.value}`
+        return [fieldName, entry(
+          nleprim((env, args, app) =>
+            args.length !== 1
+              ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
+              : !isStructKind(args[0], name)
+                ? runtimeError(msg('error-type-expected-fun', fieldName, `struct ${name}`, args[0].tag))
+                : ok((asStruct_(args[0]) as any)[f.value] as Exp)),
+          `struct ${name}`,
+          f.range
+        )]
+      })
+      // constructor primitive: id
+      const ctorPrim: Prim = (env, args, app) => {
+        if (args.length !== s.fields.length) {
+          return runtimeError(msg('error-arity', name, s.fields.length, args.length), app)
+        } else {
+          const obj: any = { }
+          s.fields.forEach((f, i) => obj[f.value] = args[i])
+          return ok(nlestruct(name, obj))
+        }
+      }
+      return [
+        env.concat(new Env([
+          [name, entry(nleprim(ctorPrim), 'struct ${name}', s.id.range)],
+          [predName, entry(nleprim(predPrim), 'struct ${name}', s.id.range)],
+          ...fieldPrims
+        ])),
+        sbinding(`struct ${name}`)
+      ]
+    }
     // N.B., as a last step, substitute free variables away when they are values.
     case 'exp': {
       const result = isValue(s.value)

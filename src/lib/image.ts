@@ -1,9 +1,52 @@
 import { ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc } from '../lang.js'
+import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr } from '../lang.js'
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
+
+type Color = { tag: 'color', r: number, g: number, b: number, a: number }
+const color = (r: number, g: number, b: number, a: number): Color => ({ tag: 'color', r, g, b, a })
+
+const colorPrim: Prim = (_env, args, app) =>
+  Utils.checkArgsResult('color', ['number?', 'number?', 'number?', 'number?'], undefined, args, app).andThen(_ => {
+    const r = asNum_(args[0])
+    const g = asNum_(args[1])
+    const b = asNum_(args[2])
+    const a = asNum_(args[3])
+    const isValid = (n: number) => n >= 0 && n <= 255
+    if (!isValid(r)) {
+      return runtimeError(msg(
+        'error-precondition-not-met',
+        'color',
+        1,
+        'a number in the range 0--255',
+        r), app)
+    } else if (!isValid(g)) {
+      return runtimeError(msg(
+        'error-precondition-not-met',
+        'color',
+        2,
+        'a number in the range 0--255',
+        g), app)
+    } else if (!isValid(b)) {
+      return runtimeError(msg(
+        'error-precondition-not-met',
+        'color',
+        3,
+        'a number in the range 0--255',
+        b), app)
+    } else if (!(a >= 0 && a <= 1)) {
+      return runtimeError(msg(
+        'error-precondition-not-met',
+        'color',
+        4,
+        'a number in the range 0--1',
+        a), app)
+    } else {
+      return ok(nlestr(`rgba(${asNum_(args[0])}, ${asNum_(args[1])}, ${asNum_(args[2])}, ${asNum_(args[3])})`))
+    }
+  })
 
 type Mode = 'solid' | 'outline'
 
@@ -55,6 +98,19 @@ const rectanglePrim: Prim = (_env, args, app) => {
   }
 }
 
+const squarePrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('square', ['number?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return argErr }
+  const width = asNum_(args[0])
+  const mode = asString_(args[1])
+  const color = asString_(args[2])
+  if (mode !== 'solid' && mode !== 'outline') {
+    return runtimeError(msg('error-precondition-not-met', 'square', '2', '"solid" or "outline"', mode), app)
+  } else {
+    return ok(nleobj('Drawing', rectangle(width, width, mode, color)))
+  }
+}
+
 type Beside = { tag: 'beside', width: number, height: number, drawings: Drawing[] }
 const beside = (drawings: Drawing[]): Beside => ({
   tag: 'beside',
@@ -100,8 +156,10 @@ const overlayPrim: Prim = (_env, args, app) => {
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
 
 export const imageLib: Env = new Env([
+  ['color', imageEntry(colorPrim, Docs.color)],
   ['circle', imageEntry(circlePrim, Docs.circle)],
   ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
+  ['square', imageEntry(squarePrim, Docs.drawingSquare)],
   ['beside', imageEntry(besidePrim, Docs.beside)],
   ['above', imageEntry(abovePrim, Docs.above)],
   ['overlay', imageEntry(overlayPrim, Docs.overlay)]

@@ -548,11 +548,16 @@ const stringSplitPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
     ok(L.arrayToList(L.asString_(args[0]).split(L.asString_(args[1])).map(L.nlestr))))
 
+const stringAppendPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('string-append', ['string?'], 'string?', args, app).andThen(_ =>
+    ok(L.nlestr(args.map(L.asString_).join(''))))
+
 const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['string?', stringPrim, Docs.stringQ],
   ['string-length', stringLengthPrim, Docs.stringLength],
   ['string-ref', stringRefPrim, Docs.stringRef],
-  ['string-split', stringSplitPrim, Docs.stringSplit]
+  ['string-split', stringSplitPrim, Docs.stringSplit],
+  ['string-append', stringAppendPrim, Docs.stringAppend]
 ]
 
 // Vectors (6.8)
