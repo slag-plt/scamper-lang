@@ -542,10 +542,17 @@ const stringRefPrim: L.Prim = function (_env, args, app) {
 
 // N.B., string-copy! and string-fill! are unimplemented since they are effectful.
 
+// Additional functions from racket/string that are exported to racket.
+
+const stringSplitPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
+    ok(L.arrayToList(L.asString_(args[0]).split(L.asString_(args[1])).map(L.nlestr))))
+
 const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['string?', stringPrim, Docs.stringQ],
   ['string-length', stringLengthPrim, Docs.stringLength],
-  ['string-ref', stringRefPrim, Docs.stringRef]
+  ['string-ref', stringRefPrim, Docs.stringRef],
+  ['string-split', stringSplitPrim, Docs.stringSplit]
 ]
 
 // Vectors (6.8)

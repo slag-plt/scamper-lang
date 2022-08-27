@@ -452,6 +452,14 @@ export const stringRef: Doc = new Doc(
   'Returns the character at index `n` of string `s`.'
 )
 
+export const stringSplit: Doc = new Doc(
+  '(string-split s sep): list?', [
+    's: string?',
+    'sep: string?',
+  ],
+  'Returns a list of strings obtained by splitting `s` at occurrences of `sep`.'
+)
+
 export const procedure: Doc = new Doc(
   '(procedure? v): boolean?', [
     'v: any',
