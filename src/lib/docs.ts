@@ -460,6 +460,13 @@ export const stringSplit: Doc = new Doc(
   'Returns a list of strings obtained by splitting `s` at occurrences of `sep`.'
 )
 
+export const stringAppend: Doc = new Doc(
+  '(string-append s1 s2 ...): string?', [
+    's: string?',
+  ],
+  'Returns a string made by joining `s1`, `s2`, ... together.'
+)
+
 export const procedure: Doc = new Doc(
   '(procedure? v): boolean?', [
     'v: any',
