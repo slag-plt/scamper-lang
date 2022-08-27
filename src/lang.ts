@@ -439,7 +439,7 @@ type SValue = { tag: 'value', value: Exp }
 const svalue = (value: Exp): SValue => ({ tag: 'value', value })
 
 /* eslint-disable no-use-before-define */
-type Stmt = SImport | SDefine | SExp | SEffect
+type Stmt = SImport | SDefine | SExp | SStruct | SEffect
 /* eslint-enable */
 
 type SImport = { tag: 'import', range: Range, source: string }
@@ -447,6 +447,9 @@ const simport = (range: Range, source: string): SImport => ({ tag: 'import', ran
 
 type SDefine = { tag: 'define', name: Name, value: Exp }
 const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, value })
+
+type SStruct = { tag: 'struct', id: Name, fields: Name[] }
+const sstruct = (id: Name, fields: Name[]): SStruct => ({ tag: 'struct', id, fields })
 
 type SExp = { tag: 'exp', value: Exp }
 const sexp = (value: Exp): SExp => ({ tag: 'exp', value })
@@ -461,6 +464,7 @@ function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
   switch (stmt.tag) {
     case 'define': return `(define ${stmt.name.value} ${expToString(stmt.value)})`
     case 'exp': return expToString(stmt.value)
+    case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
     case 'import': return `(import ${stmt.source})`
     case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
     case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
@@ -507,6 +511,6 @@ export {
   litToString, arrayToList, unsafeListToArray, expToString, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isObjKind, isProcedure,
   asNum_, asBool_, asString_, asList_, asObj_, fromObj_,
-  Stmt, serror, sbinding, svalue, simported, sdefine, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
+  Stmt, serror, sbinding, svalue, simported, sdefine, sstruct, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }

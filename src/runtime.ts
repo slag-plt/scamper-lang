@@ -1,4 +1,4 @@
-import { entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine } from './lang.js'
+import { asObj_, entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, isObjKind, EnvEntry } from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails } from './result.js'
 import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
@@ -281,7 +281,45 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       } else {
         return [env, resultToStmt(stepExp(env, s.value).andThen(e => ok(sdefine(s.name, e))))]
       }
-      /* eslint-disable no-fallthrough */
+    case 'struct': {
+      const name = s.id.value
+      const kindName = `struct-${name}`
+      const predName = `${name}?`
+      // primitive for type-testing predicate: id?
+      const predPrim: Prim = (env, args, app) =>
+        args.length !== 1
+          ? runtimeError(msg('error-arity', predName, 1, args.length), app)
+          : ok(nlebool(isObjKind(args[0], kindName)))
+      // field-accessing primitives: id-field?
+      const fieldPrims: [string, EnvEntry][] = s.fields.map(f => {
+        const fieldName = `${name}-${f}`
+        return [fieldName, entry(
+          nleprim((env, args, app) =>
+            args.length !== 1
+              ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
+              : ok((asObj_(args[0]) as any)[f.value] as Exp)),
+          `struct ${name}`,
+          s.id.range
+        )]
+      })
+      // constructor primitive: id
+      const ctorPrim: Prim = (env, args, app) => {
+        if (args.length !== s.fields.length) {
+          return runtimeError(msg('error-arity', name, s.fields.length, args.length), app)
+        } else {
+          const obj: any = { kind: kindName }
+          s.fields.forEach((f, i) => obj[f.value] = args[i])
+          return ok(obj)
+        }
+      }
+      return [env.concat(new Env([
+        [name, entry(nleprim(ctorPrim), 'struct ${name}', s.id.range)],
+        [predName, entry(nleprim(predPrim), 'struct ${name}', s.id.range)],
+        ...fieldPrims
+      ])), s]
+      // TODO: should be this, but need to ensure sbinding doesn't need its value field.
+      //sbinding(`struct ${name}`)]
+    }
     // N.B., as a last step, substitute free variables away when they are values.
     case 'exp': {
       const result = isValue(s.value)
