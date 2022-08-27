@@ -128,37 +128,37 @@ function sexpToExp (s: Sexp): Result<Exp> {
                   ? parserError(msg('error-arity', 'lambda', 2, args.length), s)
                   : sexpToStringList(args[0]).andThen(xs =>
                     sexpToExp(args[1]).andThen(body =>
-                      ok(elam(s.range, xs, body))))
+                      ok(elam(s.range, xs, body, s.bracket))))
               case 'if':
                 return args.length !== 3
                   ? parserError(msg('error-arity', 'if', 3, args.length), s)
                   : sexpToExp(args[0]).andThen(e1 =>
                     sexpToExp(args[1]).andThen(e2 =>
                       sexpToExp(args[2]).andThen(e3 =>
-                        ok(eif(s.range, e1, e2, e3)))))
+                        ok(eif(s.range, e1, e2, e3, s.bracket)))))
               case 'let':
                 return args.length !== 2
                   ? parserError(msg('error-arity', 'let', 2, args.length), s)
                   : sexpToBindings(args[0]).andThen(bindings =>
                     sexpToExp(args[1]).andThen(body =>
-                      ok(elet(s.range, bindings, body))))
+                      ok(elet(s.range, bindings, body, s.bracket))))
               case 'cond':
                 return args.length === 0
                   ? parserError(msg('error-arity-atleast', 'cond', '1', args.length), s)
                   : join(args.map(sexpToBranch)).andThen(branches =>
-                    ok(econd(s.range, branches)))
+                    ok(econd(s.range, branches, s.bracket)))
               case 'and':
-                return join(args.map(sexpToExp)).andThen(es => ok(eand(s.range, es)))
+                return join(args.map(sexpToExp)).andThen(es => ok(eand(s.range, es, s.bracket)))
               case 'or':
-                return join(args.map(sexpToExp)).andThen(es => ok(eor(s.range, es)))
+                return join(args.map(sexpToExp)).andThen(es => ok(eor(s.range, es, s.bracket)))
               default:
                 // NOTE: applications whose head are not keywords are assumed to be applications.
-                return join(args.map(sexpToExp)).andThen(es => ok(ecall(s.range, evar(head.range, head.single), es)))
+                return join(args.map(sexpToExp)).andThen(es => ok(ecall(s.range, evar(head.range, head.single), es, s.bracket)))
             }
           case 'slist':
             return sexpToExp(head).andThen(e =>
               join(args.map(sexpToExp)).andThen(es =>
-                ok(ecall(s.range, e, es))))
+                ok(ecall(s.range, e, es, s.bracket))))
         }
       }
   }

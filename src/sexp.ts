@@ -3,6 +3,8 @@ import { Loc, mkLoc, Range, mkRange, noRange } from './loc.js'
 import { msg } from './messages.js'
 
 /* eslint-disable no-use-before-define */
+type BracketKind = '(' | '[' | '{'
+
 type Sexp = Atom | SList
 
 /** A single atom */
@@ -17,12 +19,13 @@ function atom (range: Range, single: string): Atom {
 }
 
 /** An list of sexps */
-type SList = { tag: 'slist'; list: Sexp[]; range: Range; toString: () => string }
-function slist (range: Range, list: Sexp[]): SList {
+type SList = { tag: 'slist'; list: Sexp[]; range: Range; bracket: BracketKind, toString: () => string }
+function slist (range: Range, bracket: BracketKind, list: Sexp[]): SList {
   return {
     tag: 'slist',
     list,
     range,
+    bracket,
     toString: () => `(${list.map(s => s.toString()).join(' ')})`
   }
 }
@@ -267,7 +270,9 @@ function tokenize (src: string): Result<Token[]> {
     const isWhitespace = /\s/.test(src[st.i])
 
     // 1. Check if character is either bracket or comma
-    if (src[st.i] === '(' || src[st.i] === ')' || src[st.i] === ',') {
+    if (src[st.i] === '(' || src[st.i] === ')' ||
+        src[st.i] === '[' || src[st.i] === ']' ||
+        src[st.i] === '{' || src[st.i] === '}' || src[st.i] === ',') {
       // If we were previous tracking a token, then the bracket or comma marks its end.
       if (st.isTracking()) {
         result.push(st.emitToken())
@@ -358,12 +363,12 @@ function coalseCommentTokens (toks: Token[]): Token {
 }
 
 //
-function tokensToSListArgs (toks: Token[]): Result<Sexp[]> {
+function tokensToSListArgs (endBracket: string, toks: Token[]): Result<Sexp[]> {
   if (toks.length === 0) {
     return lexerError(msg('error-eof'))
   }
   const sexps: Sexp[] = []
-  while (toks.length > 0 && toks[0].value !== ')') {
+  while (toks.length > 0 && toks[0].value !== endBracket) {
     const next = tokensToSexp(toks)
     switch (next.tag) {
       case 'error': return rethrow(next)
@@ -388,14 +393,25 @@ function tokensToSexp (toks: Token[]): Result<Sexp> {
   } else {
     const head = toks.shift()!
     switch (head.value) {
-      case '(': {
-        return tokensToSListArgs(toks).andThen((args) => ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), args)))
-      }
-      case ',': {
+      case '(':
+        return tokensToSListArgs(')', toks).andThen((args) =>
+          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '(', args)))
+      case '[':
+        return tokensToSListArgs(']', toks).andThen((args) =>
+          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '[', args)))
+      case '{':
+        return tokensToSListArgs('}', toks).andThen((args) =>
+          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '{', args)))
+      case ',':
         return tokensToSexp(toks)
-      }
-      case ')': return lexerError(msg('error-unmatched-parens'), head)
-      default: return ok(atom(head.range, head.value))
+      case ')':
+        return lexerError(msg('error-unmatched-parens'), head)
+      case ']':
+        return lexerError(msg('error-unmatched-parens'), head)
+      case '}':
+        return lexerError(msg('error-unmatched-parens'), head)
+      default:
+          return ok(atom(head.range, head.value))
     }
   }
 }
