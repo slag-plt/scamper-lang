@@ -36,12 +36,12 @@ const colorPrim: Prim = (_env, args, app) =>
         3,
         'a number in the range 0--255',
         b), app)
-    } else if (!isValid(b)) {
+    } else if (!(a >= 0 && a <= 1)) {
       return runtimeError(msg(
         'error-precondition-not-met',
         'color',
         4,
-        'a number in the range 0--255',
+        'a number in the range 0--1',
         a), app)
     } else {
       return ok(nlestr(`rgba(${asNum_(args[0])}, ${asNum_(args[1])}, ${asNum_(args[2])}, ${asNum_(args[3])})`))

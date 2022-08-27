@@ -522,7 +522,7 @@ export const color: Doc = new Doc(
     'r: integer?, 0 <= r <= 255',
     'b: integer?, 0 <= b <= 255',
     'g: integer?, 0 <= g <= 255',
-    'a: integer?, 0 <= a <= 255'
+    'a: integer?, 0 <= a <= 1'
   ],
   'Returns a string of the form `"rgba(r, g, b, a)"` appropriate for use as a color.'
 )
