@@ -44,7 +44,7 @@ const colorPrim: Prim = (_env, args, app) =>
         'a number in the range 0--255',
         a), app)
     } else {
-      return ok(nlestr(`rgba(${asNum_(args[0])}, ${asNum_(args[1])}, ${asNum_(args[2])}, ${asNum_(args[3])}`))
+      return ok(nlestr(`rgba(${asNum_(args[0])}, ${asNum_(args[1])}, ${asNum_(args[2])}, ${asNum_(args[3])})`))
     }
   })
 
