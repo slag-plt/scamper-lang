@@ -460,6 +460,13 @@ export const stringSplit: Doc = new Doc(
   'Returns a list of strings obtained by splitting `s` at occurrences of `sep`.'
 )
 
+export const stringAppend: Doc = new Doc(
+  '(string-append s1 s2 ...): string?', [
+    's: string?',
+  ],
+  'Returns a string made by joining `s1`, `s2`, ... together.'
+)
+
 export const procedure: Doc = new Doc(
   '(procedure? v): boolean?', [
     'v: any',
@@ -510,11 +517,21 @@ export const reduce: Doc = new Doc(
 
 ///// image ////////////////////////////////////////////////////////////////////
 
+export const color: Doc = new Doc(
+  '(color r b g a): string?', [
+    'r: integer?, 0 <= r <= 255',
+    'b: integer?, 0 <= b <= 255',
+    'g: integer?, 0 <= g <= 255',
+    'a: integer?, 0 <= a <= 1'
+  ],
+  'Returns a string of the form `"rgba(r, g, b, a)"` appropriate for use as a color.'
+)
+
 export const circle: Doc = new Doc(
   '(circle radius fill color): drawing?', [
     'radius: number?',
     'fill: string?, either "solid" or "outline"',
-    'color: string? of the form "rgba(r, g, b, a)"'
+    'color: string?, either a color name or the form "rgba(r, g, b, a)"'
   ],
   'Returns a drawing consisting of a circle of radius `radius`.'
 )
@@ -524,9 +541,18 @@ export const rectangle: Doc = new Doc(
     'width: number?',
     'height: number?',
     'fill: string?, either "solid" or "outline"',
-    'color: string? of the form "rgba(r, g, b, a)"'
+    'color: string?, either a color name or the form "rgba(r, g, b, a)"'
   ],
   'Returns a drawing consisting of a rectangle with dimension `width × height`.'
+)
+
+export const drawingSquare: Doc = new Doc(
+  '(square width fill color): drawing?', [
+    'width: number?',
+    'fill: string?, either "solid" or "outline"',
+    'color: string?, either a color name or the form "rgba(r, g, b, a)"'
+  ],
+  'Returns a drawing consisting of a square with length `width`.'
 )
 
 export const beside: Doc = new Doc(

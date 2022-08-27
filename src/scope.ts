@@ -1,5 +1,5 @@
 import { ErrorDetails, errorDetails } from './result.js'
-import { Env, Exp, Program } from './lang.js'
+import { Env, Exp, Program, name, Name } from './lang.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
 import { internalLibs, preludeEnv } from './runtime.js'
@@ -58,6 +58,10 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
       return e.args.flatMap((v) => checkExp(bvars, v))
     case 'or':
       return e.args.flatMap((v) => checkExp(bvars, v))
+    // N.B., structs are internal, runtime only values, so we'll never
+    // encounter these cases with our scope-checker.
+    case 'struct':
+      return []
     case 'obj':
       return []
     case 'prim':
@@ -76,6 +80,20 @@ function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
         bvars = bvars.concat([s.name.value])
         errors = errors.concat(checkExp(bvars, s.value))
         return
+      case 'struct': {
+        let structBvars: Name[] = [
+          name(s.id.value, s.id.range),
+          name(`${s.id.value}?`, s.id.range), 
+          ...s.fields.map(f => name(`${s.id.value}-${f.value}`, f.range))
+        ]
+        structBvars.forEach(x => {
+          if (bvars.includes(x.value)) {
+            errors.push(shadowedVariableError(x.value, x.range))
+          }
+        })
+        bvars = bvars.concat(structBvars.map(n => n.value))
+        return
+      }
       case 'exp':
         errors = errors.concat(checkExp(bvars, s.value))
         return

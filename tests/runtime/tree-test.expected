@@ -1,0 +1,4 @@
+(struct node (struct leaf "a") (struct node (struct leaf "b") (struct leaf "c")))
+"b"
+3
+(list "a" "b" "c")
