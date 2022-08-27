@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, Stmt } from './lang.js'
+import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps } from './sexp.js'
 import { msg } from './messages.js'
@@ -10,7 +10,8 @@ const reservedWords = [
   'if',
   'import',
   'lambda',
-  'or'
+  'or',
+  'struct'
 ]
 
 function parserError <T> (message: string, s?: Sexp, hint?: string): Result<T> {
@@ -189,6 +190,16 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           return source.tag !== 'atom'
             ? parserError(msg('error-type-expected', 'module name', source.tag), s)
             : ok(simport(s.range, source.single))
+        }
+      } else if(s.list[0].tag === 'atom' && s.list[0].single === 'struct') {
+        const args = s.list.slice(1)
+        if (args.length !== 2) {
+          return parserError(msg('error-arity', 'struct', 2, args.length), s)
+        } else if (args[0].tag !== 'atom') {
+          return parserError(msg('error-type-expected', 'struct name', args[0].tag), s)
+        } else {
+          return sexpToStringList(args[1]).andThen(fields =>
+            ok(sstruct(name((args[0] as Atom).single, args[0].range), fields)))
         }
       } else {
         return sexpToExp(s).andThen(e => ok(sexp(e)))

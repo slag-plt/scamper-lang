@@ -142,6 +142,7 @@ type Exp
   // | EBegin   // TODO: implement me
 
   // Non-standard forms
+  | EStruct // An object created from a struct constructor
   | EObj // A wrapped, tagged Javascript object
   | EPrim // A primitive function value
 
@@ -208,6 +209,9 @@ type EOr = { tag: 'or', range: Range, args: Exp[], bracket: BracketKind }
 const eor = (range: Range, args: Exp[], bracket: BracketKind = '('): EOr => ({ tag: 'or', range, args, bracket })
 const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 
+type EStruct = { tag: 'struct', range: Range, kind: string, obj: object }
+const nlestruct = (kind: string, obj: object): EStruct => ({ tag: 'struct', range: noRange(), kind, obj })
+
 type EObj = { tag: 'obj', range: Range, kind: string, obj: object }
 const nleobj = (kind: string, obj: object): EObj => ({ tag: 'obj', range: noRange(), kind, obj })
 
@@ -264,6 +268,7 @@ function expToString (e:Exp): string {
     case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
+    case 'struct': return `[struct ${(e.obj as any).kind}]`
     case 'obj': return `[object ${e.kind}]`
     case 'prim': return `[prim ${e.prim.name}]`
   }
@@ -286,6 +291,7 @@ function isValue (e:Exp): boolean {
     case 'cond': return false
     case 'and': return false
     case 'or': return false
+    case 'struct': return true
     case 'obj': return true
     case 'prim': return true
   }
@@ -334,6 +340,14 @@ function isPrim (e:Exp): boolean {
   return e.tag === 'prim'
 }
 
+function isStruct (e: Exp): boolean {
+  return e.tag === 'struct'
+}
+
+function isStructKind (e: Exp, kind: string): boolean {
+  return e.tag === 'struct' && e.kind === `${kind}`
+}
+
 function isObj (e: Exp): boolean {
   return e.tag === 'obj'
 }
@@ -368,6 +382,10 @@ function asObj_ (e: Exp): object {
 
 function fromObj_ <T> (e: Exp): T {
   return ((e as EObj).obj as unknown) as T
+}
+
+function asStruct_ (e: Exp): object {
+  return (e as EStruct).obj
 }
 
 function nameEquals (n1: Name, n2: Name): boolean {
@@ -413,6 +431,7 @@ function expEquals (e1: Exp, e2: Exp): boolean {
     return e1.bindings.length === e2.bindings.length &&
       e1.bindings.every(([x, e], i) => nameEquals(x, e2.bindings[i][0]) && expEquals(e, e2.bindings[i][1])) &&
       expEquals(e1.body, e2.body)
+    // TODO: need cases for all the other value-style expression forms!
   } else {
     return false
   }
@@ -503,14 +522,14 @@ function indexOfCurrentStmt (prog: Program): number {
 export {
   Prim, Name, name, nlname,
   Lit, LBool, LNum, LChar, LStr,
-  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, ELet, ECond, EAnd, EOr, EObj,
+  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, ELet, ECond, EAnd, EOr, EStruct, EObj,
   lbool, lnum, lchar, lstr, ebool, enumber, echar, estr,
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor,
   nlebool, nlenumber, nlechar, nlestr,
-  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nleobj, nleprim,
+  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nlestruct, nleobj, nleprim,
   litToString, arrayToList, unsafeListToArray, expToString, expEquals,
-  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isObjKind, isProcedure,
-  asNum_, asBool_, asString_, asList_, asObj_, fromObj_,
+  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isStruct, isStructKind, isObjKind, isProcedure,
+  asNum_, asBool_, asString_, asList_, asStruct_, asObj_, fromObj_,
   Stmt, serror, sbinding, svalue, simported, sdefine, sstruct, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }

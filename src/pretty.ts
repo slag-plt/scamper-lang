@@ -23,6 +23,7 @@ function isSimpleExp (e: L.Exp): boolean {
     case 'cond': return false
     case 'and': return true
     case 'or': return true
+    case 'struct': return true
     case 'obj': return true
     case 'prim': return true
   }
@@ -41,6 +42,7 @@ function nestingDepth (e: L.Exp): number {
     case 'cond': return 0 // TODO
     case 'and': return 0 // TODO
     case 'or': return 0 // TODO
+    case 'struct': return 0
     case 'obj': return 0
     case 'prim': return 0
   }
@@ -118,6 +120,8 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
       return parens(e.bracket, ['and', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
     case 'or':
       return parens(e.bracket, ['or', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
+    case 'struct':
+      return parens('(', [`struct ${e.kind}`, ...Object.keys(e.obj).map(k => expToString(col, (e.obj as any)[k], htmlOutput))])
     case 'obj':
       if (htmlOutput && e.kind === 'Drawing') {
         return `<span class="drawing">${JSON.stringify(e.obj)}</span>`
