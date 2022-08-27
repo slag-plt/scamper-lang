@@ -139,6 +139,7 @@ export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean 
         ? `${preamble} ${expToString(col, stmt.value, htmlOutput)}`
         : `${preamble}\n${indent(col + 2, expToString(col + 2, stmt.value, htmlOutput))}`
     }
+    case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
     case 'exp': return expToString(col, stmt.value, htmlOutput)
     case 'import': return `(import ${stmt.source})`
     case 'error': return stmt.errors.map(err => detailsToCompleteString(err)).join('\n')

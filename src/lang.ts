@@ -432,8 +432,8 @@ const simported = (source: string): SImported => ({ tag: 'imported', source })
 type SError = { tag: 'error', errors: ErrorDetails[] }
 const serror = (errors: ErrorDetails[]): SEffect => ({ tag: 'error', errors })
 
-type SBinding = { tag: 'binding', name: string, value: Exp }
-const sbinding = (name: string, value: Exp): SBinding => ({ tag: 'binding', name, value })
+type SBinding = { tag: 'binding', name: string }
+const sbinding = (name: string): SBinding => ({ tag: 'binding', name })
 
 type SValue = { tag: 'value', value: Exp }
 const svalue = (value: Exp): SValue => ({ tag: 'value', value })

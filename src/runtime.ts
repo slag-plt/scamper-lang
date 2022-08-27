@@ -277,9 +277,15 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       return [env, s]
     case 'define':
       if (isValue(s.value)) {
-        return [env.append(s.name.value, entry(s.value, 'binding', s.name.range)), sbinding(s.name.value, s.value)]
+        return [
+          env.append(s.name.value, entry(s.value, 'binding', s.name.range)),
+          sbinding(s.name.value)
+        ]
       } else {
-        return [env, resultToStmt(stepExp(env, s.value).andThen(e => ok(sdefine(s.name, e))))]
+        return [
+          env,
+          resultToStmt(stepExp(env, s.value).andThen(e => ok(sdefine(s.name, e))))
+        ]
       }
     case 'struct': {
       const name = s.id.value
@@ -312,13 +318,14 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
           return ok(obj)
         }
       }
-      return [env.concat(new Env([
-        [name, entry(nleprim(ctorPrim), 'struct ${name}', s.id.range)],
-        [predName, entry(nleprim(predPrim), 'struct ${name}', s.id.range)],
-        ...fieldPrims
-      ])), s]
-      // TODO: should be this, but need to ensure sbinding doesn't need its value field.
-      //sbinding(`struct ${name}`)]
+      return [
+        env.concat(new Env([
+          [name, entry(nleprim(ctorPrim), 'struct ${name}', s.id.range)],
+          [predName, entry(nleprim(predPrim), 'struct ${name}', s.id.range)],
+          ...fieldPrims
+        ])),
+        sbinding(`struct ${name}`)
+      ]
     }
     // N.B., as a last step, substitute free variables away when they are values.
     case 'exp': {
