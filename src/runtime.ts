@@ -83,9 +83,18 @@ function substituteAll (es: Exp[], xs: Name[], e: Exp) {
 function substituteIfFreeVar (env: Env, e: Exp): Result<Exp> {
   switch (e.tag) {
     case 'var':
-      return env.has(e.value)
-        ? ok(env.get(e.value)!.value)
-        : runtimeError(msg('error-var-undef', e.value), e)
+      // N.B., repeatedly substitute if a free var is bound to another
+      // free var. Kind of gross, probably should re think it.
+      if (env.has(e.value)) {
+        const result = env.get(e.value)!.value
+        if (result.tag === 'var') {
+          return substituteIfFreeVar(env, result)
+        } else {
+          return ok(result)
+        }
+      } else {
+        return runtimeError(msg('error-var-undef', e.value), e)
+      }
     default:
       return ok(e)
   }
