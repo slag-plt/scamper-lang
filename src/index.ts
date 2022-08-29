@@ -1,5 +1,6 @@
 import { evaluateExp, preludeEnv, stepExp, stepStmt } from './runtime.js'
-import { Env, Exp, Stmt, isStmtDone, Program, indexOfCurrentStmt, progToString, serror } from './lang.js'
+import { Env, Exp, isStmtDone, Program, indexOfCurrentStmt, serror } from './lang.js'
+import { progToString } from './pretty.js'
 import { parseExp, parseProgram } from './parser.js'
 import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'
@@ -10,6 +11,9 @@ export { preludeEnv, internalLibs } from './runtime.js'
 export * from './pretty.js'
 export * from './web.js'
 export * as Formatter from './formatter.js'
+
+export * as Image from './lib/image.js'
+export * as Music from './lib/music.js'
 
 export function compileProgram (src: string): Result<Program> {
   return parseProgram(src).andThen(prog =>
@@ -70,7 +74,7 @@ export class ProgramState {
   }
 
   toString (): string {
-    return progToString(this.prog, true)
+    return progToString(0, this.prog, true)
   }
 }
 

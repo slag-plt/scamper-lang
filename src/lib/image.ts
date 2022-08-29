@@ -51,7 +51,7 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-type Drawing = Circle | Rectangle | Beside | Above | Overlay
+export type Drawing = Circle | Rectangle | Beside | Above | Overlay
 
 type Circle = { tag: 'circle', width: number, height: number, radius: number, mode: Mode, color: string }
 const circle = (radius: number, mode: Mode, color: string): Circle => ({
