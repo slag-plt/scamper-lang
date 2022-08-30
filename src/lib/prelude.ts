@@ -119,8 +119,8 @@ function numericNOp (symbol: string, op: (x: number, y: number) => number, args:
     asNumbers(args).andThen(vs => ok(L.nlenumber(vs.reduce(op)))))
 }
 
-const maxPrim: L.Prim = (_env, args, app) => numericNOp('max', Math.max, args, app)
-const minPrim: L.Prim = (_env, args, app) => numericNOp('min', Math.min, args, app)
+const maxPrim: L.Prim = (_env, args, app) => numericNOp('max', (x, y) => Math.max(x, y), args, app)
+const minPrim: L.Prim = (_env, args, app) => numericNOp('min', (x, y) => Math.min(x, y), args, app)
 
 const plusPrim: L.Prim = (_env, args, app) => numericNOp('+', (x, y) => x + y, args, app)
 const minusPrim: L.Prim = (_env, args, app) => numericNOp('-', (x, y) => x - y, args, app)
