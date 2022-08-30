@@ -377,10 +377,11 @@ const makeListPrim: L.Prim = function (_env, args, app) {
 const lengthPrim: L.Prim = function (_env, args, app) {
   const argErr = Utils.checkArgs('length', ['list?'], undefined, args, app)
   if (argErr) { return argErr }
-  const length = 0
+  let length = 0
   let e: L.Exp = args[0]
   while (e.tag !== 'nil') {
     if (e.tag === 'pair') {
+      length += 1
       e = e.e2
     } else {
       throw new ICE('lengthPrim', `Processing a non-list that we thought was a list: ${L.expToString(app)}`)
