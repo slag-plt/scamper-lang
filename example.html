@@ -19,6 +19,29 @@
 
       (square 100 "solid" (color 255 0 0 0.50))
       (triangle 100 "solid" (color 255 0 0 1))
+      (circle 100 "solid" (color 255 0 0 1))
+      (ellipse 100 25 "solid" (color 0 255 0 1))
+
+      (overlay
+        (above (circle 50 "solid" "red")
+              (circle 50  "solid" "black"))
+        (rectangle 125 125 "outline" "red"))
+      
+      (define width 100)
+      (define height 100)
+      (define alpha 0.5)
+
+      (overlay
+        (beside
+          (ellipse width height "solid" (color 255 0 0 alpha))
+          (ellipse (* width 0.75) (* height 0.75) "solid" (color 0 255 0 (* alpha 0.75)))
+          (ellipse (* width 0.5) (* height 0.5) "solid" (color 0 0 255 (* alpha 0.5)))
+          (ellipse (* width 0.25) (* height 0.25) "solid" (color 0 0 0 (* alpha 0.25))))
+        (beside
+          (ellipse (* width 0.25) (* height 0.25) "solid" (color 0 0 0 (* alpha 0.25)))
+          (ellipse (* width 0.5) (* height 0.5) "solid" (color 0 0 255 (* alpha 0.5)))
+          (ellipse (* width 0.75) (* height 0.75) "solid" (color 0 255 0 (* alpha 0.75)))
+          (ellipse width height "solid" (color 255 0 0 alpha))))
     </div>
   </body>
 

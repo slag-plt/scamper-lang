@@ -51,20 +51,33 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Circle | Rectangle | Triangle | Beside | Above | Overlay
+export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay
 
-type Circle = { tag: 'circle', width: number, height: number, radius: number, mode: Mode, color: string }
-const circle = (radius: number, mode: Mode, color: string): Circle => ({
-  tag: 'circle',
-  width: 2 * radius,
-  height: 2 * radius,
-  radius,
+type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
+const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
+  tag: 'ellipse',
+  width,
+  height,
   mode,
   color
 })
 
 function isDrawing (e: Exp): boolean {
   return e.tag === 'obj' && e.kind === 'Drawing'
+}
+
+const ellipsePrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('ellipse', ['number?', 'number?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return argErr }
+  const width = asNum_(args[0])
+  const height = asNum_(args[1])
+  const mode = asString_(args[2])
+  const color = asString_(args[3])
+  if (mode !== 'solid' && mode !== 'outline') {
+    return runtimeError(msg('error-precondition-not-met', 'circle', '3', '"solid" or "outline"', mode), app)
+  } else {
+    return ok(nleobj('Drawing', ellipse(width, height, mode, color)))
+  }
 }
 
 const circlePrim: Prim = (_env, args, app) => {
@@ -76,7 +89,7 @@ const circlePrim: Prim = (_env, args, app) => {
   if (mode !== 'solid' && mode !== 'outline') {
     return runtimeError(msg('error-precondition-not-met', 'circle', '2', '"solid" or "outline"', mode), app)
   } else {
-    return ok(nleobj('Drawing', circle(radius, mode, color)))
+    return ok(nleobj('Drawing', ellipse(radius * 2, radius * 2, mode, color)))
   }
 }
 
@@ -180,6 +193,7 @@ const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', und
 
 export const imageLib: Env = new Env([
   ['color', imageEntry(colorPrim, Docs.color)],
+  ['ellipse', imageEntry(ellipsePrim, Docs.ellipse)],
   ['circle', imageEntry(circlePrim, Docs.circle)],
   ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
   ['square', imageEntry(squarePrim, Docs.drawingSquare)],

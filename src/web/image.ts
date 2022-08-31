@@ -5,11 +5,15 @@ type Drawing = Image.Drawing
 function render (x: number, y: number, width: number, height: number, drawing: Drawing, canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext('2d')!
   switch (drawing.tag) {
-    case 'circle': {
+    case 'ellipse': {
       ctx.fillStyle = drawing.color
       ctx.strokeStyle = drawing.color
+      const radiusX = drawing.width / 2
+      const radiusY = drawing.height / 2
+      const centerX = x + radiusX + (width - drawing.width) / 2
+      const centerY = y + radiusY + (height - drawing.height) / 2
       ctx.beginPath()
-      ctx.arc(x + width / 2, y + height / 2, drawing.radius, 0, 2 * Math.PI)
+      ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI)
       if (drawing.mode === 'solid') {
         ctx.fill()
       } else if (drawing.mode === 'outline') {
