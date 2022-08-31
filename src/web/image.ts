@@ -2,16 +2,17 @@ import * as Image from '../lib/image.js'
 
 type Drawing = Image.Drawing
 
-function render (x: number, y: number, width: number, height: number, drawing: Drawing, canvas: HTMLCanvasElement) {
+function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext('2d')!
+  console.log(`render (${drawing.tag}): (${x}, ${y}), ${drawing.width}, ${drawing.height}`)
   switch (drawing.tag) {
     case 'ellipse': {
       ctx.fillStyle = drawing.color
       ctx.strokeStyle = drawing.color
       const radiusX = drawing.width / 2
       const radiusY = drawing.height / 2
-      const centerX = x + radiusX + (width - drawing.width) / 2
-      const centerY = y + radiusY + (height - drawing.height) / 2
+      const centerX = x + radiusX
+      const centerY = y + radiusY
       ctx.beginPath()
       ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI)
       if (drawing.mode === 'solid') {
@@ -25,9 +26,9 @@ function render (x: number, y: number, width: number, height: number, drawing: D
       ctx.fillStyle = drawing.color
       ctx.strokeStyle = drawing.color
       if (drawing.mode === 'solid') {
-        ctx.fillRect(x + (width - drawing.width) / 2, y + (height - drawing.height) / 2, drawing.width, drawing.height)
+        ctx.fillRect(x, y, drawing.width, drawing.height)
       } else if (drawing.mode === 'outline') {
-        ctx.strokeRect(x + (width - drawing.width) / 2, y + (height - drawing.height) / 2, drawing.width, drawing.height)
+        ctx.strokeRect(x, y, drawing.width, drawing.height)
       }
       break
     }
@@ -36,13 +37,13 @@ function render (x: number, y: number, width: number, height: number, drawing: D
       ctx.strokeStyle = drawing.color
       ctx.beginPath()
       // Start in the bottom-left corner of the triangle...
-      ctx.moveTo(x, y + height)
+      ctx.moveTo(x, y + drawing.height)
       // Then go to the top corner...
-      ctx.lineTo(x + width / 2, y)
+      ctx.lineTo(x + drawing.width / 2, y)
       // And then the bottom-right corner...
-      ctx.lineTo(x + width, y + height)
+      ctx.lineTo(x + drawing.width, y + drawing.height)
       // And back!
-      ctx.lineTo(x, y + height)
+      ctx.lineTo(x, y + drawing.height)
       if (drawing.mode === 'solid') {
         ctx.fill()
       } else if (drawing.mode === 'outline') {
@@ -52,16 +53,14 @@ function render (x: number, y: number, width: number, height: number, drawing: D
     }
     case 'beside': {
       drawing.drawings.forEach(d => {
-        console.log(`beside: (${x}, ${y}), ${d.width}, ${d.height}`)
-        render(x + (width - drawing.width) / 2, y + (height - drawing.height) / 2, d.width, height, d, canvas)
+        render(x, y + (drawing.height - d.height) / 2, d, canvas)
         x += d.width
       })
       break
     }
     case 'above': {
       drawing.drawings.forEach(d => {
-        console.log(`above: (${x}, ${y}), ${d.width}, ${d.height}`)
-        render(x + (width - drawing.width) / 2, y + (height - drawing.height) / 2, width, d.height, d, canvas)
+        render(x + (drawing.width - d.width) / 2, y, d, canvas)
         y += d.height
       })
       break
@@ -69,7 +68,7 @@ function render (x: number, y: number, width: number, height: number, drawing: D
     case 'overlay': {
       // N.B., need to draw in reverse order to get the overlay effect to work
       [...drawing.drawings].reverse().forEach(d => {
-        render(x, y, width, height, d, canvas)
+        render(x + (drawing.width - d.width) / 2, y + (drawing.height - d.height) / 2, d, canvas)
       })
       break
     }
@@ -85,7 +84,7 @@ function clearDrawing (canvas: HTMLCanvasElement) {
 
 function renderDrawing (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasElement) {
   clearDrawing(canvas)
-  render(x, y, drawing.width, drawing.height, drawing, canvas)
+  render(x, y, drawing, canvas)
 }
 
 export function emitDrawingWidget(node: Element) {
@@ -93,6 +92,7 @@ export function emitDrawingWidget(node: Element) {
   const drawing = JSON.parse(node.textContent!)
   canvas.width = drawing.width
   canvas.height = drawing.height
+  console.log('==========')
   renderDrawing(0, 0, drawing, canvas)
   node.replaceWith(canvas)
 }

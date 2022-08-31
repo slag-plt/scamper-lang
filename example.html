@@ -9,47 +9,53 @@
   <body>
     <div class="scamper" style="white-space: pre; font-family: monospace;">
       (import image)
-      (import music)
-
-      (define fact
-        (lambda (n)
-          (if (= n 0)
-              1
-              (* n (fact (- n 1))))))
-
+      
       (square 100 "solid" (color 255 0 0 0.50))
       (triangle 100 "solid" (color 255 0 0 1))
       (circle 100 "solid" (color 255 0 0 1))
       (ellipse 100 25 "solid" (color 0 255 0 1))
 
+      (beside
+        (rectangle 50 50 "solid" "blue")
+        (rectangle 150 150 "solid" "red")
+        (rectangle 100 50 "solid" "green"))
+
       (overlay
         (above (circle 50 "solid" "red")
-              (circle 50  "solid" "black"))
+              (circle 50 "solid" "black"))
         (rectangle 125 125 "outline" "red"))
       
       (define width 100)
       (define height 100)
       (define alpha 0.5)
-
-      (overlay
+     
+      (define example-ellipse1
         (beside
           (ellipse width height "solid" (color 255 0 0 alpha))
           (ellipse (* width 0.75) (* height 0.75) "solid" (color 0 255 0 (* alpha 0.75)))
           (ellipse (* width 0.5) (* height 0.5) "solid" (color 0 0 255 (* alpha 0.5)))
-          (ellipse (* width 0.25) (* height 0.25) "solid" (color 0 0 0 (* alpha 0.25))))
+          (ellipse (* width 0.25) (* height 0.25) "solid" (color 0 0 0 (* alpha 0.25)))))
+
+      (define example-ellipse2
         (beside
           (ellipse (* width 0.25) (* height 0.25) "solid" (color 0 0 0 (* alpha 0.25)))
           (ellipse (* width 0.5) (* height 0.5) "solid" (color 0 0 255 (* alpha 0.5)))
           (ellipse (* width 0.75) (* height 0.75) "solid" (color 0 255 0 (* alpha 0.75)))
           (ellipse width height "solid" (color 255 0 0 alpha))))
 
-      (define c1 (rectangle 100 25 "outline" "red"))
-      (define c2 (above c1 (rectangle 100 25 "outline" "orange")))
-      (define c3 (above c2 (rectangle 100 25 "outline" "yellow")))
-      (define c4 (above c3 (rectangle 100 25 "outline" "green")))
-      (define c5 (above c4 (rectangle 100 25 "outline" "blue")))
-      (define c6 (above c5 (rectangle 100 25 "outline" "violet")))
+      example-ellipse1
+
+      example-ellipse2
+
+      (overlay example-ellipse1 example-ellipse2)
       
+      (define c1 (rectangle 100 25 "solid" "red"))
+      (define c2 (above c1 (rectangle 100 25 "solid" "orange")))
+      (define c3 (above c2 (rectangle 100 25 "solid" "yellow")))
+      (define c4 (above c3 (rectangle 100 25 "solid" "green")))
+      (define c5 (above c4 (rectangle 100 25 "solid" "blue")))
+      (define c6 (above c5 (rectangle 100 25 "solid" "violet")))
+       
       c2
       c3
       (beside c2 c3)

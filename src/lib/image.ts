@@ -178,8 +178,8 @@ const abovePrim: Prim = (_env, args, app) => {
 type Overlay = { tag: 'overlay', width: number, height: number, drawings: Drawing[] }
 const overlay = (drawings: Drawing[]): Overlay => ({
   tag: 'overlay',
-  width: drawings.reduce((acc, d) => Math.max(acc, d.width), 0),
-  height: drawings.reduce((acc, d) => Math.max(acc, d.height), 0),
+  width: Math.max(...drawings.map(d => d.width)),
+  height: Math.max(...drawings.map(d => d.height)),
   drawings
 })
 
