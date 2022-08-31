@@ -119,8 +119,8 @@ function numericNOp (symbol: string, op: (x: number, y: number) => number, args:
     asNumbers(args).andThen(vs => ok(L.nlenumber(vs.reduce(op)))))
 }
 
-const maxPrim: L.Prim = (_env, args, app) => numericNOp('max', Math.max, args, app)
-const minPrim: L.Prim = (_env, args, app) => numericNOp('min', Math.min, args, app)
+const maxPrim: L.Prim = (_env, args, app) => numericNOp('max', (x, y) => Math.max(x, y), args, app)
+const minPrim: L.Prim = (_env, args, app) => numericNOp('min', (x, y) => Math.min(x, y), args, app)
 
 const plusPrim: L.Prim = (_env, args, app) => numericNOp('+', (x, y) => x + y, args, app)
 const minusPrim: L.Prim = (_env, args, app) => numericNOp('-', (x, y) => x - y, args, app)
@@ -377,10 +377,11 @@ const makeListPrim: L.Prim = function (_env, args, app) {
 const lengthPrim: L.Prim = function (_env, args, app) {
   const argErr = Utils.checkArgs('length', ['list?'], undefined, args, app)
   if (argErr) { return argErr }
-  const length = 0
+  let length = 0
   let e: L.Exp = args[0]
   while (e.tag !== 'nil') {
     if (e.tag === 'pair') {
+      length += 1
       e = e.e2
     } else {
       throw new ICE('lengthPrim', `Processing a non-list that we thought was a list: ${L.expToString(app)}`)

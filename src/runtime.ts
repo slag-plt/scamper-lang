@@ -60,6 +60,9 @@ function inBindings (x: string, bindings: [Name, Exp][]): boolean {
 function substituteTelescope (e1: Exp, x: string, bindings: [Name, Exp][]): [Name, Exp][] {
   const result = new Array(bindings.length)
   let seenVar = false
+  // N.B., when substituting into successive bindings, we ensure
+  // that we don't substitute for a shadowed occurrence of the
+  // variable.
   for (let i = 0; i < bindings.length; i++) {
     if (seenVar) {
       result[i] = bindings[i]
@@ -185,7 +188,14 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
         } else {
           return e.bindings.length === 1
             ? ok(substitute(e1, x.value, e.body))
-            : ok(elet(e.range, substituteTelescope(e1, x.value, e.bindings.slice(1)), substitute(e1, x.value, e.body)))
+            : ok(elet(
+                e.range,
+                substituteTelescope(e1, x.value, e.bindings.slice(1)),
+                // N.B., make sure that we only substitute into the body
+                // of the let if it isn't shadowed by a successive binding
+                e.bindings.slice(1).map(b => b[0].value).includes(x.value)
+                  ? e.body
+                  : substitute(e1, x.value, e.body)))
         }
       } else {
         return ok(e.body)
