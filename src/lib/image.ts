@@ -151,7 +151,7 @@ type Beside = { tag: 'beside', width: number, height: number, drawings: Drawing[
 const beside = (drawings: Drawing[]): Beside => ({
   tag: 'beside',
   width: drawings.reduce((acc, d) => acc + d.width, 0),
-  height: drawings.reduce((acc, d) => Math.max(acc, d.height), 0),
+  height: Math.max(...drawings.map(d => d.height)),
   drawings
 })
 
@@ -164,7 +164,7 @@ const besidePrim: Prim = (_env, args, app) => {
 type Above = { tag: 'above', width: number, height: number, drawings: Drawing[] }
 const above = (drawings: Drawing[]): Above => ({
   tag: 'above',
-  width: drawings.reduce((acc, d) => Math.max(acc, d.width), 0),
+  width: Math.max(...drawings.map(d => d.width)),
   height: drawings.reduce((acc, d) => acc + d.height, 0),
   drawings
 })

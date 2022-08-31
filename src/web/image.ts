@@ -52,14 +52,16 @@ function render (x: number, y: number, width: number, height: number, drawing: D
     }
     case 'beside': {
       drawing.drawings.forEach(d => {
-        render(x, y, d.width, height, d, canvas)
+        console.log(`beside: (${x}, ${y}), ${d.width}, ${d.height}`)
+        render(x + (width - drawing.width) / 2, y + (height - drawing.height) / 2, d.width, height, d, canvas)
         x += d.width
       })
       break
     }
     case 'above': {
       drawing.drawings.forEach(d => {
-        render(x, y, width, d.height, d, canvas)
+        console.log(`above: (${x}, ${y}), ${d.width}, ${d.height}`)
+        render(x + (width - drawing.width) / 2, y + (height - drawing.height) / 2, width, d.height, d, canvas)
         y += d.height
       })
       break

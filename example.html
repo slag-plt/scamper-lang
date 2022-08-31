@@ -42,6 +42,17 @@
           (ellipse (* width 0.5) (* height 0.5) "solid" (color 0 0 255 (* alpha 0.5)))
           (ellipse (* width 0.75) (* height 0.75) "solid" (color 0 255 0 (* alpha 0.75)))
           (ellipse width height "solid" (color 255 0 0 alpha))))
+
+      (define c1 (rectangle 100 25 "outline" "red"))
+      (define c2 (above c1 (rectangle 100 25 "outline" "orange")))
+      (define c3 (above c2 (rectangle 100 25 "outline" "yellow")))
+      (define c4 (above c3 (rectangle 100 25 "outline" "green")))
+      (define c5 (above c4 (rectangle 100 25 "outline" "blue")))
+      (define c6 (above c5 (rectangle 100 25 "outline" "violet")))
+      
+      c2
+      c3
+      (beside c2 c3)
     </div>
   </body>
 
