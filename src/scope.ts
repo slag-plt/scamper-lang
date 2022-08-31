@@ -31,9 +31,10 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
     case 'call':
       return checkExp(bvars, e.head).concat(e.args.flatMap((v) => checkExp(bvars, v)))
     case 'lam':
-      return e.args.filter(x => bvars.includes(x.value))
-        .map(x => shadowedVariableError(x.value, x.range))
-        .concat(checkExp(bvars.concat(e.args.map(n => n.value)), e.body))
+      return checkExp(bvars.concat(e.args.map(n => n.value)), e.body)
+      // return e.args.filter(x => bvars.includes(x.value))
+      //   .map(x => shadowedVariableError(x.value, x.range))
+      //   .concat(checkExp(bvars.concat(e.args.map(n => n.value)), e.body))
     case 'if':
       return checkExp(bvars, e.e1).concat(checkExp(bvars, e.e2).concat(checkExp(bvars, e.e3)))
     case 'nil':
@@ -43,9 +44,9 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
     case 'let': {
       let errors: ErrorDetails[] = []
       e.bindings.forEach(binding => {
-        if (bvars.includes(binding[0].value)) {
-          errors.push(shadowedVariableError(binding[0].value, binding[0].range))
-        }
+        // if (bvars.includes(binding[0].value)) {
+        //   errors.push(shadowedVariableError(binding[0].value, binding[0].range))
+        // }
         bvars = bvars.concat(binding[0].value)
         errors = errors.concat(checkExp(bvars, binding[1]))
       })
@@ -74,9 +75,9 @@ function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
   prog.statements.forEach(s => {
     switch (s.tag) {
       case 'define':
-        if (bvars.includes(s.name.value)) {
-          errors.push(shadowedVariableError(s.name.value, s.name.range))
-        }
+        // if (bvars.includes(s.name.value)) {
+        //   errors.push(shadowedVariableError(s.name.value, s.name.range))
+        // }
         bvars = bvars.concat([s.name.value])
         errors = errors.concat(checkExp(bvars, s.value))
         return
@@ -86,11 +87,11 @@ function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
           name(`${s.id.value}?`, s.id.range), 
           ...s.fields.map(f => name(`${s.id.value}-${f.value}`, f.range))
         ]
-        structBvars.forEach(x => {
-          if (bvars.includes(x.value)) {
-            errors.push(shadowedVariableError(x.value, x.range))
-          }
-        })
+        // structBvars.forEach(x => {
+        //   if (bvars.includes(x.value)) {
+        //     errors.push(shadowedVariableError(x.value, x.range))
+        //   }
+        // })
         bvars = bvars.concat(structBvars.map(n => n.value))
         return
       }
