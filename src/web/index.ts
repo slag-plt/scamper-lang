@@ -1,8 +1,12 @@
 import * as Image from './image.js'
+import * as Music from './music.js'
 import * as Scamper from '../index.js'
+import * as JZZ from './jzz/jzz-combined.cjs'
 
 // injects 
 const global = window as any
+
+const synth = JZZ.synth.Tiny()
 
 global.replaceCodeWidgets = function (): void {
   for (const element of document.getElementsByClassName('scamper')) {
@@ -28,6 +32,7 @@ global.replaceCodeWidgets = function (): void {
 
       // Now, sweep over the document and render any rich values that the runtime produced.
       Array.from(document.getElementsByClassName('drawing')).forEach(Image.emitDrawingWidget)
+      Array.from(document.getElementsByClassName('composition')).forEach(e => Music.emitCompositionWidget(synth, e))
     }
   }
 }
