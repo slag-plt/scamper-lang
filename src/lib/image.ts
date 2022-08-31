@@ -51,7 +51,7 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Circle | Rectangle | Beside | Above | Overlay
+export type Drawing = Circle | Rectangle | Triangle | Beside | Above | Overlay
 
 type Circle = { tag: 'circle', width: number, height: number, radius: number, mode: Mode, color: string }
 const circle = (radius: number, mode: Mode, color: string): Circle => ({
@@ -111,6 +111,29 @@ const squarePrim: Prim = (_env, args, app) => {
   }
 }
 
+type Triangle = { tag: 'triangle', width: number, height: number, length: number, mode: Mode, color: string }
+const triangle = (length: number, mode: Mode, color: string): Triangle => ({
+  tag: 'triangle', 
+  width: length,
+  height: length * Math.sqrt(3) / 2,
+  length,
+  mode,
+  color
+})
+
+const trianglePrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('triangle', ['number?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return argErr }
+  const length = asNum_(args[0])
+  const mode = asString_(args[1])
+  const color = asString_(args[2])
+  if (mode !== 'solid' && mode !== 'outline') {
+    return runtimeError(msg('error-precondition-not-met', 'triangle', '2', '"solid" or "outline"', mode), app)
+  } else {
+    return ok(nleobj('Drawing', triangle(length, mode, color)))
+  }
+}
+
 type Beside = { tag: 'beside', width: number, height: number, drawings: Drawing[] }
 const beside = (drawings: Drawing[]): Beside => ({
   tag: 'beside',
@@ -160,6 +183,7 @@ export const imageLib: Env = new Env([
   ['circle', imageEntry(circlePrim, Docs.circle)],
   ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
   ['square', imageEntry(squarePrim, Docs.drawingSquare)],
+  ['triangle', imageEntry(trianglePrim, Docs.triangle)],
   ['beside', imageEntry(besidePrim, Docs.beside)],
   ['above', imageEntry(abovePrim, Docs.above)],
   ['overlay', imageEntry(overlayPrim, Docs.overlay)]

@@ -27,6 +27,25 @@ function render (x: number, y: number, width: number, height: number, drawing: D
       }
       break
     }
+    case 'triangle': {
+      ctx.fillStyle = drawing.color
+      ctx.strokeStyle = drawing.color
+      ctx.beginPath()
+      // Start in the bottom-left corner of the triangle...
+      ctx.moveTo(x, y + height)
+      // Then go to the top corner...
+      ctx.lineTo(x + width / 2, y)
+      // And then the bottom-right corner...
+      ctx.lineTo(x + width, y + height)
+      // And back!
+      ctx.lineTo(x, y + height)
+      if (drawing.mode === 'solid') {
+        ctx.fill()
+      } else if (drawing.mode === 'outline') {
+        ctx.stroke()
+      }
+      break
+    }
     case 'beside': {
       drawing.drawings.forEach(d => {
         render(x, y, d.width, height, d, canvas)

@@ -555,6 +555,15 @@ export const drawingSquare: Doc = new Doc(
   'Returns a drawing consisting of a square with length `width`.'
 )
 
+export const triangle: Doc = new Doc(
+  '(triangle length fill color): drawing?', [
+    'length: number?',
+    'fill: string?, either "solid" or "outline"',
+    'color: string?, either a color name or the form "rgba(r, g, b, a)"'
+  ],
+  'Returns a drawing consisting of a equilateral triangle with length `length`.'
+)
+
 export const beside: Doc = new Doc(
   '(beside d1 d2 ...): drawing?', [
     'd: drawing?'
