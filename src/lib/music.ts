@@ -6,9 +6,9 @@ import { runtimeError } from '../runtime.js'
 import * as Docs from './docs.js'
 import * as Utils from './utils.js'
 
-type PitchClass = string
-type Octave = number
-type Duration = { num: number, den: number }
+export type PitchClass = string
+export type Octave = number
+export type Duration = { num: number, den: number }
 
 const isPitchClass = (s: string): boolean =>
     /^[A-Ga-g][#b]{0,2}$/.test(s)
@@ -16,7 +16,7 @@ const isPitchClass = (s: string): boolean =>
 const isOctave = (n: number): boolean =>
   n >= 0 && n <= 10
 
-type Note = { tag: 'note', pitch: PitchClass, octave: Octave, duration: Duration }
+export type Note = { tag: 'note', pitch: PitchClass, octave: Octave, duration: Duration }
 const note = (pitch: PitchClass, octave: Octave, duration: Duration): Note => ({
   tag: 'note', pitch, octave, duration
 })
@@ -42,10 +42,10 @@ The Mod datatype from HSM:
 | Player PlayerName -- player label
 */
 
-type Mod = { tag: 'mod', note: Composition, mod: ModKind }
+export type Mod = { tag: 'mod', note: Composition, mod: ModKind }
 const mod = (note: Composition, mod: ModKind): Mod => ({ tag: 'mod', note, mod })
 
-type Composition = Note | Rest | Par | Seq | Mod
+export type Composition = Note | Rest | Par | Seq | Mod
 
 const pitchPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>

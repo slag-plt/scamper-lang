@@ -10,22 +10,27 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "build": "mkdir -p dist/web/jzz && cp src/web/jzz/jzz-combined.cjs dist/web/jzz/jzz-combined.cjs && tsc",
     "clean": "rm -rf dist",
     "lint": "eslint --fix",
     "prepare": "npm run build",
     "driver": "node dist/driver.js",
-    "test": "./run-tests.sh"
+    "test": "./run-tests.sh",
+    "bundle": "npm run build && npm exec esbuild -- dist/web/index.js --bundle --outfile=dist/web/bundle.js",
+    "serve": "npm run bundle && npm exec live-server -- --no-browser"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
+    "esbuild": "^0.15.6",
     "eslint": "^8.17.0",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-n": "^15.2.2",
     "eslint-plugin-promise": "^6.0.0",
+    "jazz-midi": "^1.7.6",
+    "live-server": "^1.1.0",
     "typescript": "^4.7.3"
   }
 }
