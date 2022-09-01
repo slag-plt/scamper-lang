@@ -574,6 +574,15 @@ export const triangle: Doc = new Doc(
   'Returns a drawing consisting of a equilateral triangle with length `length`.'
 )
 
+export const path: Doc = new Doc(
+  '(path points fill color): drawing?', [
+    'points: list?, a list of points, pairs of numbers',
+    'fill: string?, either "solid" or "outline"',
+    'color: string?, either a color name or the form "rgba(r, g, b, a)"'
+  ],
+  'Returns a drawing formed by connecting the points in `points` with straight lines.'
+)
+
 export const beside: Doc = new Doc(
   '(beside d1 d2 ...): drawing?', [
     'd: drawing?'

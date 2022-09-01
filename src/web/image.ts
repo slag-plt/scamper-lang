@@ -51,6 +51,24 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
       }
       break
     }
+    case 'path': {
+      // TODO: path fills won't render. I wonder why...
+      console.log('Drawing path...')
+      ctx.beginPath()
+      ctx.fillStyle = drawing.color
+      ctx.strokeStyle = drawing.color
+      drawing.points.forEach(p => {
+        console.log(`(${p[0]}, ${p[1]})`)
+        ctx.lineTo(x + p[0], y + p[1])
+      })
+      ctx.closePath()
+      if (drawing.mode === 'solid') {
+        ctx.fill('evenodd')
+      } else {
+        ctx.stroke()
+      }
+      break
+    }
     case 'beside': {
       drawing.drawings.forEach(d => {
         render(

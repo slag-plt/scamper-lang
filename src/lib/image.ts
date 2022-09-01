@@ -1,6 +1,6 @@
-import { ok } from '../result.js'
+import { join, ok, Result } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr } from '../lang.js'
+import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber } from '../lang.js'
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
@@ -51,7 +51,7 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | OverlayOffset | Rotate
+export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | OverlayOffset | Rotate | Path
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -144,6 +144,35 @@ const trianglePrim: Prim = (_env, args, app) => {
     return runtimeError(msg('error-precondition-not-met', 'triangle', '2', '"solid" or "outline"', mode), app)
   } else {
     return ok(nleobj('Drawing', triangle(length, mode, color)))
+  }
+}
+
+type Path = { tag: 'path', width: number, height: number, points: [number, number][], mode: Mode, color: string }
+const path = (width: number, height: number, points: [number, number][], mode: Mode, color: string) =>
+  ({ tag: 'path', width, height, points, mode, color })
+
+const pathPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('path', ['number?', 'number?', 'list?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return argErr }
+  const width = asNum_(args[0])
+  const height = asNum_(args[1])
+  const mode = asString_(args[3])
+  if (mode !== 'solid' && mode !== 'outline') {
+    return runtimeError(msg('error-precondition-not-met', 'path', '2', '"solid" or "outline"', mode), app)
+  } else {
+    const result: Result<[number,number][]> = join(asList_(args[2]).map(e => {
+      if (isPair(e)) {
+        const p = asPair_(e)
+        if (!isNumber(p[0]) || !isNumber(p[1])) {
+          return runtimeError(msg('error-type-expected-fun', 'path', 'list of pairs of numbers', e.tag), e)
+        } 
+        return ok([asNum_(p[0]), asNum_(p[1])])
+      } else {
+        return runtimeError(msg('error-type-expected-fun', 'path', 'list of pairs of numbers', e.tag), e)
+      }
+    }))
+    return result.andThen((points: [number, number][]) =>
+      ok(nleobj('Drawing', path(width, height, points, mode, asString_(args[3])))))
   }
 }
 
@@ -279,6 +308,7 @@ export const imageLib: Env = new Env([
   ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
   ['square', imageEntry(squarePrim, Docs.drawingSquare)],
   ['triangle', imageEntry(trianglePrim, Docs.triangle)],
+  // ['path', imageEntry(pathPrim, Docs.path)],
   ['beside', imageEntry(besidePrim, Docs.beside)],
   ['beside/align', imageEntry(besideAlignPrim, Docs.besideAlign)],
   ['above', imageEntry(abovePrim, Docs.above)],
