@@ -9,7 +9,6 @@ export { Env, EnvEntry } from './lang.js'
 export * from './result.js'
 export { preludeEnv, internalLibs } from './runtime.js'
 export * from './pretty.js'
-export * from './web.js'
 export * as Formatter from './formatter.js'
 
 export * as Image from './lib/image.js'
