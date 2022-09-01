@@ -527,6 +527,16 @@ export const color: Doc = new Doc(
   'Returns a string of the form `"rgba(r, g, b, a)"` appropriate for use as a color.'
 )
 
+export const ellipse: Doc = new Doc(
+  '(ellipse width height fill color): drawing?', [
+    'width: integer?',
+    'height: integer?',
+    'fill: boolean?',
+    'color: string?',
+  ],
+  'Returns a new drawing containing an ellipse with dimensions `width × height`.'
+)
+
 export const circle: Doc = new Doc(
   '(circle radius fill color): drawing?', [
     'radius: number?',
@@ -543,7 +553,7 @@ export const rectangle: Doc = new Doc(
     'fill: string?, either "solid" or "outline"',
     'color: string?, either a color name or the form "rgba(r, g, b, a)"'
   ],
-  'Returns a drawing consisting of a rectangle with dimension `width × height`.'
+  'Returns a drawing consisting of a rectangle with dimensions `width × height`.'
 )
 
 export const drawingSquare: Doc = new Doc(
@@ -553,6 +563,15 @@ export const drawingSquare: Doc = new Doc(
     'color: string?, either a color name or the form "rgba(r, g, b, a)"'
   ],
   'Returns a drawing consisting of a square with length `width`.'
+)
+
+export const triangle: Doc = new Doc(
+  '(triangle length fill color): drawing?', [
+    'length: number?',
+    'fill: string?, either "solid" or "outline"',
+    'color: string?, either a color name or the form "rgba(r, g, b, a)"'
+  ],
+  'Returns a drawing consisting of a equilateral triangle with length `length`.'
 )
 
 export const beside: Doc = new Doc(
@@ -574,6 +593,14 @@ export const overlay: Doc = new Doc(
     'd: drawing?'
   ],
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., on top of each other. (`d1` is the topmost drawing).'
+)
+
+export const rotate: Doc = new Doc(
+  '(rotate angle d): drawing?', [
+    'angle: number?, in degrees',
+    'd: drawing?',
+  ],
+  'Returns a new drawing formed by rotating drawing `d` by `angle` degrees.'
 )
 
 ///// music ////////////////////////////////////////////////////////////////////

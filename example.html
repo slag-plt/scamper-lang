@@ -9,40 +9,72 @@
   <body>
     <div class="scamper" style="white-space: pre; font-family: monospace;">
       (import image)
-      (import music)
-
-      (define fact
-        (lambda (n)
-          (if (= n 0)
-              1
-              (* n (fact (- n 1))))))
-
+      
       (square 100 "solid" (color 255 0 0 0.50))
+      (triangle 100 "solid" (color 255 0 0 1))
+      (circle 100 "solid" (color 255 0 0 1))
+      (ellipse 100 25 "solid" (color 0 255 0 1))
 
-      (define wn (dur 4 4))
-      (define hn (dur 2 4))
-      (define qn (dur 1 4))
-      (define en (dur 1 8))
-      (define sn (dur 1 16))
-      (define tn (dur 1 32))
+      (beside
+        (rectangle 50 50 "solid" "blue")
+        (rectangle 150 150 "solid" "red")
+        (rectangle 100 50 "solid" "green"))
 
-      (map string-length
-            (string-split "Twas brillig and the slithy toves" " "))
+      (overlay
+        (above (circle 50 "solid" "red")
+              (circle 50 "solid" "black"))
+        (rectangle 125 125 "outline" "red"))
+      
+      (define width 100)
+      (define height 100)
+      (define alpha 0.5)
+     
+      (define example-ellipse1
+        (beside
+          (ellipse width height "solid" (color 255 0 0 alpha))
+          (ellipse (* width 0.75) (* height 0.75) "solid" (color 0 255 0 (* alpha 0.75)))
+          (ellipse (* width 0.5) (* height 0.5) "solid" (color 0 0 255 (* alpha 0.5)))
+          (ellipse (* width 0.25) (* height 0.25) "solid" (color 0 0 0 (* alpha 0.25)))))
 
-      (define scale
-        (seq
-          (par (note "Bb" 4 qn) (note "D" 5 qn) (note "F" 5 qn))
-          (par (note "C" 5 qn) (note "E" 5 qn) (note "G" 5 qn))
-          (par (note "D" 5 qn) (note "F#" 5 qn) (note "A" 5 qn))
-          (par (note "Eb" 5 qn) (note "G" 5 qn) (note "Bb" 5 qn))
-          (par (note "F" 5 qn) (note "A" 5 qn) (note "C" 6 qn))
-          (par (note "G" 5 qn) (note "B" 5 qn) (note "D" 6 qn))
-          (par (note "A" 5 qn) (note "C#" 6 qn) (note "E" 6 qn))
-          (par (note "Bb" 5 qn) (note "D" 6 qn) (note "F" 6 qn))))
+      (define example-ellipse2
+        (beside
+          (ellipse (* width 0.25) (* height 0.25) "solid" (color 0 0 0 (* alpha 0.25)))
+          (ellipse (* width 0.5) (* height 0.5) "solid" (color 0 0 255 (* alpha 0.5)))
+          (ellipse (* width 0.75) (* height 0.75) "solid" (color 0 255 0 (* alpha 0.75)))
+          (ellipse width height "solid" (color 255 0 0 alpha))))
 
-      (par
-        scale
-        (seq (rest hn) scale))
+      example-ellipse1
+
+      example-ellipse2
+
+      (overlay example-ellipse1 example-ellipse2)
+      
+      (define c1 (rectangle 100 25 "solid" "red"))
+      (define c2 (above c1 (rectangle 100 25 "solid" "orange")))
+      (define c3 (above c2 (rectangle 100 25 "solid" "yellow")))
+      (define c4 (above c3 (rectangle 100 25 "solid" "green")))
+      (define c5 (above c4 (rectangle 100 25 "solid" "blue")))
+      (define c6 (above c5 (rectangle 100 25 "solid" "violet")))
+       
+      c2
+      c3
+      (beside c2 c3)
+
+      (define domino (rectangle 30 100 "solid" "black"))
+      (define space (rectangle 10 100 "solid" "white"))
+
+      (rotate 60 domino)
+      
+      (beside
+        domino
+        space
+        (rotate 23 domino)
+        space
+        (rotate 46 domino)
+        space
+        (rotate 69 domino)
+        space
+        (rotate 90 domino))
     </div>
   </body>
 

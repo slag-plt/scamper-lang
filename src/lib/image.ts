@@ -51,20 +51,33 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Circle | Rectangle | Beside | Above | Overlay
+export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | Rotate
 
-type Circle = { tag: 'circle', width: number, height: number, radius: number, mode: Mode, color: string }
-const circle = (radius: number, mode: Mode, color: string): Circle => ({
-  tag: 'circle',
-  width: 2 * radius,
-  height: 2 * radius,
-  radius,
+type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
+const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
+  tag: 'ellipse',
+  width,
+  height,
   mode,
   color
 })
 
 function isDrawing (e: Exp): boolean {
   return e.tag === 'obj' && e.kind === 'Drawing'
+}
+
+const ellipsePrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('ellipse', ['number?', 'number?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return argErr }
+  const width = asNum_(args[0])
+  const height = asNum_(args[1])
+  const mode = asString_(args[2])
+  const color = asString_(args[3])
+  if (mode !== 'solid' && mode !== 'outline') {
+    return runtimeError(msg('error-precondition-not-met', 'circle', '3', '"solid" or "outline"', mode), app)
+  } else {
+    return ok(nleobj('Drawing', ellipse(width, height, mode, color)))
+  }
 }
 
 const circlePrim: Prim = (_env, args, app) => {
@@ -76,7 +89,7 @@ const circlePrim: Prim = (_env, args, app) => {
   if (mode !== 'solid' && mode !== 'outline') {
     return runtimeError(msg('error-precondition-not-met', 'circle', '2', '"solid" or "outline"', mode), app)
   } else {
-    return ok(nleobj('Drawing', circle(radius, mode, color)))
+    return ok(nleobj('Drawing', ellipse(radius * 2, radius * 2, mode, color)))
   }
 }
 
@@ -111,11 +124,34 @@ const squarePrim: Prim = (_env, args, app) => {
   }
 }
 
+type Triangle = { tag: 'triangle', width: number, height: number, length: number, mode: Mode, color: string }
+const triangle = (length: number, mode: Mode, color: string): Triangle => ({
+  tag: 'triangle', 
+  width: length,
+  height: length * Math.sqrt(3) / 2,
+  length,
+  mode,
+  color
+})
+
+const trianglePrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('triangle', ['number?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return argErr }
+  const length = asNum_(args[0])
+  const mode = asString_(args[1])
+  const color = asString_(args[2])
+  if (mode !== 'solid' && mode !== 'outline') {
+    return runtimeError(msg('error-precondition-not-met', 'triangle', '2', '"solid" or "outline"', mode), app)
+  } else {
+    return ok(nleobj('Drawing', triangle(length, mode, color)))
+  }
+}
+
 type Beside = { tag: 'beside', width: number, height: number, drawings: Drawing[] }
 const beside = (drawings: Drawing[]): Beside => ({
   tag: 'beside',
   width: drawings.reduce((acc, d) => acc + d.width, 0),
-  height: drawings.reduce((acc, d) => Math.max(acc, d.height), 0),
+  height: Math.max(...drawings.map(d => d.height)),
   drawings
 })
 
@@ -128,7 +164,7 @@ const besidePrim: Prim = (_env, args, app) => {
 type Above = { tag: 'above', width: number, height: number, drawings: Drawing[] }
 const above = (drawings: Drawing[]): Above => ({
   tag: 'above',
-  width: drawings.reduce((acc, d) => Math.max(acc, d.width), 0),
+  width: Math.max(...drawings.map(d => d.width)),
   height: drawings.reduce((acc, d) => acc + d.height, 0),
   drawings
 })
@@ -142,8 +178,8 @@ const abovePrim: Prim = (_env, args, app) => {
 type Overlay = { tag: 'overlay', width: number, height: number, drawings: Drawing[] }
 const overlay = (drawings: Drawing[]): Overlay => ({
   tag: 'overlay',
-  width: drawings.reduce((acc, d) => Math.max(acc, d.width), 0),
-  height: drawings.reduce((acc, d) => Math.max(acc, d.height), 0),
+  width: Math.max(...drawings.map(d => d.width)),
+  height: Math.max(...drawings.map(d => d.height)),
   drawings
 })
 
@@ -153,14 +189,33 @@ const overlayPrim: Prim = (_env, args, app) => {
   return ok(nleobj('Drawing', overlay(args.map(e => (e as EObj).obj as Drawing))))
 }
 
+type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
+const rotate = (angle: number, drawing: Drawing): Rotate => ({
+  tag: 'rotate',
+  width: drawing.width * Math.abs(Math.cos(Math.PI / 180)) + drawing.height * Math.abs(Math.sin(Math.PI / 180)),
+  height: drawing.width * Math.abs(Math.sin(Math.PI / 180)) + drawing.height * Math.abs(Math.cos(Math.PI /180)),
+  angle,
+  drawing
+})
+
+const rotatePrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('rotate', ['number?', 'Drawing'], undefined, args, app)
+  if (argErr) { return argErr }
+  const angle = asNum_(args[0])
+  return ok(nleobj('Drawing', rotate(angle, (args[1] as EObj).obj as Drawing)))
+}
+
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
 
 export const imageLib: Env = new Env([
   ['color', imageEntry(colorPrim, Docs.color)],
+  ['ellipse', imageEntry(ellipsePrim, Docs.ellipse)],
   ['circle', imageEntry(circlePrim, Docs.circle)],
   ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
   ['square', imageEntry(squarePrim, Docs.drawingSquare)],
+  ['triangle', imageEntry(trianglePrim, Docs.triangle)],
   ['beside', imageEntry(besidePrim, Docs.beside)],
   ['above', imageEntry(abovePrim, Docs.above)],
   ['overlay', imageEntry(overlayPrim, Docs.overlay)]
+  // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
 ])
