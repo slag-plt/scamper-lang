@@ -574,11 +574,28 @@ export const triangle: Doc = new Doc(
   'Returns a drawing consisting of a equilateral triangle with length `length`.'
 )
 
+export const path: Doc = new Doc(
+  '(path points fill color): drawing?', [
+    'points: list?, a list of points, pairs of numbers',
+    'fill: string?, either "solid" or "outline"',
+    'color: string?, either a color name or the form "rgba(r, g, b, a)"'
+  ],
+  'Returns a drawing formed by connecting the points in `points` with straight lines.'
+)
+
 export const beside: Doc = new Doc(
   '(beside d1 d2 ...): drawing?', [
     'd: drawing?'
   ],
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., beside each other (horizontally).'
+)
+
+export const besideAlign: Doc = new Doc(
+  '(beside/align align d1 d2 ...): drawing?', [
+    'align: string?, either "top", "center", or "bottom"',
+    'd: drawing?'
+  ],
+  'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., beside each other on the x-axis, aligning them along the y-axis according to `align`.'
 )
 
 export const above: Doc = new Doc(
@@ -588,11 +605,38 @@ export const above: Doc = new Doc(
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., above each other (vertically in descending order).'
 )
 
+export const aboveAlign: Doc = new Doc(
+  '(above/align align d1 d2 ...): drawing?', [
+    'align: string?, either "left", "middle", or "right"',
+    'd: drawing?'
+  ],
+  'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., above each other on the y-axis, aligning them along the x-axis according to `align`.'
+)
+
 export const overlay: Doc = new Doc(
   '(overlay d1 d2 ...): drawing?', [
     'd: drawing?'
   ],
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., on top of each other. (`d1` is the topmost drawing).'
+)
+
+export const overlayAlign: Doc = new Doc(
+  '(overlay/align xAlign yAlign d1 d2 ...): drawing?', [
+    'xAlign: string?, either "left", "middle", or "right"',
+    'yAlign: string?, either "top", "center", or "bottom"',
+    'd: drawing?'
+  ],
+  'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., on top of each other, aligning them according to `xAlign` and `yAlign`.'
+)
+
+export const overlayOffset: Doc = new Doc(
+  '(overlay/offset d1 dx dy d2): drawing?', [
+    'd1: drawing?',
+    'dx: number?',
+    'dy: number?',
+    'd2: drawing?',
+  ],
+  'Creates a new drawing formed by places the drawing `d1` on top of `d2`, offset by `(dx, dy)`.'
 )
 
 export const rotate: Doc = new Doc(

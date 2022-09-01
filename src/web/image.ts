@@ -51,16 +51,52 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
       }
       break
     }
+    case 'path': {
+      // TODO: path fills won't render. I wonder why...
+      console.log('Drawing path...')
+      ctx.beginPath()
+      ctx.fillStyle = drawing.color
+      ctx.strokeStyle = drawing.color
+      drawing.points.forEach(p => {
+        console.log(`(${p[0]}, ${p[1]})`)
+        ctx.lineTo(x + p[0], y + p[1])
+      })
+      ctx.closePath()
+      if (drawing.mode === 'solid') {
+        ctx.fill('evenodd')
+      } else {
+        ctx.stroke()
+      }
+      break
+    }
     case 'beside': {
       drawing.drawings.forEach(d => {
-        render(x, y + (drawing.height - d.height) / 2, d, canvas)
+        render(
+          x,
+          drawing.align === 'top'
+            ? y
+            : drawing.align === 'bottom'
+              ? y + drawing.height - d.height
+              // N.B., assumed to be 'center'
+              : y + (drawing.height - d.height) / 2,
+          d,
+          canvas)
         x += d.width
       })
       break
     }
     case 'above': {
       drawing.drawings.forEach(d => {
-        render(x + (drawing.width - d.width) / 2, y, d, canvas)
+        render(
+          drawing.align === 'left'
+            ? x
+            : drawing.align === 'right'
+              ? x + drawing.width - d.width
+              // N.B., assumed to be 'middle'
+              : x + (drawing.width - d.width) / 2,
+          y,
+          d,
+          canvas)
         y += d.height
       })
       break
@@ -68,8 +104,32 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
     case 'overlay': {
       // N.B., need to draw in reverse order to get the overlay effect to work
       [...drawing.drawings].reverse().forEach(d => {
-        render(x + (drawing.width - d.width) / 2, y + (drawing.height - d.height) / 2, d, canvas)
+        render(
+          drawing.xAlign === 'left'
+            ? x
+            : drawing.xAlign === 'right'
+              ? x + drawing.width - d.width
+              // N.B., assumed to be 'middle'
+              : x + (drawing.width - d.width) / 2,
+          drawing.yAlign === 'top'
+            ? y
+            : drawing.yAlign === 'bottom'
+              ? y + drawing.height - d.height
+              // N.B., assumed to be 'center'
+              : y + (drawing.height - d.height) / 2,
+          d,
+          canvas)
       })
+      break
+    }
+    case 'overlayOffset': {
+      const x1 = drawing.dx > 0 ? x : x + Math.abs(drawing.dx)
+      const y1 = drawing.dy > 0 ? y : y + Math.abs(drawing.dy)
+      const x2 = drawing.dx > 0 ? x + drawing.dx : x
+      const y2 = drawing.dy > 0 ? y + drawing.dy : y
+      // N.B., render d2 first so d1 is on top
+      render(x2, y2, drawing.d2, canvas)
+      render(x1, y1, drawing.d1, canvas)
       break
     }
     case 'rotate': {

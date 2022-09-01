@@ -1,6 +1,6 @@
-import { ok } from '../result.js'
+import { join, ok, Result } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr } from '../lang.js'
+import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber } from '../lang.js'
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
@@ -51,7 +51,7 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | Rotate
+export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | OverlayOffset | Rotate | Path
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -147,9 +147,39 @@ const trianglePrim: Prim = (_env, args, app) => {
   }
 }
 
-type Beside = { tag: 'beside', width: number, height: number, drawings: Drawing[] }
-const beside = (drawings: Drawing[]): Beside => ({
+type Path = { tag: 'path', width: number, height: number, points: [number, number][], mode: Mode, color: string }
+const path = (width: number, height: number, points: [number, number][], mode: Mode, color: string) =>
+  ({ tag: 'path', width, height, points, mode, color })
+
+const pathPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('path', ['number?', 'number?', 'list?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return argErr }
+  const width = asNum_(args[0])
+  const height = asNum_(args[1])
+  const mode = asString_(args[3])
+  if (mode !== 'solid' && mode !== 'outline') {
+    return runtimeError(msg('error-precondition-not-met', 'path', '2', '"solid" or "outline"', mode), app)
+  } else {
+    const result: Result<[number,number][]> = join(asList_(args[2]).map(e => {
+      if (isPair(e)) {
+        const p = asPair_(e)
+        if (!isNumber(p[0]) || !isNumber(p[1])) {
+          return runtimeError(msg('error-type-expected-fun', 'path', 'list of pairs of numbers', e.tag), e)
+        } 
+        return ok([asNum_(p[0]), asNum_(p[1])])
+      } else {
+        return runtimeError(msg('error-type-expected-fun', 'path', 'list of pairs of numbers', e.tag), e)
+      }
+    }))
+    return result.andThen((points: [number, number][]) =>
+      ok(nleobj('Drawing', path(width, height, points, mode, asString_(args[3])))))
+  }
+}
+
+type Beside = { tag: 'beside', align: string, width: number, height: number, drawings: Drawing[] }
+const beside = (align: string, drawings: Drawing[]): Beside => ({
   tag: 'beside',
+  align,
   width: drawings.reduce((acc, d) => acc + d.width, 0),
   height: Math.max(...drawings.map(d => d.height)),
   drawings
@@ -158,12 +188,24 @@ const beside = (drawings: Drawing[]): Beside => ({
 const besidePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('beside', [], 'Drawing', args, app)
   if (argErr) { return argErr }
-  return ok(nleobj('Drawing', beside(args.map(e => (e as EObj).obj as Drawing))))
+  return ok(nleobj('Drawing', beside('center', args.map(e => (e as EObj).obj as Drawing))))
 }
 
-type Above = { tag: 'above', width: number, height: number, drawings: Drawing[] }
-const above = (drawings: Drawing[]): Above => ({
+const besideAlignPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('beside-align', ['string?'], 'Drawing', args, app)
+  if (argErr) { return argErr }
+  const align = asString_(args[0])
+  if (align !== 'top' && align !== 'center' && align !== 'bottom') {
+    return runtimeError(msg('error-precondition-not-met', 'beside-align', '1', '"top", "center", or "bottom"', align), app)
+  } else {
+    return ok(nleobj('Drawing', beside(align, args.slice(1).map(e => (e as EObj).obj as Drawing))))
+  }
+}
+
+type Above = { tag: 'above', align: string, width: number, height: number, drawings: Drawing[] }
+const above = (align: string, drawings: Drawing[]): Above => ({
   tag: 'above',
+  align,
   width: Math.max(...drawings.map(d => d.width)),
   height: drawings.reduce((acc, d) => acc + d.height, 0),
   drawings
@@ -172,12 +214,25 @@ const above = (drawings: Drawing[]): Above => ({
 const abovePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('above', [], 'Drawing', args, app)
   if (argErr) { return argErr }
-  return ok(nleobj('Drawing', above(args.map(e => (e as EObj).obj as Drawing))))
+  return ok(nleobj('Drawing', above('middle', args.map(e => (e as EObj).obj as Drawing))))
 }
 
-type Overlay = { tag: 'overlay', width: number, height: number, drawings: Drawing[] }
-const overlay = (drawings: Drawing[]): Overlay => ({
+const aboveAlignPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('above-align', ['string?'], 'Drawing', args, app)
+  if (argErr) { return argErr }
+  const align = asString_(args[0])
+  if (align !== 'left' && align !== 'middle' && align !== 'right') {
+    return runtimeError(msg('error-precondition-not-met', 'above-align', '1', '"left", "middle", or "right"', align), app)
+  } else {
+    return ok(nleobj('Drawing', above(align, args.slice(1).map(e => (e as EObj).obj as Drawing))))
+  }
+}
+
+type Overlay = { tag: 'overlay', xAlign: string, yAlign: string, width: number, height: number, drawings: Drawing[] }
+const overlay = (xAlign: string, yAlign: string, drawings: Drawing[]): Overlay => ({
   tag: 'overlay',
+  xAlign,
+  yAlign,
   width: Math.max(...drawings.map(d => d.width)),
   height: Math.max(...drawings.map(d => d.height)),
   drawings
@@ -186,14 +241,53 @@ const overlay = (drawings: Drawing[]): Overlay => ({
 const overlayPrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('overlay', [], 'Drawing', args, app)
   if (argErr) { return argErr }
-  return ok(nleobj('Drawing', overlay(args.map(e => (e as EObj).obj as Drawing))))
+  return ok(nleobj('Drawing', overlay('middle', 'center', args.map(e => (e as EObj).obj as Drawing))))
+}
+
+const overlayAlignPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('overlay-align', ['string?', 'string?'], 'Drawing', args, app)
+  if (argErr) { return argErr }
+  const xAlign = asString_(args[0])
+  const yAlign = asString_(args[1])
+  if (xAlign !== 'left' && xAlign !== 'middle' && xAlign !== 'right') {
+    return runtimeError(msg('error-precondition-not-met', 'overlay-align', '1', '"left", "middle", or "right"', xAlign), app)
+  } else if (yAlign !== 'top' && yAlign !== 'center' && yAlign !== 'bottom') {
+    return runtimeError(msg('error-precondition-not-met', 'overlay-align', '2', '"top", "center", or "bottom"', yAlign), app)
+  } else {
+    return ok(nleobj('Drawing', overlay(xAlign, yAlign, args.slice(2).map(e => (e as EObj).obj as Drawing))))
+  }
+}
+
+type OverlayOffset = { tag: 'overlayOffset', dx: number, dy: number, width: number, height: number, d1: Drawing, d2: Drawing }
+const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => ({
+  tag: 'overlayOffset',
+  dx,
+  dy,
+  width:
+    dx > 0
+      ? Math.max(d1.width, d2.width + dx)
+      : Math.abs(dx) + d1.width,
+  height:
+    dy > 0
+      ? Math.max(d1.height, d2.height + dy)
+      : Math.abs(dy) + d1.height,
+  d1,
+  d2
+})
+
+const overlayOffsetPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('overlay-offset', ['Drawing', 'number?', 'number?', 'Drawing'], undefined, args, app)
+  if (argErr) { return argErr }
+  const dx = asNum_(args[1])
+  const dy = asNum_(args[2])
+  return ok(nleobj('Drawing', overlayOffset(dx, dy, (args[0] as EObj).obj as Drawing, (args[3] as EObj).obj as Drawing)))
 }
 
 type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
 const rotate = (angle: number, drawing: Drawing): Rotate => ({
   tag: 'rotate',
-  width: drawing.width * Math.abs(Math.cos(Math.PI / 180)) + drawing.height * Math.abs(Math.sin(Math.PI / 180)),
-  height: drawing.width * Math.abs(Math.sin(Math.PI / 180)) + drawing.height * Math.abs(Math.cos(Math.PI /180)),
+  width: drawing.width * Math.abs(Math.cos(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.sin(angle * Math.PI / 180)),
+  height: drawing.width * Math.abs(Math.sin(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.cos(angle * Math.PI /180)),
   angle,
   drawing
 })
@@ -214,8 +308,13 @@ export const imageLib: Env = new Env([
   ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
   ['square', imageEntry(squarePrim, Docs.drawingSquare)],
   ['triangle', imageEntry(trianglePrim, Docs.triangle)],
+  // ['path', imageEntry(pathPrim, Docs.path)],
   ['beside', imageEntry(besidePrim, Docs.beside)],
+  ['beside/align', imageEntry(besideAlignPrim, Docs.besideAlign)],
   ['above', imageEntry(abovePrim, Docs.above)],
-  ['overlay', imageEntry(overlayPrim, Docs.overlay)]
+  ['above/align', imageEntry(aboveAlignPrim, Docs.aboveAlign)],
+  ['overlay', imageEntry(overlayPrim, Docs.overlay)],
+  ['overlay/align', imageEntry(overlayAlignPrim, Docs.overlayAlign)],
+  ['overlay/offset', imageEntry(overlayOffsetPrim, Docs.overlayOffset)],
   // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
 ])
