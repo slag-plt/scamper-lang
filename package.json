@@ -13,7 +13,7 @@
     "build": "mkdir -p dist/web/jzz && cp src/web/jzz/jzz-combined.cjs dist/web/jzz/jzz-combined.cjs && tsc",
     "clean": "rm -rf dist",
     "lint": "eslint --fix",
-    "prepare": "npm run build",
+    "prepare": "npm run build && npm run bundle",
     "driver": "node dist/driver.js",
     "test": "./run-tests.sh",
     "bundle": "npm run build && npm exec esbuild -- dist/web/index.js --bundle --outfile=dist/web/bundle.js",
