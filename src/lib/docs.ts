@@ -581,6 +581,14 @@ export const beside: Doc = new Doc(
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., beside each other (horizontally).'
 )
 
+export const besideAlign: Doc = new Doc(
+  '(beside/align align d1 d2 ...): drawing?', [
+    'align: string?, either "top", "middle", or "bottom"',
+    'd: drawing?'
+  ],
+  'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., beside each other on the x-axis, aligning them along the y-axis according to `align`.'
+)
+
 export const above: Doc = new Doc(
   '(above d1 d2 ...): drawing?', [
     'd: drawing?'

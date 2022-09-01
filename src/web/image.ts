@@ -53,7 +53,16 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
     }
     case 'beside': {
       drawing.drawings.forEach(d => {
-        render(x, y + (drawing.height - d.height) / 2, d, canvas)
+        render(
+          x,
+          drawing.align === 'top'
+            ? y
+            : drawing.align === 'bottom'
+              ? y + drawing.height - d.height
+              // N.B., assumed to be 'center'
+              : y + (drawing.height - d.height) / 2,
+          d,
+          canvas)
         x += d.width
       })
       break

@@ -83,8 +83,12 @@
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.8)"))
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.6)"))
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.4)")))
-
-      ; (rotate 60 domino)
+      
+      ; (overlay
+      ;   (above (rotate 60 domino)
+      ;          (rectangle 50 50 "outline" "blue")
+      ;          (rectangle 50 50 "outline" "blue"))
+      ;   (rectangle 300 300 "outline" "black"))
       
       ; (beside
       ;   domino
@@ -94,8 +98,17 @@
       ;   (rotate 46 domino)
       ;   space
       ;   (rotate 69 domino)
-      ;  space
+      ;   space
       ;   (rotate 90 domino))
+
+      (define small-gray (circle 50 "solid" "gray"))
+      (define medium-red (circle 75 "solid" "red"))
+      (define large-black (circle 100 "solid" "black"))
+
+      (beside small-gray medium-red large-black)
+      (beside/align "top" small-gray medium-red large-black)
+      (beside/align "center" small-gray medium-red large-black)
+      (beside/align "bottom" small-gray medium-red large-black)
     </div>
   </body>
 

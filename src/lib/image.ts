@@ -147,9 +147,10 @@ const trianglePrim: Prim = (_env, args, app) => {
   }
 }
 
-type Beside = { tag: 'beside', width: number, height: number, drawings: Drawing[] }
-const beside = (drawings: Drawing[]): Beside => ({
+type Beside = { tag: 'beside', align: string, width: number, height: number, drawings: Drawing[] }
+const beside = (align: string, drawings: Drawing[]): Beside => ({
   tag: 'beside',
+  align,
   width: drawings.reduce((acc, d) => acc + d.width, 0),
   height: Math.max(...drawings.map(d => d.height)),
   drawings
@@ -158,7 +159,18 @@ const beside = (drawings: Drawing[]): Beside => ({
 const besidePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('beside', [], 'Drawing', args, app)
   if (argErr) { return argErr }
-  return ok(nleobj('Drawing', beside(args.map(e => (e as EObj).obj as Drawing))))
+  return ok(nleobj('Drawing', beside('center', args.map(e => (e as EObj).obj as Drawing))))
+}
+
+const besideAlignPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('beside-align', ['string?'], 'Drawing', args, app)
+  if (argErr) { return argErr }
+  const align = asString_(args[0])
+  if (align !== 'top' && align !== 'center' && align !== 'bottom') {
+    return runtimeError(msg('error-precondition-not-met', 'beside-align', '1', '"top", "center", or "bottom"', align), app)
+  } else {
+    return ok(nleobj('Drawing', beside(align, args.slice(1).map(e => (e as EObj).obj as Drawing))))
+  }
 }
 
 type Above = { tag: 'above', width: number, height: number, drawings: Drawing[] }
@@ -192,8 +204,8 @@ const overlayPrim: Prim = (_env, args, app) => {
 type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
 const rotate = (angle: number, drawing: Drawing): Rotate => ({
   tag: 'rotate',
-  width: drawing.width * Math.abs(Math.cos(Math.PI / 180)) + drawing.height * Math.abs(Math.sin(Math.PI / 180)),
-  height: drawing.width * Math.abs(Math.sin(Math.PI / 180)) + drawing.height * Math.abs(Math.cos(Math.PI /180)),
+  width: drawing.width * Math.abs(Math.cos(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.sin(angle * Math.PI / 180)),
+  height: drawing.width * Math.abs(Math.sin(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.cos(angle * Math.PI /180)),
   angle,
   drawing
 })
@@ -215,6 +227,7 @@ export const imageLib: Env = new Env([
   ['square', imageEntry(squarePrim, Docs.drawingSquare)],
   ['triangle', imageEntry(trianglePrim, Docs.triangle)],
   ['beside', imageEntry(besidePrim, Docs.beside)],
+  ['beside/align', imageEntry(besideAlignPrim, Docs.besideAlign)],
   ['above', imageEntry(abovePrim, Docs.above)],
   ['overlay', imageEntry(overlayPrim, Docs.overlay)]
   // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
