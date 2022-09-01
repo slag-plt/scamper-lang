@@ -7,7 +7,7 @@
     <title>scamper-web test</title>
   </head>
   <body>
-    <div class="scamper" style="white-space: pre; font-family: monospace;">
+    <div class="scamper-output output-prog" style="white-space: pre; font-family: monospace;">
       (import image)
       
       (square 100 "solid" (color 255 0 0 0.50))
@@ -28,6 +28,14 @@
       (define width 100)
       (define height 100)
       (define alpha 0.5)
+
+      (define inc
+        (lambda (x)
+          (+ x 1)))
+
+      (inc 5)
+      (inc 6)
+      (inc 7)
      
       (define example-ellipse1
         (beside
@@ -63,18 +71,31 @@
       (define domino (rectangle 30 100 "solid" "black"))
       (define space (rectangle 10 100 "solid" "white"))
 
-      (rotate 60 domino)
+      (define circles
+        (beside
+          (circle 50 "solid" "rgba(255, 0, 0, 1)")
+          (circle 50 "solid" "rgba(255, 0, 0, 0.8")
+          (circle 50 "solid" "rgba(255, 0, 0, 0.6")
+          (circle 50 "solid" "rgba(255, 0, 0, 0.4")))
+
+      (above
+        (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 1)"))
+        (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.8)"))
+        (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.6)"))
+        (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.4)")))
+
+      ; (rotate 60 domino)
       
-      (beside
-        domino
-        space
-        (rotate 23 domino)
-        space
-        (rotate 46 domino)
-        space
-        (rotate 69 domino)
-        space
-        (rotate 90 domino))
+      ; (beside
+      ;   domino
+      ;   space
+      ;   (rotate 23 domino)
+      ;   space
+      ;   (rotate 46 domino)
+      ;   space
+      ;   (rotate 69 domino)
+      ;  space
+      ;   (rotate 90 domino))
     </div>
   </body>
 

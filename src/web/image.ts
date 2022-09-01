@@ -99,7 +99,6 @@ export function emitDrawingWidget(node: Element) {
   const drawing = JSON.parse(node.textContent!)
   canvas.width = drawing.width
   canvas.height = drawing.height
-  console.log('==========')
   renderDrawing(0, 0, drawing, canvas)
   node.replaceWith(canvas)
 }
