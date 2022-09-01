@@ -69,7 +69,16 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
     }
     case 'above': {
       drawing.drawings.forEach(d => {
-        render(x + (drawing.width - d.width) / 2, y, d, canvas)
+        render(
+          drawing.align === 'left'
+            ? x
+            : drawing.align === 'right'
+              ? x + drawing.width - d.width
+              // N.B., assumed to be 'middle'
+              : x + (drawing.width - d.width) / 2,
+          y,
+          d,
+          canvas)
         y += d.height
       })
       break
@@ -77,7 +86,21 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
     case 'overlay': {
       // N.B., need to draw in reverse order to get the overlay effect to work
       [...drawing.drawings].reverse().forEach(d => {
-        render(x + (drawing.width - d.width) / 2, y + (drawing.height - d.height) / 2, d, canvas)
+        render(
+          drawing.xAlign === 'left'
+            ? x
+            : drawing.xAlign === 'right'
+              ? x + drawing.width - d.width
+              // N.B., assumed to be 'middle'
+              : x + (drawing.width - d.width) / 2,
+          drawing.yAlign === 'top'
+            ? y
+            : drawing.yAlign === 'bottom'
+              ? y + drawing.height - d.height
+              // N.B., assumed to be 'center'
+              : y + (drawing.height - d.height) / 2,
+          d,
+          canvas)
       })
       break
     }

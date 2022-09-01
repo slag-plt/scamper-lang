@@ -583,7 +583,7 @@ export const beside: Doc = new Doc(
 
 export const besideAlign: Doc = new Doc(
   '(beside/align align d1 d2 ...): drawing?', [
-    'align: string?, either "top", "middle", or "bottom"',
+    'align: string?, either "top", "center", or "bottom"',
     'd: drawing?'
   ],
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., beside each other on the x-axis, aligning them along the y-axis according to `align`.'
@@ -596,11 +596,28 @@ export const above: Doc = new Doc(
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., above each other (vertically in descending order).'
 )
 
+export const aboveAlign: Doc = new Doc(
+  '(above/align align d1 d2 ...): drawing?', [
+    'align: string?, either "left", "middle", or "right"',
+    'd: drawing?'
+  ],
+  'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., above each other on the y-axis, aligning them along the x-axis according to `align`.'
+)
+
 export const overlay: Doc = new Doc(
   '(overlay d1 d2 ...): drawing?', [
     'd: drawing?'
   ],
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., on top of each other. (`d1` is the topmost drawing).'
+)
+
+export const overlayAlign: Doc = new Doc(
+  '(overlay/align xAlign yAlign d1 d2 ...): drawing?', [
+    'xAlign: string?, either "left", "middle", or "right"',
+    'yAlign: string?, either "top", "center", or "bottom"',
+    'd: drawing?'
+  ],
+  'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., on top of each other, aligning them according to `xAlign` and `yAlign`.'
 )
 
 export const rotate: Doc = new Doc(

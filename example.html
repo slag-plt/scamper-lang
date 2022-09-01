@@ -101,14 +101,30 @@
       ;   space
       ;   (rotate 90 domino))
 
-      (define small-gray (circle 50 "solid" "gray"))
-      (define medium-red (circle 75 "solid" "red"))
-      (define large-black (circle 100 "solid" "black"))
+      (define small-gray (circle 10 "solid" "gray"))
+      (define medium-red (circle 15 "solid" "red"))
+      (define large-black (circle 20 "solid" "black"))
 
       (beside small-gray medium-red large-black)
       (beside/align "top" small-gray medium-red large-black)
       (beside/align "center" small-gray medium-red large-black)
       (beside/align "bottom" small-gray medium-red large-black)
+
+      (above small-gray medium-red large-black)
+      (above/align "left" small-gray medium-red large-black)
+      (above/align "middle" small-gray medium-red large-black)
+      (above/align "right" small-gray medium-red large-black)
+
+      (overlay small-gray medium-red large-black)
+      (overlay/align "left" "top" small-gray medium-red large-black)
+      (overlay/align "middle" "top" small-gray medium-red large-black)
+      (overlay/align "right" "top" small-gray medium-red large-black)
+      (overlay/align "left" "center" small-gray medium-red large-black)
+      (overlay/align "middle" "center" small-gray medium-red large-black)
+      (overlay/align "right" "center" small-gray medium-red large-black)
+      (overlay/align "left" "bottom" small-gray medium-red large-black)
+      (overlay/align "middle" "bottom" small-gray medium-red large-black)
+      (overlay/align "right" "bottom" small-gray medium-red large-black)
     </div>
   </body>
 

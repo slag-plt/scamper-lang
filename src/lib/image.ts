@@ -173,9 +173,10 @@ const besideAlignPrim: Prim = (_env, args, app) => {
   }
 }
 
-type Above = { tag: 'above', width: number, height: number, drawings: Drawing[] }
-const above = (drawings: Drawing[]): Above => ({
+type Above = { tag: 'above', align: string, width: number, height: number, drawings: Drawing[] }
+const above = (align: string, drawings: Drawing[]): Above => ({
   tag: 'above',
+  align,
   width: Math.max(...drawings.map(d => d.width)),
   height: drawings.reduce((acc, d) => acc + d.height, 0),
   drawings
@@ -184,12 +185,25 @@ const above = (drawings: Drawing[]): Above => ({
 const abovePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('above', [], 'Drawing', args, app)
   if (argErr) { return argErr }
-  return ok(nleobj('Drawing', above(args.map(e => (e as EObj).obj as Drawing))))
+  return ok(nleobj('Drawing', above('middle', args.map(e => (e as EObj).obj as Drawing))))
 }
 
-type Overlay = { tag: 'overlay', width: number, height: number, drawings: Drawing[] }
-const overlay = (drawings: Drawing[]): Overlay => ({
+const aboveAlignPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('above-align', ['string?'], 'Drawing', args, app)
+  if (argErr) { return argErr }
+  const align = asString_(args[0])
+  if (align !== 'left' && align !== 'middle' && align !== 'right') {
+    return runtimeError(msg('error-precondition-not-met', 'above-align', '1', '"left", "middle", or "right"', align), app)
+  } else {
+    return ok(nleobj('Drawing', above(align, args.slice(1).map(e => (e as EObj).obj as Drawing))))
+  }
+}
+
+type Overlay = { tag: 'overlay', xAlign: string, yAlign: string, width: number, height: number, drawings: Drawing[] }
+const overlay = (xAlign: string, yAlign: string, drawings: Drawing[]): Overlay => ({
   tag: 'overlay',
+  xAlign,
+  yAlign,
   width: Math.max(...drawings.map(d => d.width)),
   height: Math.max(...drawings.map(d => d.height)),
   drawings
@@ -198,7 +212,21 @@ const overlay = (drawings: Drawing[]): Overlay => ({
 const overlayPrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('overlay', [], 'Drawing', args, app)
   if (argErr) { return argErr }
-  return ok(nleobj('Drawing', overlay(args.map(e => (e as EObj).obj as Drawing))))
+  return ok(nleobj('Drawing', overlay('middle', 'center', args.map(e => (e as EObj).obj as Drawing))))
+}
+
+const overlayAlignPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('overlay-align', ['string?', 'string?'], 'Drawing', args, app)
+  if (argErr) { return argErr }
+  const xAlign = asString_(args[0])
+  const yAlign = asString_(args[1])
+  if (xAlign !== 'left' && xAlign !== 'middle' && xAlign !== 'right') {
+    return runtimeError(msg('error-precondition-not-met', 'overlay-align', '1', '"left", "middle", or "right"', xAlign), app)
+  } else if (yAlign !== 'top' && yAlign !== 'center' && yAlign !== 'bottom') {
+    return runtimeError(msg('error-precondition-not-met', 'overlay-align', '2', '"top", "center", or "bottom"', yAlign), app)
+  } else {
+    return ok(nleobj('Drawing', overlay(xAlign, yAlign, args.slice(2).map(e => (e as EObj).obj as Drawing))))
+  }
 }
 
 type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
@@ -229,6 +257,8 @@ export const imageLib: Env = new Env([
   ['beside', imageEntry(besidePrim, Docs.beside)],
   ['beside/align', imageEntry(besideAlignPrim, Docs.besideAlign)],
   ['above', imageEntry(abovePrim, Docs.above)],
-  ['overlay', imageEntry(overlayPrim, Docs.overlay)]
+  ['above/align', imageEntry(aboveAlignPrim, Docs.aboveAlign)],
+  ['overlay', imageEntry(overlayPrim, Docs.overlay)],
+  ['overlay/align', imageEntry(overlayAlignPrim, Docs.overlayAlign)],
   // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
 ])
