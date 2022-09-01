@@ -51,7 +51,7 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay
+export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | Rotate
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -189,6 +189,22 @@ const overlayPrim: Prim = (_env, args, app) => {
   return ok(nleobj('Drawing', overlay(args.map(e => (e as EObj).obj as Drawing))))
 }
 
+type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
+const rotate = (angle: number, drawing: Drawing): Rotate => ({
+  tag: 'rotate',
+  width: drawing.width * Math.abs(Math.cos(Math.PI / 180)) + drawing.height * Math.abs(Math.sin(Math.PI / 180)),
+  height: drawing.width * Math.abs(Math.sin(Math.PI / 180)) + drawing.height * Math.abs(Math.cos(Math.PI /180)),
+  angle,
+  drawing
+})
+
+const rotatePrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('rotate', ['number?', 'Drawing'], undefined, args, app)
+  if (argErr) { return argErr }
+  const angle = asNum_(args[0])
+  return ok(nleobj('Drawing', rotate(angle, (args[1] as EObj).obj as Drawing)))
+}
+
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
 
 export const imageLib: Env = new Env([
@@ -201,4 +217,5 @@ export const imageLib: Env = new Env([
   ['beside', imageEntry(besidePrim, Docs.beside)],
   ['above', imageEntry(abovePrim, Docs.above)],
   ['overlay', imageEntry(overlayPrim, Docs.overlay)]
+  // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
 ])

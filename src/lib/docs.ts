@@ -595,6 +595,14 @@ export const overlay: Doc = new Doc(
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., on top of each other. (`d1` is the topmost drawing).'
 )
 
+export const rotate: Doc = new Doc(
+  '(rotate angle d): drawing?', [
+    'angle: number?, in degrees',
+    'd: drawing?',
+  ],
+  'Returns a new drawing formed by rotating drawing `d` by `angle` degrees.'
+)
+
 ///// music ////////////////////////////////////////////////////////////////////
 
 export const pitch: Doc = new Doc(

@@ -59,6 +59,22 @@
       c2
       c3
       (beside c2 c3)
+
+      (define domino (rectangle 30 100 "solid" "black"))
+      (define space (rectangle 10 100 "solid" "white"))
+
+      (rotate 60 domino)
+      
+      (beside
+        domino
+        space
+        (rotate 23 domino)
+        space
+        (rotate 46 domino)
+        space
+        (rotate 69 domino)
+        space
+        (rotate 90 domino))
     </div>
   </body>
 
