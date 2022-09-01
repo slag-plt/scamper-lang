@@ -125,6 +125,15 @@
       (overlay/align "left" "bottom" small-gray medium-red large-black)
       (overlay/align "middle" "bottom" small-gray medium-red large-black)
       (overlay/align "right" "bottom" small-gray medium-red large-black)
+
+      (define medium-red (circle 15 "solid" "red"))
+      (define medium-black (circle 15 "solid" "black"))
+
+      (overlay/offset medium-red 2 6 medium-black)
+
+      (overlay/offset medium-red 6 2 medium-black)
+
+      (overlay/offset medium-red -3 -3 medium-black)
     </div>
   </body>
 

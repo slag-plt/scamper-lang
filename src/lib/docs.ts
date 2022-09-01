@@ -620,6 +620,16 @@ export const overlayAlign: Doc = new Doc(
   'Creates a new drawing formed by places the drawing `d1`, `d2`, ..., on top of each other, aligning them according to `xAlign` and `yAlign`.'
 )
 
+export const overlayOffset: Doc = new Doc(
+  '(overlay/offset d1 dx dy d2): drawing?', [
+    'd1: drawing?',
+    'dx: number?',
+    'dy: number?',
+    'd2: drawing?',
+  ],
+  'Creates a new drawing formed by places the drawing `d1` on top of `d2`, offset by `(dx, dy)`.'
+)
+
 export const rotate: Doc = new Doc(
   '(rotate angle d): drawing?', [
     'angle: number?, in degrees',

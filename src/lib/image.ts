@@ -51,7 +51,7 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | Rotate
+export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | OverlayOffset | Rotate
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -229,6 +229,31 @@ const overlayAlignPrim: Prim = (_env, args, app) => {
   }
 }
 
+type OverlayOffset = { tag: 'overlayOffset', dx: number, dy: number, width: number, height: number, d1: Drawing, d2: Drawing }
+const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => ({
+  tag: 'overlayOffset',
+  dx,
+  dy,
+  width:
+    dx > 0
+      ? Math.max(d1.width, d2.width + dx)
+      : Math.abs(dx) + d1.width,
+  height:
+    dy > 0
+      ? Math.max(d1.height, d2.height + dy)
+      : Math.abs(dy) + d1.height,
+  d1,
+  d2
+})
+
+const overlayOffsetPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('overlay-offset', ['Drawing', 'number?', 'number?', 'Drawing'], undefined, args, app)
+  if (argErr) { return argErr }
+  const dx = asNum_(args[1])
+  const dy = asNum_(args[2])
+  return ok(nleobj('Drawing', overlayOffset(dx, dy, (args[0] as EObj).obj as Drawing, (args[3] as EObj).obj as Drawing)))
+}
+
 type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
 const rotate = (angle: number, drawing: Drawing): Rotate => ({
   tag: 'rotate',
@@ -260,5 +285,6 @@ export const imageLib: Env = new Env([
   ['above/align', imageEntry(aboveAlignPrim, Docs.aboveAlign)],
   ['overlay', imageEntry(overlayPrim, Docs.overlay)],
   ['overlay/align', imageEntry(overlayAlignPrim, Docs.overlayAlign)],
+  ['overlay/offset', imageEntry(overlayOffsetPrim, Docs.overlayOffset)],
   // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
 ])

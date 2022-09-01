@@ -104,6 +104,16 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
       })
       break
     }
+    case 'overlayOffset': {
+      const x1 = drawing.dx > 0 ? x : x + Math.abs(drawing.dx)
+      const y1 = drawing.dy > 0 ? y : y + Math.abs(drawing.dy)
+      const x2 = drawing.dx > 0 ? x + drawing.dx : x
+      const y2 = drawing.dy > 0 ? y + drawing.dy : y
+      // N.B., render d2 first so d1 is on top
+      render(x2, y2, drawing.d2, canvas)
+      render(x1, y1, drawing.d1, canvas)
+      break
+    }
     case 'rotate': {
       ctx.translate(x + drawing.width / 2, y + drawing.height / 2)
       ctx.rotate(drawing.angle * Math.PI / 180)
