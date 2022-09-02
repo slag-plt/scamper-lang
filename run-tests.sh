@@ -49,6 +49,8 @@ echo ""
 if [ $failures -eq 0 ]
 then
   echo -e "${GREEN}All tests passed!${CLEAR}"
+  exit 0
 else
   echo -e "${RED}${failures} failure(s)${CLEAR} out of ${total} tests"
+  exit 1
 fi

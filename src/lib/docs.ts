@@ -523,6 +523,18 @@ export const reduce: Doc = new Doc(
   'Like `fold` but uses the first element of `l` as the initial value.'
 )
 
+export const error: Doc = new Doc(
+  '(error msg): any', [
+    'msg: string?',
+  ],
+  'Raises a runtime error with message `msg`.'
+)
+
+export const qq: Doc = new Doc(
+  '{??}: any', [],
+  'A placeholder for an expression that is not yet implemented.'
+)
+
 ///// image ////////////////////////////////////////////////////////////////////
 
 export const color: Doc = new Doc(

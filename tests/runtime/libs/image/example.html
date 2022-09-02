@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>scamper-web test</title>
+    <title>Scamper Image Test</title>
   </head>
   <body>
     <div class="scamper-output output-prog" style="white-space: pre; font-family: monospace;">
@@ -28,14 +28,6 @@
       (define width 100)
       (define height 100)
       (define alpha 0.5)
-
-      (define inc
-        (lambda (x)
-          (+ x 1)))
-
-      (inc 5)
-      (inc 6)
-      (inc 7)
      
       (define example-ellipse1
         (beside
@@ -174,25 +166,10 @@
         (rotate 75 rect)
         (rotate 90 rect))
     </div>
-    <canvas id="test" width="400" height="400"></canvas>
   </body>
 
   <script src="dist/web/bundle.js"></script>
   <script>
     replaceCodeWidgets()
-    const ctx = document.getElementById('test').getContext('2d')
-    ctx.fillStyle = 'black'
-    ctx.strokeStyle = 'black'
-    ctx.setLineDash([3, 5])
-    ctx.strokeRect(0, 0, 400, 400)
-    ctx.setLineDash([])
-    ctx.translate(200, 200)
-    ctx.rotate(45 * Math.PI / 180)
-    ctx.translate(-200, -200)
-    ctx.fillRect(100, 100, 200, 200)
-    ctx.translate(200, 200)
-    ctx.rotate(-45 * Math.PI / 180)
-    ctx.translate(-200, -200)
-    ctx.strokeRect(100, 100, 200, 200)
   </script>
 </html>

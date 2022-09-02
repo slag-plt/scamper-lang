@@ -659,13 +659,24 @@ const reducePrim: L.Prim = (env, args, app) =>
 //   (call-with-values producer consumer)
 //   (dynamic-wind before thunk after)
 
+// Additional control features
+const errorPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('error', ['string?'], undefined, args, app).andThen(_ =>
+    runtimeError(msg('error-runtime', L.asString_(args[0])), app))
+
+const qqPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('??', [], undefined, args, app).andThen(_ =>
+    runtimeError(msg('error-hole', '??'), app))
+
 const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['procedure?', procedurePrim, Docs.procedure],
   ['apply', applyPrim, Docs.apply],
   ['map', mapPrim, Docs.map],
   ['filter', filterPrim, Docs.filter],
   ['fold', foldPrim, Docs.fold],
-  ['reduce', reducePrim, Docs.reduce]
+  ['reduce', reducePrim, Docs.reduce],
+  ['error', errorPrim, Docs.error],
+  ['??', qqPrim, Docs.qq]
 ]
 
 // Exceptions (6.11)
