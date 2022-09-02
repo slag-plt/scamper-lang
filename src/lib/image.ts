@@ -157,6 +157,7 @@ const pathPrim: Prim = (_env, args, app) => {
   const width = asNum_(args[0])
   const height = asNum_(args[1])
   const mode = asString_(args[3])
+  const color = asString_(args[4])
   if (mode !== 'solid' && mode !== 'outline') {
     return runtimeError(msg('error-precondition-not-met', 'path', '2', '"solid" or "outline"', mode), app)
   } else {
@@ -172,7 +173,7 @@ const pathPrim: Prim = (_env, args, app) => {
       }
     }))
     return result.andThen((points: [number, number][]) =>
-      ok(nleobj('Drawing', path(width, height, points, mode, asString_(args[3])))))
+      ok(nleobj('Drawing', path(width, height, points, mode, color))))
   }
 }
 
@@ -308,7 +309,7 @@ export const imageLib: Env = new Env([
   ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
   ['square', imageEntry(squarePrim, Docs.drawingSquare)],
   ['triangle', imageEntry(trianglePrim, Docs.triangle)],
-  // ['path', imageEntry(pathPrim, Docs.path)],
+  ['path', imageEntry(pathPrim, Docs.path)],
   ['beside', imageEntry(besidePrim, Docs.beside)],
   ['beside/align', imageEntry(besideAlignPrim, Docs.besideAlign)],
   ['above', imageEntry(abovePrim, Docs.above)],

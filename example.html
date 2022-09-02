@@ -135,15 +135,45 @@
 
       (overlay/offset medium-red -3 -3 medium-black)
 
-      ; (path 100 100 (list (cons 0 50)
-      ;                     (cons 50 0)
-      ;                     (cons 100 50)
-      ;                     (cons 50 100)) "solid" "green")
+      (beside
+        (rectangle 25 40 "solid" (color 0 0 255 1))
+        (rectangle 25 40 "solid" (color 0 0 255 0.75))
+        (rectangle 25 40 "solid" (color 0 0 255 0.5))
+        (rectangle 25 40 "solid" (color 0 0 255 0.25)))
+
+      (define circles
+        (beside
+          (circle 10 "solid" (color 255 0 0 1))
+          (circle 10 "solid" (color 255 0 0 0.75))
+          (circle 10 "solid" (color 255 0 0 0.5))
+          (circle 10 "solid" (color 255 0 0 0.25))))
+
+      (above
+        (overlay circles (rectangle 60 20 "solid" (color 0 0 255 1)))
+        (overlay circles (rectangle 60 20 "solid" (color 0 0 255 0.75)))
+        (overlay circles (rectangle 60 20 "solid" (color 0 0 255 0.5)))
+        (overlay circles (rectangle 60 20 "solid" (color 0 0 255 0.25))))
+
+      (path 100 100 (list (pair 0 50)
+                          (pair 50 0)
+                          (pair 100 50)
+                          (pair 50 100)
+                          (pair 0 50)) "solid" "green")
     </div>
   </body>
 
   <script src="dist/web/bundle.js"></script>
   <script>
     replaceCodeWidgets()
+    const ctx = document.getElementById('test').getContext('2d')
+    ctx.fillStyle = 'black'
+    ctx.strokeStyle = 'black'
+    ctx.beginPath()
+    ctx.moveTo(0, 50)
+    ctx.lineTo(50, 0)
+    ctx.lineTo(100, 50)
+    ctx.lineTo(50, 100)
+    ctx.closePath()
+    ctx.fill()
   </script>
 </html>

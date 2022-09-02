@@ -319,12 +319,16 @@ const booleanPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 
 // Pairs and Lists (6.4)
 
-const pairPrim: L.Prim = (_env, args, app) =>
+const pairQPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('pair?', ['any'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(L.isPair(args[0]))))
 
 const consPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('cons', ['any', 'any'], 'pair?', args, app).andThen(_ =>
+    ok(L.epair(app.range, args[0], args[1])))
+
+const pairPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('pair', ['any', 'any'], 'pair?', args, app).andThen(_ =>
     ok(L.epair(app.range, args[0], args[1])))
 
 const carPrim : L.Prim = (_env, args, app) =>
@@ -349,8 +353,9 @@ const listQPrim : L.Prim = (_env, args, app) =>
     ok(L.nlebool(L.isList(args[0]))))
 
 const pairListPrimitives: [string, L.Prim, L.Doc | undefined][] = [
-  ['pair?', pairPrim, Docs.pair],
+  ['pair?', pairQPrim, Docs.pairQ],
   ['cons', consPrim, Docs.cons],
+  ['pair', pairPrim, Docs.pair],
   ['car', carPrim, Docs.car],
   ['cdr', cdrPrim, Docs.cdr],
   ['null?', nullPrim, Docs.nullQ],

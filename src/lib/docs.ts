@@ -351,7 +351,7 @@ export const xor: Doc = new Doc(
   'Equivalent to `(or (and v1 (not v2)) (and (not v1) v2))`.'
 )
 
-export const pair: Doc = new Doc(
+export const pairQ: Doc = new Doc(
   '(pair? v): boolean?', [
     'v: any',
   ],
@@ -360,6 +360,14 @@ export const pair: Doc = new Doc(
 
 export const cons: Doc = new Doc(
   '(cons v1 v2): pair?', [
+    'v1: any',
+    'v2: any',
+  ],
+  'Returns a new pair containing `v1` and `v2`.'
+)
+
+export const pair: Doc = new Doc(
+  '(pair v1 v2): pair?', [
     'v1: any',
     'v2: any',
   ],
