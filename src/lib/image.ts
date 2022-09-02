@@ -4,6 +4,7 @@ import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, 
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
+import { dirname } from 'path'
 
 type Color = { tag: 'color', r: number, g: number, b: number, a: number }
 const color = (r: number, g: number, b: number, a: number): Color => ({ tag: 'color', r, g, b, a })
@@ -51,7 +52,7 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | OverlayOffset | Rotate | Path
+export type Drawing = Ellipse | Rectangle | Triangle | Path | Beside | Above | Overlay | OverlayOffset | Rotate | WithDash
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -157,6 +158,7 @@ const pathPrim: Prim = (_env, args, app) => {
   const width = asNum_(args[0])
   const height = asNum_(args[1])
   const mode = asString_(args[3])
+  const color = asString_(args[4])
   if (mode !== 'solid' && mode !== 'outline') {
     return runtimeError(msg('error-precondition-not-met', 'path', '2', '"solid" or "outline"', mode), app)
   } else {
@@ -172,7 +174,7 @@ const pathPrim: Prim = (_env, args, app) => {
       }
     }))
     return result.andThen((points: [number, number][]) =>
-      ok(nleobj('Drawing', path(width, height, points, mode, asString_(args[3])))))
+      ok(nleobj('Drawing', path(width, height, points, mode, color))))
   }
 }
 
@@ -284,19 +286,81 @@ const overlayOffsetPrim: Prim = (_env, args, app) => {
 }
 
 type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
-const rotate = (angle: number, drawing: Drawing): Rotate => ({
-  tag: 'rotate',
-  width: drawing.width * Math.abs(Math.cos(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.sin(angle * Math.PI / 180)),
-  height: drawing.width * Math.abs(Math.sin(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.cos(angle * Math.PI /180)),
-  angle,
-  drawing
-})
+// const rotate = (angle: number, drawing: Drawing): Rotate => ({
+//   tag: 'rotate',
+//   width: drawing.width * Math.abs(Math.cos(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.sin(angle * Math.PI / 180)),
+//   height: drawing.width * Math.abs(Math.sin(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.cos(angle * Math.PI /180)),
+//   angle,
+//   drawing
+// })
+
+function calculateRotatedBox(width: number, height: number, degrees: number): { width: number, height: number } {
+  // Calculate the rotated corners of the box
+  const angle = degrees * Math.PI / 180
+  const origPoints = [
+    [-width / 2, -height / 2],
+    [width / 2, -height / 2],
+    [-width / 2, height / 2],
+    [width / 2, height / 2]
+  ]
+  const rotatedPoints = origPoints.map(
+    ([x, y]) => [
+      x * Math.cos(angle) - y * Math.sin(angle),
+      x * Math.sin(angle) + y * Math.cos(angle)
+    ]
+  )
+
+  // Determine the width and height of the box's bounding
+  // box by taking mins and maxes of the points.
+  const xMin = Math.min(...rotatedPoints.map(([x, _]) => x))
+  const xMax = Math.max(...rotatedPoints.map(([x, _]) => x))
+  const yMin = Math.min(...rotatedPoints.map(([_, y]) => y))
+  const yMax = Math.max(...rotatedPoints.map(([_, y]) => y))
+
+  return {
+    width: xMax - xMin,
+    height: yMax - yMin
+  }
+}
+
+const rotate = (angle: number, drawing: Drawing): Rotate => {
+  const dims = calculateRotatedBox(drawing.width, drawing.height, angle)
+  return {
+    tag: 'rotate',
+    width: dims.width,
+    height: dims.height,
+    angle,
+    drawing
+  }
+}
 
 const rotatePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('rotate', ['number?', 'Drawing'], undefined, args, app)
   if (argErr) { return argErr }
   const angle = asNum_(args[0])
   return ok(nleobj('Drawing', rotate(angle, (args[1] as EObj).obj as Drawing)))
+}
+
+type WithDash = { tag: 'withDash', dashSpec: number[], drawing: Drawing, width: number, height: number }
+const withDash = (dashSpec: number[], drawing: Drawing): WithDash => ({
+  tag: 'withDash',
+  dashSpec,
+  drawing,
+  width: drawing.width,
+  height: drawing.height
+})
+
+const withDashPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('with-dash', ['list?', 'Drawing'], undefined, args, app)
+  if (argErr) { return argErr }
+  const es = asList_(args[0])
+  for (const e of es) {
+    if (!isNumber(e)) {
+      runtimeError(msg('error-precondition-not-met', 'with-dash', '1', 'list of numbers', es), app)
+    }
+  }
+  const dashes = es.map(e => asNum_(e))
+  return ok(nleobj('Drawing', withDash(dashes, (args[1] as EObj).obj as Drawing)))
 }
 
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
@@ -308,7 +372,7 @@ export const imageLib: Env = new Env([
   ['rectangle', imageEntry(rectanglePrim, Docs.rectangle)],
   ['square', imageEntry(squarePrim, Docs.drawingSquare)],
   ['triangle', imageEntry(trianglePrim, Docs.triangle)],
-  // ['path', imageEntry(pathPrim, Docs.path)],
+  ['path', imageEntry(pathPrim, Docs.path)],
   ['beside', imageEntry(besidePrim, Docs.beside)],
   ['beside/align', imageEntry(besideAlignPrim, Docs.besideAlign)],
   ['above', imageEntry(abovePrim, Docs.above)],
@@ -316,5 +380,6 @@ export const imageLib: Env = new Env([
   ['overlay', imageEntry(overlayPrim, Docs.overlay)],
   ['overlay/align', imageEntry(overlayAlignPrim, Docs.overlayAlign)],
   ['overlay/offset', imageEntry(overlayOffsetPrim, Docs.overlayOffset)],
-  // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
+  ['rotate', imageEntry(rotatePrim, Docs.rotate)],
+  ['with-dashes', imageEntry(withDashPrim, Docs.withDashes)],
 ])
