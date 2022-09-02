@@ -3,7 +3,7 @@
 Scamper is:
 
 +   An implementation of a subset of the [R7RS-small](https://small.r7rs.org/)
-    Scheme standard appropriate for teaching in a introductory computer science
+    Scheme standard appropriate for teaching in an introductory computer science
     course.
 +   An opinionated subset of Scheme that conveys the best of pure, functional
     programming to new programmers, in particular, as taught at [Grinnell
@@ -15,3 +15,7 @@ Scamper is:
     [Typescript](https://www.typescriptlang.org/) with an API built for direct
     integration into modern integrated development environments, _e.g._,
     [Visual Studio Code](https://code.visualstudio.com).
+
+## Dependencies
+
+Scamper uses [JZZ](https://github.com/jazz-soft/JZZ) for its MIDI playback facilities.

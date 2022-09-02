@@ -376,6 +376,10 @@ function asList_ (e: Exp): Exp[] {
   return unsafeListToArray(e)
 }
 
+function asPair_ (e: Exp): [Exp, Exp] {
+  return [(e as EPair).e1, (e as EPair).e2]
+}
+
 function asObj_ (e: Exp): object {
   return (e as EObj).obj
 }
@@ -529,7 +533,7 @@ export {
   nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nlestruct, nleobj, nleprim,
   litToString, arrayToList, unsafeListToArray, expToString, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isStruct, isStructKind, isObjKind, isProcedure,
-  asNum_, asBool_, asString_, asList_, asStruct_, asObj_, fromObj_,
+  asNum_, asBool_, asString_, asList_, asPair_, asStruct_, asObj_, fromObj_,
   Stmt, serror, sbinding, svalue, simported, sdefine, sstruct, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }

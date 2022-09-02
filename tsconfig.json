@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "es2022",
+    "moduleResolution": "node",
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
@@ -10,7 +11,13 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths":{
+      "*": [
+        "./node_modules/*",
+        "./src/types/*"
+      ]
+    }
   },
   "exclude": ["node_modules", "dist"]
 }
