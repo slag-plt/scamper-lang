@@ -1,0 +1,5 @@
+(zero? 0.002)
+(zero? 0.1)
+(zero? 0.0)
+(zero? 0)
+(zero? 1)
