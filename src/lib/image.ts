@@ -265,12 +265,13 @@ const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => ({
   tag: 'overlayOffset',
   dx,
   dy,
+  // BUG: what if d2 is actually bigger than d1? Then the calculation needs to mirror!
   width:
-    dx > 0
+    dx >= 0
       ? Math.max(d1.width, d2.width + dx)
       : Math.abs(dx) + d1.width,
   height:
-    dy > 0
+    dy >= 0
       ? Math.max(d1.height, d2.height + dy)
       : Math.abs(dy) + d1.height,
   d1,
