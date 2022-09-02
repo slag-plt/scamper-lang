@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>scamper-web test</title>
+    <title>Scamper Image Test</title>
   </head>
   <body>
     <div class="scamper-output output-prog" style="white-space: pre; font-family: monospace;">
@@ -28,14 +28,6 @@
       (define width 100)
       (define height 100)
       (define alpha 0.5)
-
-      (define inc
-        (lambda (x)
-          (+ x 1)))
-
-      (inc 5)
-      (inc 6)
-      (inc 7)
      
       (define example-ellipse1
         (beside
@@ -68,9 +60,6 @@
       c3
       (beside c2 c3)
 
-      (define domino (rectangle 30 100 "solid" "black"))
-      (define space (rectangle 10 100 "solid" "white"))
-
       (define circles
         (beside
           (circle 50 "solid" "rgba(255, 0, 0, 1)")
@@ -83,23 +72,6 @@
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.8)"))
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.6)"))
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.4)")))
-      
-      ; (overlay
-      ;   (above (rotate 60 domino)
-      ;          (rectangle 50 50 "outline" "blue")
-      ;          (rectangle 50 50 "outline" "blue"))
-      ;   (rectangle 300 300 "outline" "black"))
-      
-      ; (beside
-      ;   domino
-      ;   space
-      ;   (rotate 23 domino)
-      ;   space
-      ;   (rotate 46 domino)
-      ;   space
-      ;   (rotate 69 domino)
-      ;   space
-      ;   (rotate 90 domino))
 
       (define small-gray (circle 10 "solid" "gray"))
       (define medium-red (circle 15 "solid" "red"))
@@ -135,10 +107,64 @@
 
       (overlay/offset medium-red -3 -3 medium-black)
 
-      ; (path 100 100 (list (cons 0 50)
-      ;                     (cons 50 0)
-      ;                     (cons 100 50)
-      ;                     (cons 50 100)) "solid" "green")
+      (beside
+        (rectangle 25 40 "solid" (color 0 0 255 1))
+        (rectangle 25 40 "solid" (color 0 0 255 0.75))
+        (rectangle 25 40 "solid" (color 0 0 255 0.5))
+        (rectangle 25 40 "solid" (color 0 0 255 0.25)))
+
+      (define circles
+        (beside
+          (circle 10 "solid" (color 255 0 0 1))
+          (circle 10 "solid" (color 255 0 0 0.75))
+          (circle 10 "solid" (color 255 0 0 0.5))
+          (circle 10 "solid" (color 255 0 0 0.25))))
+
+      (above
+        (overlay circles (rectangle 60 20 "solid" (color 0 0 255 1)))
+        (overlay circles (rectangle 60 20 "solid" (color 0 0 255 0.75)))
+        (overlay circles (rectangle 60 20 "solid" (color 0 0 255 0.5)))
+        (overlay circles (rectangle 60 20 "solid" (color 0 0 255 0.25))))
+
+      (path 100 100 (list (pair 0 50)
+                          (pair 50 0)
+                          (pair 100 50)
+                          (pair 50 100)
+                          (pair 0 50)) "solid" "green")
+
+      (with-dashes (list 3 5) (circle 100 "outline" "black"))
+
+
+      (define domino (rectangle 30 100 "solid" "black"))
+      (define space (rectangle 20 150 "solid" "white"))
+
+      (overlay
+        (above (rotate 60 domino)
+               (rectangle 50 50 "outline" "blue")
+               (rectangle 50 50 "outline" "blue"))
+        (rectangle 300 300 "outline" "black"))
+      
+      (beside/align "bottom"
+        domino
+        space
+        (rotate 23 domino)
+        space
+        (rotate 46 domino)
+        space
+        (rotate 69 domino)
+        space
+        (rotate 90 domino))
+
+      (define rect (rectangle 100 100 "outline" "red"))
+
+      (overlay
+        rect
+        (rotate 15 rect)
+        (rotate 30 rect)
+        (rotate 45 rect)
+        (rotate 60 rect)
+        (rotate 75 rect)
+        (rotate 90 rect))
     </div>
   </body>
 

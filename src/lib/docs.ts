@@ -351,7 +351,7 @@ export const xor: Doc = new Doc(
   'Equivalent to `(or (and v1 (not v2)) (and (not v1) v2))`.'
 )
 
-export const pair: Doc = new Doc(
+export const pairQ: Doc = new Doc(
   '(pair? v): boolean?', [
     'v: any',
   ],
@@ -360,6 +360,14 @@ export const pair: Doc = new Doc(
 
 export const cons: Doc = new Doc(
   '(cons v1 v2): pair?', [
+    'v1: any',
+    'v2: any',
+  ],
+  'Returns a new pair containing `v1` and `v2`.'
+)
+
+export const pair: Doc = new Doc(
+  '(pair v1 v2): pair?', [
     'v1: any',
     'v2: any',
   ],
@@ -515,6 +523,18 @@ export const reduce: Doc = new Doc(
   'Like `fold` but uses the first element of `l` as the initial value.'
 )
 
+export const error: Doc = new Doc(
+  '(error msg): any', [
+    'msg: string?',
+  ],
+  'Raises a runtime error with message `msg`.'
+)
+
+export const qq: Doc = new Doc(
+  '{??}: any', [],
+  'A placeholder for an expression that is not yet implemented.'
+)
+
 ///// image ////////////////////////////////////////////////////////////////////
 
 export const color: Doc = new Doc(
@@ -644,7 +664,15 @@ export const rotate: Doc = new Doc(
     'angle: number?, in degrees',
     'd: drawing?',
   ],
-  'Returns a new drawing formed by rotating drawing `d` by `angle` degrees.'
+  'Returns a new drawing formed by rotating drawing `d` by `angle` degrees around the center of its bounding box. Note: currently buggy and shifts off-center.'
+)
+
+export const withDashes: Doc = new Doc(
+  '(with-dashes dash-spec d): drawing?', [
+    'dash-spec: list?, a list of numbers',
+    'd: drawing?',
+  ],
+  'Returns a new drawing formed by drawing `d` but with dashes specified by `dash-spec`. `dash-spec` is an list of numbers where each successive pair of numbers describe the length of a dash and the length of the subsequent gap.'
 )
 
 ///// music ////////////////////////////////////////////////////////////////////

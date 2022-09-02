@@ -52,18 +52,16 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
       break
     }
     case 'path': {
-      // TODO: path fills won't render. I wonder why...
-      console.log('Drawing path...')
-      ctx.beginPath()
+      if (drawing.points.length === 0) { break }
       ctx.fillStyle = drawing.color
       ctx.strokeStyle = drawing.color
-      drawing.points.forEach(p => {
-        console.log(`(${p[0]}, ${p[1]})`)
+      ctx.beginPath()
+      ctx.moveTo(x + drawing.points[0][0], y + drawing.points[0][1])
+      drawing.points.slice(1).forEach(p => {
         ctx.lineTo(x + p[0], y + p[1])
       })
-      ctx.closePath()
       if (drawing.mode === 'solid') {
-        ctx.fill('evenodd')
+        ctx.fill()
       } else {
         ctx.stroke()
       }
@@ -133,11 +131,25 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
       break
     }
     case 'rotate': {
-      ctx.translate(x + drawing.width / 2, y + drawing.height / 2)
-      ctx.rotate(drawing.angle * Math.PI / 180)
-      ctx.translate(x - drawing.width / 2, y - drawing.height / 2)
+      const centerX = x + drawing.width / 2
+      const centerY = y + drawing.height / 2
+      const angle = drawing.angle * Math.PI / 180
+      // N.B., need to move the canvas from the origin to the
+      // center of the drawing to rotate and then move back to
+      // the origin.
+      ctx.translate(centerX, centerY)
+      ctx.rotate(angle)
+      ctx.translate(-centerX, -centerY)
       render(x, y, drawing.drawing, canvas)
-      ctx.resetTransform()
+      ctx.translate(centerX, centerY)
+      ctx.rotate(-angle)
+      ctx.translate(-centerX, -centerY)
+      break
+    }
+    case 'withDash': {
+      ctx.setLineDash(drawing.dashSpec)
+      render(x, y, drawing.drawing, canvas)
+      ctx.setLineDash([])
     }
   }
 }
