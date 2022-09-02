@@ -136,6 +136,12 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
       ctx.translate(x - drawing.width / 2, y - drawing.height / 2)
       render(x, y, drawing.drawing, canvas)
       ctx.resetTransform()
+      break
+    }
+    case 'withDash': {
+      ctx.setLineDash(drawing.dashSpec)
+      render(x, y, drawing.drawing, canvas)
+      ctx.setLineDash([])
     }
   }
 }

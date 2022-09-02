@@ -51,7 +51,7 @@ const colorPrim: Prim = (_env, args, app) =>
 type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
-export type Drawing = Ellipse | Rectangle | Triangle | Beside | Above | Overlay | OverlayOffset | Rotate | Path
+export type Drawing = Ellipse | Rectangle | Triangle | Path | Beside | Above | Overlay | OverlayOffset | Rotate | WithDash
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -300,6 +300,28 @@ const rotatePrim: Prim = (_env, args, app) => {
   return ok(nleobj('Drawing', rotate(angle, (args[1] as EObj).obj as Drawing)))
 }
 
+type WithDash = { tag: 'withDash', dashSpec: number[], drawing: Drawing, width: number, height: number }
+const withDash = (dashSpec: number[], drawing: Drawing): WithDash => ({
+  tag: 'withDash',
+  dashSpec,
+  drawing,
+  width: drawing.width,
+  height: drawing.height
+})
+
+const withDashPrim: Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('with-dash', ['list?', 'Drawing'], undefined, args, app)
+  if (argErr) { return argErr }
+  const es = asList_(args[0])
+  for (const e of es) {
+    if (!isNumber(e)) {
+      runtimeError(msg('error-precondition-not-met', 'with-dash', '1', 'list of numbers', es), app)
+    }
+  }
+  const dashes = es.map(e => asNum_(e))
+  return ok(nleobj('Drawing', withDash(dashes, (args[1] as EObj).obj as Drawing)))
+}
+
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
 
 export const imageLib: Env = new Env([
@@ -317,5 +339,6 @@ export const imageLib: Env = new Env([
   ['overlay', imageEntry(overlayPrim, Docs.overlay)],
   ['overlay/align', imageEntry(overlayAlignPrim, Docs.overlayAlign)],
   ['overlay/offset', imageEntry(overlayOffsetPrim, Docs.overlayOffset)],
+  ['with-dashes', imageEntry(withDashPrim, Docs.withDashes)],
   // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
 ])

@@ -159,21 +159,13 @@
                           (pair 100 50)
                           (pair 50 100)
                           (pair 0 50)) "solid" "green")
+
+      (with-dashes (list 3 5) (circle 100 "outline" "black"))
     </div>
   </body>
 
   <script src="dist/web/bundle.js"></script>
   <script>
     replaceCodeWidgets()
-    const ctx = document.getElementById('test').getContext('2d')
-    ctx.fillStyle = 'black'
-    ctx.strokeStyle = 'black'
-    ctx.beginPath()
-    ctx.moveTo(0, 50)
-    ctx.lineTo(50, 0)
-    ctx.lineTo(100, 50)
-    ctx.lineTo(50, 100)
-    ctx.closePath()
-    ctx.fill()
   </script>
 </html>

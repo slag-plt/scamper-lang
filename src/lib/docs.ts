@@ -655,6 +655,14 @@ export const rotate: Doc = new Doc(
   'Returns a new drawing formed by rotating drawing `d` by `angle` degrees.'
 )
 
+export const withDashes: Doc = new Doc(
+  '(with-dashes dash-spec d): drawing?', [
+    'dash-spec: list?, a list of numbers',
+    'd: drawing?',
+  ],
+  'Returns a new drawing formed by drawing `d` but with dashes specified by `dash-spec`. `dash-spec` is an list of numbers where each successive pair of numbers describe the length of a dash and the length of the subsequent gap.'
+)
+
 ///// music ////////////////////////////////////////////////////////////////////
 
 export const pitch: Doc = new Doc(
