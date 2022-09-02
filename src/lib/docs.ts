@@ -595,12 +595,14 @@ export const triangle: Doc = new Doc(
 )
 
 export const path: Doc = new Doc(
-  '(path points fill color): drawing?', [
+  '(path width height points fill color): drawing?', [
+    'width: number?',
+    'height: number?',
     'points: list?, a list of points, pairs of numbers',
     'fill: string?, either "solid" or "outline"',
     'color: string?, either a color name or the form "rgba(r, g, b, a)"'
   ],
-  'Returns a drawing formed by connecting the points in `points` with straight lines.'
+  'Returns a drawing with dimensions `width × height` formed by connecting the points in `points` with straight lines. The points are specified as a `pair` of coordinates.'
 )
 
 export const beside: Doc = new Doc(
