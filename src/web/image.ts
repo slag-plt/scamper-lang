@@ -131,11 +131,19 @@ function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasEleme
       break
     }
     case 'rotate': {
-      ctx.translate(x + drawing.width / 2, y + drawing.height / 2)
-      ctx.rotate(drawing.angle * Math.PI / 180)
-      ctx.translate(x - drawing.width / 2, y - drawing.height / 2)
+      const centerX = x + drawing.width / 2
+      const centerY = y + drawing.height / 2
+      const angle = drawing.angle * Math.PI / 180
+      // N.B., need to move the canvas from the origin to the
+      // center of the drawing to rotate and then move back to
+      // the origin.
+      ctx.translate(centerX, centerY)
+      ctx.rotate(angle)
+      ctx.translate(-centerX, -centerY)
       render(x, y, drawing.drawing, canvas)
-      ctx.resetTransform()
+      ctx.translate(centerX, centerY)
+      ctx.rotate(-angle)
+      ctx.translate(-centerX, -centerY)
       break
     }
     case 'withDash': {

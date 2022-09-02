@@ -652,7 +652,7 @@ export const rotate: Doc = new Doc(
     'angle: number?, in degrees',
     'd: drawing?',
   ],
-  'Returns a new drawing formed by rotating drawing `d` by `angle` degrees.'
+  'Returns a new drawing formed by rotating drawing `d` by `angle` degrees around the center of its bounding box. Note: currently buggy and shifts off-center.'
 )
 
 export const withDashes: Doc = new Doc(

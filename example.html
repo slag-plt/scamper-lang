@@ -68,9 +68,6 @@
       c3
       (beside c2 c3)
 
-      (define domino (rectangle 30 100 "solid" "black"))
-      (define space (rectangle 10 100 "solid" "white"))
-
       (define circles
         (beside
           (circle 50 "solid" "rgba(255, 0, 0, 1)")
@@ -83,23 +80,6 @@
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.8)"))
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.6)"))
         (overlay circles (rectangle 400 50 "solid" "rgba(0, 0, 255, 0.4)")))
-      
-      ; (overlay
-      ;   (above (rotate 60 domino)
-      ;          (rectangle 50 50 "outline" "blue")
-      ;          (rectangle 50 50 "outline" "blue"))
-      ;   (rectangle 300 300 "outline" "black"))
-      
-      ; (beside
-      ;   domino
-      ;   space
-      ;   (rotate 23 domino)
-      ;   space
-      ;   (rotate 46 domino)
-      ;   space
-      ;   (rotate 69 domino)
-      ;   space
-      ;   (rotate 90 domino))
 
       (define small-gray (circle 10 "solid" "gray"))
       (define medium-red (circle 15 "solid" "red"))
@@ -161,11 +141,58 @@
                           (pair 0 50)) "solid" "green")
 
       (with-dashes (list 3 5) (circle 100 "outline" "black"))
+
+
+      (define domino (rectangle 30 100 "solid" "black"))
+      (define space (rectangle 20 150 "solid" "white"))
+
+      (overlay
+        (above (rotate 60 domino)
+               (rectangle 50 50 "outline" "blue")
+               (rectangle 50 50 "outline" "blue"))
+        (rectangle 300 300 "outline" "black"))
+      
+      (beside/align "bottom"
+        domino
+        space
+        (rotate 23 domino)
+        space
+        (rotate 46 domino)
+        space
+        (rotate 69 domino)
+        space
+        (rotate 90 domino))
+
+      (define rect (rectangle 100 100 "outline" "red"))
+
+      (overlay
+        rect
+        (rotate 15 rect)
+        (rotate 30 rect)
+        (rotate 45 rect)
+        (rotate 60 rect)
+        (rotate 75 rect)
+        (rotate 90 rect))
     </div>
+    <canvas id="test" width="400" height="400"></canvas>
   </body>
 
   <script src="dist/web/bundle.js"></script>
   <script>
     replaceCodeWidgets()
+    const ctx = document.getElementById('test').getContext('2d')
+    ctx.fillStyle = 'black'
+    ctx.strokeStyle = 'black'
+    ctx.setLineDash([3, 5])
+    ctx.strokeRect(0, 0, 400, 400)
+    ctx.setLineDash([])
+    ctx.translate(200, 200)
+    ctx.rotate(45 * Math.PI / 180)
+    ctx.translate(-200, -200)
+    ctx.fillRect(100, 100, 200, 200)
+    ctx.translate(200, 200)
+    ctx.rotate(-45 * Math.PI / 180)
+    ctx.translate(-200, -200)
+    ctx.strokeRect(100, 100, 200, 200)
   </script>
 </html>

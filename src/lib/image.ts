@@ -4,6 +4,7 @@ import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, 
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
+import { dirname } from 'path'
 
 type Color = { tag: 'color', r: number, g: number, b: number, a: number }
 const color = (r: number, g: number, b: number, a: number): Color => ({ tag: 'color', r, g, b, a })
@@ -285,13 +286,53 @@ const overlayOffsetPrim: Prim = (_env, args, app) => {
 }
 
 type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
-const rotate = (angle: number, drawing: Drawing): Rotate => ({
-  tag: 'rotate',
-  width: drawing.width * Math.abs(Math.cos(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.sin(angle * Math.PI / 180)),
-  height: drawing.width * Math.abs(Math.sin(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.cos(angle * Math.PI /180)),
-  angle,
-  drawing
-})
+// const rotate = (angle: number, drawing: Drawing): Rotate => ({
+//   tag: 'rotate',
+//   width: drawing.width * Math.abs(Math.cos(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.sin(angle * Math.PI / 180)),
+//   height: drawing.width * Math.abs(Math.sin(angle * Math.PI / 180)) + drawing.height * Math.abs(Math.cos(angle * Math.PI /180)),
+//   angle,
+//   drawing
+// })
+
+function calculateRotatedBox(width: number, height: number, degrees: number): { width: number, height: number } {
+  // Calculate the rotated corners of the box
+  const angle = degrees * Math.PI / 180
+  const origPoints = [
+    [-width / 2, -height / 2],
+    [width / 2, -height / 2],
+    [-width / 2, height / 2],
+    [width / 2, height / 2]
+  ]
+  const rotatedPoints = origPoints.map(
+    ([x, y]) => [
+      x * Math.cos(angle) - y * Math.sin(angle),
+      x * Math.sin(angle) + y * Math.cos(angle)
+    ]
+  )
+
+  // Determine the width and height of the box's bounding
+  // box by taking mins and maxes of the points.
+  const xMin = Math.min(...rotatedPoints.map(([x, _]) => x))
+  const xMax = Math.max(...rotatedPoints.map(([x, _]) => x))
+  const yMin = Math.min(...rotatedPoints.map(([_, y]) => y))
+  const yMax = Math.max(...rotatedPoints.map(([_, y]) => y))
+
+  return {
+    width: xMax - xMin,
+    height: yMax - yMin
+  }
+}
+
+const rotate = (angle: number, drawing: Drawing): Rotate => {
+  const dims = calculateRotatedBox(drawing.width, drawing.height, angle)
+  return {
+    tag: 'rotate',
+    width: dims.width,
+    height: dims.height,
+    angle,
+    drawing
+  }
+}
 
 const rotatePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('rotate', ['number?', 'Drawing'], undefined, args, app)
@@ -339,6 +380,6 @@ export const imageLib: Env = new Env([
   ['overlay', imageEntry(overlayPrim, Docs.overlay)],
   ['overlay/align', imageEntry(overlayAlignPrim, Docs.overlayAlign)],
   ['overlay/offset', imageEntry(overlayOffsetPrim, Docs.overlayOffset)],
+  ['rotate', imageEntry(rotatePrim, Docs.rotate)],
   ['with-dashes', imageEntry(withDashPrim, Docs.withDashes)],
-  // ['rotate', imageEntry(rotatePrim, Docs.rotate)]
 ])
