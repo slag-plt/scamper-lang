@@ -6,6 +6,7 @@
     "url": "https://github.com/slag-plt/scamper-lang.git"
   },
   "main": "./dist/index.js",
+  "bin": { "scamper" : "./scamper" },
   "types": "./dist/index.d.ts",
   "type": "module",
   "license": "MIT",
