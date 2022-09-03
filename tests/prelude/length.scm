@@ -1,0 +1,1 @@
+(length (list 28 0 "know"))

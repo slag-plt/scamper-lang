@@ -1,0 +1,5 @@
+(number? 56)
+(number? "56")
+(number? 56.2)
+(number? (/ 56 2))
+(number? 56.0)
