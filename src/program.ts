@@ -51,8 +51,8 @@ export class ProgramState {
     return Runtime.evaluateExp(this.env, e)
   }
 
-  toString (): string {
-    return Pretty.progToString(0, this.prog, true)
+  toString (outputBindings?: boolean): string {
+    return Pretty.progToString(0, this.prog, outputBindings)
   }
 }
 

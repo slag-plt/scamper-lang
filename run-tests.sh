@@ -18,7 +18,7 @@ do
   test=${f%.scm}
   echo -n "Running lexing test: ${test}... "
   ((total += 1))
-  DIFF=$(npm run --silent driver lex ${test}.scm | diff ${test}.expected -)
+  DIFF=$(npm run --silent driver -- -c --emit-tokens ${test}.scm | diff ${test}.expected -)
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
@@ -34,7 +34,7 @@ do
   test=${f%.scm}
   echo -n "Running runtime test: ${test}... "
   ((total += 1))
-  DIFF=$(npm run --silent driver output ${test}.scm | diff ${test}.expected -)
+  DIFF=$(npm run --silent driver -- ${test}.scm | diff ${test}.expected -)
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"

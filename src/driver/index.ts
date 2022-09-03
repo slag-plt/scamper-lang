@@ -64,7 +64,6 @@ function processArgs(args: string[]): CompilerOptions {
 }
 
 function emitTokens(tokens: scamper.sexp.Token[]) {
-  console.log('===== Tokens =====')
   tokens.forEach(tok => {
     // N.B., we 0-index line/col numbers to align with vscode, but for testing
     // purposes, it is much easier to work with 1-indexed numbers that align
