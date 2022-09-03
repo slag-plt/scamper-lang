@@ -51,7 +51,7 @@ do
   test=${f%.scm}
   echo -n "Running prelude test: ${test}... "
   ((total += 1))
-  DIFF=$(npm run --silent driver output ${test}.scm | diff ${test}.expected -)
+  DIFF=$(npm run --silent driver -- ${test}.scm | diff ${test}.expected -)
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
