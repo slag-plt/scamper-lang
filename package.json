@@ -1,12 +1,14 @@
 {
   "name": "scamper-lang",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/slag-plt/scamper-lang.git"
   },
   "main": "./dist/index.js",
-  "bin": { "scamper" : "./scamper" },
+  "bin": {
+    "scamper": "./scamper"
+  },
   "types": "./dist/index.d.ts",
   "type": "module",
   "license": "MIT",
