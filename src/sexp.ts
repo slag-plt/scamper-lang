@@ -420,18 +420,20 @@ function stringToSexp (s: string): Result<Sexp> {
   return tokenize(s).andThen(toks => tokensToSexp(toks))
 }
 
-function stringToSexps (s: string): Result<Sexp[]> {
-  return tokenize(s).andThen(toks => {
-    const result = []
-    while (toks.length > 0) {
-      const next = tokensToSexp(toks)
-      switch (next.tag) {
-        case 'error': return rethrow(next)
-        case 'ok': result.push(next.value)
-      }
+function tokensToSexps (tokens: Token[]): Result<Sexp[]> {
+  const result = []
+  while (tokens.length > 0) {
+    const next = tokensToSexp(tokens)
+    switch (next.tag) {
+      case 'error': return rethrow(next)
+      case 'ok': result.push(next.value)
     }
-    return ok(result)
-  })
+  }
+  return ok(result)
+}
+
+function stringToSexps (s: string): Result<Sexp[]> {
+  return tokenize(s).andThen(tokensToSexps)
 }
 
 function sexpToString (s: Sexp): string {
@@ -444,6 +446,6 @@ function sexpToString (s: Sexp): string {
 
 export {
   Sexp, Atom, SList, atom, slist,
-  tokenize, stringToSexp, stringToSexps,
+  Token, tokenize, tokensToSexp, stringToSexp, tokensToSexps, stringToSexps,
   sexpToString
 }
