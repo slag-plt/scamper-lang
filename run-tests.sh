@@ -11,6 +11,8 @@ LEXING_TESTS=$(ls tests/lexing/*.scm)
 RUNTIME_TESTS=$(find tests/runtime -name "*.scm")
 PRELUDE_TESTS=$(find tests/prelude -name "*.scm")
 
+SCAMPER="dist/driver/index.js"
+
 total=0
 failures=0
 
@@ -19,7 +21,7 @@ do
   test=${f%.scm}
   echo -n "Running lexing test: ${test}... "
   ((total += 1))
-  DIFF=$(npm run --silent driver -- -c --emit-tokens ${test}.scm | diff ${test}.expected -)
+  DIFF=$($SCAMPER -c --emit-tokens ${test}.scm | diff ${test}.expected -)
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
@@ -35,7 +37,7 @@ do
   test=${f%.scm}
   echo -n "Running runtime test: ${test}... "
   ((total += 1))
-  DIFF=$(npm run --silent driver -- ${test}.scm | diff ${test}.expected -)
+  DIFF=$($SCAMPER ${test}.scm | diff ${test}.expected -)
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
@@ -51,7 +53,7 @@ do
   test=${f%.scm}
   echo -n "Running prelude test: ${test}... "
   ((total += 1))
-  DIFF=$(npm run --silent driver -- ${test}.scm | diff ${test}.expected -)
+  DIFF=$($SCAMPER ${test}.scm | diff ${test}.expected -)
   if [ "$DIFF" != "" ]
   then
     echo -e "${RED}failed!${CLEAR}"
@@ -65,7 +67,7 @@ done
 echo ""
 if [ $failures -eq 0 ]
 then
-  echo -e "${GREEN}All tests passed!${CLEAR}"
+  echo -e "${GREEN}All ${total} tests passed!${CLEAR}"
   exit 0
 else
   echo -e "${RED}${failures} failure(s)${CLEAR} out of ${total} tests"
