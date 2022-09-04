@@ -165,10 +165,36 @@
         (rotate 60 rect)
         (rotate 75 rect)
         (rotate 90 rect))
+
+      (define jup_fig (circle 150 "solid" "orange"))
+      (define jup_shadow (circle 150 "solid" "black"))
+      (define spot (circle 30 "solid" "red"))
+      (define jup (overlay/offset spot -150 -150 (overlay/offset jup_fig 4 4 jup_shadow)))
+
+      (overlay/offset jup_fig 4 4 jup_shadow)
+      spot
+
+      (overlay/offset spot 1 1 (overlay/offset jup_fig 4 4 jup_shadow))
+      (overlay/offset spot 50 50 (overlay/offset jup_fig 4 4 jup_shadow))
+      (overlay/offset spot 0 0 (overlay/offset jup_fig 4 4 jup_shadow))
+      (overlay/offset spot -150 -150 (overlay/offset jup_fig 4 4 jup_shadow))
+
+      (define jup_fig (circle 150 "solid" "orange"))
+      (define jup_shadow (circle 150 "solid" "black"))
+      (define spot (circle 30 "solid" "red"))
+      (define jup (overlay/offset spot -150 -150 (overlay/offset jup_fig 4 4 jup_shadow)))
+
+      (overlay/offset jup_fig 4 4 jup_shadow)
+      spot
+
+      (overlay/offset spot 1 1 (overlay/offset jup_fig 4 4 jup_shadow))
+      (overlay/offset spot 50 50 (overlay/offset jup_fig 4 4 jup_shadow))
+      (overlay/offset spot 0 0 (overlay/offset jup_fig 4 4 jup_shadow))
+      (overlay/offset spot -150 -150 (overlay/offset jup_fig 4 4 jup_shadow))
     </div>
   </body>
 
-  <script src="dist/web/bundle.js"></script>
+  <script src="../../../../dist/web/bundle.js"></script>
   <script>
     replaceCodeWidgets()
   </script>
