@@ -154,5 +154,8 @@ export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean 
 }
 
 export function progToString(col: number, prog: L.Program, outputBindings: boolean = false, htmlOutput: boolean = false): string {
-  return prog.statements.map(s => stmtToString(col, s, outputBindings, htmlOutput)).filter(s => s.length > 0).join('\n\n')
+  return prog.statements
+    .map(s => stmtToString(col, s, outputBindings, htmlOutput))
+    .filter(s => s.length > 0)
+    .join('\n')
 }

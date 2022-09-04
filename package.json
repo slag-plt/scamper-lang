@@ -1,20 +1,23 @@
 {
   "name": "scamper-lang",
-  "version": "1.2.4",
+  "version": "1.2.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/slag-plt/scamper-lang.git"
   },
   "main": "./dist/index.js",
+  "bin": {
+    "scamper": "./dist/driver/index.js"
+  },
   "types": "./dist/index.d.ts",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "build": "mkdir -p dist/web/jzz && cp src/web/jzz/jzz-combined.cjs dist/web/jzz/jzz-combined.cjs && tsc",
+    "build": "mkdir -p dist/web/jzz && cp src/web/jzz/jzz-combined.cjs dist/web/jzz/jzz-combined.cjs && tsc && chmod u+x dist/driver/index.js",
     "clean": "rm -rf dist",
     "lint": "eslint --fix",
     "prepare": "npm run build && npm run bundle",
-    "driver": "node dist/driver.js",
+    "driver": "dist/driver/index.js",
     "test": "./run-tests.sh",
     "bundle": "npm run build && npm exec esbuild -- dist/web/index.js --bundle --outfile=dist/web/bundle.js",
     "serve": "npm run bundle && npm exec live-server -- --no-browser"

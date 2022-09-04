@@ -36,6 +36,10 @@ function detailsToCompleteString (details: ErrorDetails): string {
   return msg.join('\n')
 }
 
+function allDetailsToCompleteString (details: ErrorDetails[]): string {
+  return details.map(detailsToCompleteString).join('\n')
+}
+
 function detailsToMsgString (details: ErrorDetails): string {
   const msg = [`${details.phase} error: ${details.message}`]
   if (details.hint) {
@@ -104,7 +108,7 @@ class ICE extends Error {
 export {
   Result, Error, ErrorDetails,
   errorDetails, error, errors, ok,
-  detailsToCompleteString, detailsToMsgString, errorToString,
+  detailsToCompleteString, allDetailsToCompleteString, detailsToMsgString, errorToString,
   rethrow, join, detailsToResult,
   ICE
 }

@@ -1,0 +1,6 @@
+(equal? 4 4)
+(equal? 10 20)
+(equal? "Hello" "Hello")
+(equal? "Hello" "HELLO")
+(equal? 4 "4")
+(equal? 4 4.0)
