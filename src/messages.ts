@@ -14,6 +14,7 @@ const templates: Messages = new Map([
   ['error-hole', (_) => 'A hole was encountered!'],
   ['error-import-not-found', (vs) => `Import ${vs[0]} not found`],
   ['error-index-string', (vs) => `${vs[0]} is not a valid index into string "${vs[1]}"`],
+  ['error-invalid-char-constant', (_) => 'Invalid character constant encountered'],
   ['error-invalid-string-literal', (_) => 'Invalid string literal encountered'],
   ['error-runtime-parsing', (vs) => `${vs[0]} expects that its input string ${vs[1]} is a valid ${vs[2]} but it is not.`],
   ['error-precondition-not-met', (vs) => `${vs[0]} expects that argument ${vs[1]} obeys the following property: ${vs[2]}, but ${vs[3]} was given.`],
