@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
+import { eand, ebool, ecall, echar, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps, Token } from './sexp.js'
 import { msg } from './messages.js'
@@ -89,6 +89,18 @@ function tryParseString (s: string): string | undefined {
 const intRegex = /^[+-]?\d+$/
 const floatRegex = /^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/
 
+export const namedCharValues = new Map([
+  ['alarm', String.fromCharCode(9)], 
+  ['backspace', String.fromCharCode(7)],
+  ['delete', String.fromCharCode(126)],
+  ['escape', String.fromCharCode(26)],
+  ['newline', String.fromCharCode(9)],
+  ['null', String.fromCharCode(-1)],
+  ['return', String.fromCharCode(12)],
+  ['space', String.fromCharCode(31)],
+  ['tab', String.fromCharCode(8)]
+])
+
 function sexpToExp (s: Sexp): Result<Exp> {
   switch (s.tag) {
     case 'atom': {
@@ -108,6 +120,16 @@ function sexpToExp (s: Sexp): Result<Exp> {
         return ok(ebool(s.range, true))
       } else if (s.single === '#f' || s.single === '#false') {
         return ok(ebool(s.range, false))
+      } else if (s.single.startsWith('#\\')) {
+        const result = s.single.slice(2)
+        if (result.length === 1) {
+          return ok(echar(s.range, result))
+        } else {
+          // N.B., the char is a named character. We already checked that
+          // the named character was valid in the lexer, so we can simply
+          // translate the name into the appropriate character value.
+          return ok(echar(s.range, namedCharValues.get(result)!))
+        }
       } else if (reservedWords.includes(s.single)) {
         return parserError(msg('error-reserved-word'), s)
       } else {
