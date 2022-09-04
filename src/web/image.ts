@@ -4,7 +4,6 @@ type Drawing = Image.Drawing
 
 function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext('2d')!
-  console.log(`render (${drawing.tag}): (${x}, ${y}), ${drawing.width}, ${drawing.height}`)
   switch (drawing.tag) {
     case 'ellipse': {
       ctx.fillStyle = drawing.color
