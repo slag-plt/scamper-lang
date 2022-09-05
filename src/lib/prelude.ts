@@ -470,30 +470,98 @@ const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 // Characters (6.6)
 
 // TODO: implement:
-//   (char? obj)
-//   (char=? char1 ... chark)
-//   (char<? char1 ... chark)
-//   (char>? char1 ... chark)
-//   (char<=? char1 ... chark)
-//   (char>=? char1 ... chark)
-//   (char-ci=? char1 ... chark)
-//   (char-ci<? char1 ... chark)
-//   (char-ci>? char1 ... chark)
-//   (char-ci<=? char1 ... chark)
-//   (char-ci>=? char1 ... chark)
-//   (char-alphabetic? char)
-//   (char-numeric? char)
-//   (char-whitespace? letter)
-//   (char-upper-case? letter)
-//   (char-lower-case? letter)
-//   (digit-value char)
-//   (char->integer char)
-//   (integer->char n)
-//   (char-upcase char)
-//   (char-downcase char)
-//   (char-foldcase char)
+
+const charQPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char?', ['any'], undefined, args, app).andThen(_ =>
+    ok(L.nlebool(L.isChar(args[0]))))
+
+function pairwiseSatisfies<T> (f: (a: T, b: T) => boolean, xs: T[]): boolean {
+  if (xs.length <= 1) {
+    return true
+  } else {
+    for (let i = 0; i < xs.length - 1; i++) {
+      if (!f(xs[i], xs[i + 1])) {
+        return false
+      }
+    }
+    return true
+  }
+}
+
+function mkCharComparePrim (name: string, f: (a: string, b: string) => boolean): L.Prim {
+  return (_env, args, app) => {
+    const err = Utils.checkArgs(name, [], 'char?', args, app)
+    if (err) { return err }
+    return ok(L.nlebool(pairwiseSatisfies((a, b) => f(L.asChar_(a), L.asChar_(b)), args)))
+  }
+}
+
+const charEqPrim: L.Prim = mkCharComparePrim('char=?', (a, b) => a === b)
+const charLtPrim: L.Prim = mkCharComparePrim('char<?', (a, b) => a.codePointAt(0)! < b.codePointAt(0)!)
+const charGtPrim: L.Prim = mkCharComparePrim('char>?', (a, b) => a.codePointAt(0)! > b.codePointAt(0)!)
+const charLeqPrim: L.Prim = mkCharComparePrim('char<=?', (a, b) => a.codePointAt(0)! <= b.codePointAt(0)!)
+const charGeqPrim: L.Prim = mkCharComparePrim('char>=?', (a, b) => a.codePointAt(0)! >= b.codePointAt(0)!)
+const charEqCiPrim: L.Prim = mkCharComparePrim('char-ci=?', (a, b) => a.toLowerCase() === b.toLowerCase())
+const charLtCiPrim: L.Prim = mkCharComparePrim('char-ci<?', (a, b) => a.toLowerCase().codePointAt(0)! < b.toLowerCase().codePointAt(0)!)
+const charGtCiPrim: L.Prim = mkCharComparePrim('char-ci>?', (a, b) => a.toLowerCase().codePointAt(0)! > b.toLowerCase().codePointAt(0)!)
+const charLeqCiPrim: L.Prim = mkCharComparePrim('char-ci<=?', (a, b) => a.toLowerCase().codePointAt(0)! <= b.toLowerCase().codePointAt(0)!)
+const charGeqCiPrim: L.Prim = mkCharComparePrim('char-ci>=?', (a, b) => a.toLowerCase().codePointAt(0)! >= b.toLowerCase().codePointAt(0)!)
+
+function mkCharPredicatePrim (name: string, f: (a: string) => boolean): L.Prim {
+  return (_env, args, app) => {
+    const err = Utils.checkArgs(name, ['char?'], 'boolean?', args, app)
+    if (err) { return err }
+    return ok(L.nlebool(f(L.asChar_(args[0]))))
+  }
+}
+
+const charAlphabeticPrim: L.Prim =
+  mkCharPredicatePrim('char-alphabetic?', (a) => /\p{L}/gu.test(a))
+const charNumericPrim: L.Prim =
+  mkCharPredicatePrim('char-numeric?', (a) => /\p{N}/gu.test(a))
+const charWhitespacePrim: L.Prim =
+  mkCharPredicatePrim('char-whitespace?', (a) => /\p{Z}/gu.test(a))
+const charUpperCasePrim: L.Prim =
+  mkCharPredicatePrim('char-upper-case?', (a) => /\p{Lu}/gu.test(a))
+const charLowerCasePrim: L.Prim =
+  mkCharPredicatePrim('char-lower-case?', (a) => /\p{Ll}/gu.test(a))
+
+const digitValuePrim: L.Prim = (_env, args, app) => {
+  const err = Utils.checkArgs('digit-value', ['char?'], 'number?', args, app)
+  if (err) { return err }
+  const char = L.asChar_(args[0])
+  const n = parseInt(char, 10)
+  if (isNaN(n)) {
+    return runtimeError(msg('error-precondition-not-met', 'digit-value', 'decimal digit', char), app)
+  } else {
+    return ok(L.nlenumber(n))
+  }
+}
+
+const charIntegerPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char->integer', ['char?'], 'number?', args, app).andThen(_ =>
+    ok(L.nlenumber(L.asChar_(args[0]).codePointAt(0)!)))
+
+const integerCharPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('integer->char', ['integer?'], 'char?', args, app).andThen(_ =>
+    ok(L.nlechar(String.fromCodePoint(L.asNum_(args[0])))))
+
+const charUpcasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char-upcase', ['char?'], 'char?', args, app).andThen(_ =>
+    ok(L.nlechar(L.asChar_(args[0]).toUpperCase())))
+
+const charDowncasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char-downcase', ['char?'], 'char?', args, app).andThen(_ =>
+    ok(L.nlechar(L.asChar_(args[0]).toLowerCase())))
+
+// N.B., "folding" in Unicode returns a character to a "canonical" form, suitable for
+// comparison in a "case-insensitive" manner. toLowerCase is Unicode aware, so maybe
+// this implementation works. But... yea, maybe not!
 //
-// ...but there are no characters in Javascript. How should we implement them?
+// See: https://unicode.org/reports/tr18/#General_Category_Property
+const charFoldcasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char-foldcase', ['char?'], 'char?', args, app).andThen(_ =>
+    ok(L.nlechar(L.asChar_(args[0]).toLowerCase())))
 
 // Strings (6.7)
 
@@ -559,6 +627,28 @@ const stringAppendPrim: L.Prim = (_env, args, app) =>
     ok(L.nlestr(args.map(L.asString_).join(''))))
 
 const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
+  ['char?', charQPrim, Docs.charQ],
+  ['char=?', charEqPrim, Docs.charEq],
+  ['char<?', charLtPrim, Docs.charLt],
+  ['char>?', charGtPrim, Docs.charGt],
+  ['char<=?', charLeqPrim, Docs.charLeq],
+  ['char>=?', charGeqPrim, Docs.charGeq],
+  ['char-ci=?', charEqCiPrim, Docs.charEqCi],
+  ['char-ci<?', charLtCiPrim, Docs.charLtCi],
+  ['char-ci>?', charGtCiPrim, Docs.charGtCi],
+  ['char-ci<=?', charLeqCiPrim, Docs.charLeqCi],
+  ['char-ci>=?', charGeqCiPrim, Docs.charGeqCi],
+  ['char-alphabetic?', charAlphabeticPrim, Docs.charAlphabetic],
+  ['char-numeric?', charNumericPrim, Docs.charNumeric],
+  ['char-whitespace?', charWhitespacePrim, Docs.charWhitespace],
+  ['char-upper-case?', charUpperCasePrim, Docs.charUpperCase],
+  ['char-lower-case?', charLowerCasePrim, Docs.charLowerCase],
+  ['digit-value', digitValuePrim, Docs.digitValue],
+  ['char->integer', charIntegerPrim, Docs.charToInteger],
+  ['integer->char', integerCharPrim, Docs.integerToChar],
+  ['char-upcase', charUpcasePrim, Docs.charUpcase],
+  ['char-downcase', charDowncasePrim, Docs.charDowncase],
+  ['char-foldcase', charFoldcasePrim, Docs.charFoldcase],
   ['string?', stringPrim, Docs.stringQ],
   ['string-length', stringLengthPrim, Docs.stringLength],
   ['string-ref', stringRefPrim, Docs.stringRef],

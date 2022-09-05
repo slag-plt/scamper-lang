@@ -438,6 +438,160 @@ export const reverse: Doc = new Doc(
   'Returns a new list containing the elements of `l` in reverse order.'
 )
 
+export const charQ: Doc = new Doc(
+  '(char? v): boolean?', [
+    'v: any',
+  ],
+  'Returns `#t` if and only `v` is a character.'
+)
+
+export const charEq: Doc = new Doc(
+  '(char=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... are all equivalent characters.'
+)
+
+export const charLt: Doc = new Doc(
+  '(char<? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have strictly increasing character values.'
+)
+
+export const charGt: Doc = new Doc(
+  '(char>? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have strictly decreasing character values.'
+)
+
+export const charLeq: Doc = new Doc(
+  '(char<=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have non-decreasing character values.'
+)
+
+export const charGeq: Doc = new Doc(
+  '(char>=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have non-increasing character values.'
+)
+
+export const charEqCi: Doc = new Doc(
+  '(char-ci=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... are all equivalent characters, ignoring case.'
+)
+
+export const charLtCi: Doc = new Doc(
+  '(char-ci<? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have strictly increasing character values, ignoring case.'
+)
+
+export const charGtCi: Doc = new Doc(
+  '(char-ci>? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have strictly decreasing character values, ignoring case.'
+)
+
+export const charLeqCi: Doc = new Doc(
+  '(char-ci<=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have non-decreasing character values, ignoring case.'
+)
+
+export const charGeqCi: Doc = new Doc(
+  '(char-ci>=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have non-increasing character values, ignoring case.'
+)
+
+export const charAlphabetic: Doc = new Doc(
+  '(char-alphabetic? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is an alphabetic character.'
+)
+
+export const charNumeric: Doc = new Doc(
+  '(char-numeric? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is a numeric character.'
+)
+
+export const charWhitespace: Doc = new Doc(
+  '(char-whitespace? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is a whitespace character.'
+)
+
+export const charUpperCase: Doc = new Doc(
+  '(char-upper-case? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is an upper-case character.'
+)
+
+export const charLowerCase: Doc = new Doc(
+  '(char-lower-case? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is a lower-case character.'
+)
+
+export const digitValue: Doc = new Doc(
+  '(digit-value c): integer?', [
+    'c: char?',
+  ],
+  'Returns the numeric value of `c` if `c` is a decimal digit (0-10), otherwise raises an error.'
+)
+
+export const charToInteger: Doc = new Doc(
+  '(char->integer c): integer?', [
+    'c: char?',
+  ],
+  'Returns the codepoint value of character `c`.'
+)
+
+export const integerToChar: Doc = new Doc(
+  '(integer->char n): char?', [
+    'n: integer?',
+  ],
+  'Returns the character with codepoint value `n`.'
+)
+
+export const charUpcase: Doc = new Doc(
+  '(char-upcase c): char?', [
+    'c: char?',
+  ],
+  'Returns the upper-case equivalent of `c`.'
+)
+
+export const charDowncase: Doc = new Doc(
+  '(char-downcase c): char?', [
+    'c: char?',
+  ],
+  'Returns the lower-case equivalent of `c`.'
+)
+
+export const charFoldcase: Doc = new Doc(
+  '(char-foldcase c): char?', [
+    'c: char?',
+  ],
+  'Returns the case-folded equivalent of `c`. This is a version of `c` that is appropriate for case-insensitive comparison.'
+)
+
 export const stringQ: Doc = new Doc(
   '(string? v): boolean?', [
     'v: any',
