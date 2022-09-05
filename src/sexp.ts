@@ -203,6 +203,8 @@ function tokenizeCharLiteral (src: string, st: LexerState): Result<Token> {
   // to be "(non-)alphabetic" characters. Just maximally chomping the token
   // seems much more sensible.
   const isWhitespace = (c: string): boolean => /\s/.test(c)
+  const isBracket = (c: string): boolean =>
+    c === '(' || c === ')' || c === '[' || c === ']' || c === '{' || c === '}'
 
   if (!(st.i < src.length - 1) && src[st.i] !== '#' && src[st.i + 1] !== '\\') {
     throw new ICE('tokenizeCharLiteral', `Beginning characters are not hash-slash: ${src[st.i]}`)
@@ -213,7 +215,7 @@ function tokenizeCharLiteral (src: string, st: LexerState): Result<Token> {
     let namedChar = startsWithNamedChar(src, st)
     if (namedChar !== undefined) {
       tokenizeWord(namedChar, src, st)
-      if (st.i >= src.length || isWhitespace(src[st.i])) {
+      if (st.i >= src.length || (isWhitespace(src[st.i]) || isBracket(src[st.i]))) {
         return ok(st.emitToken())
       } else {
         // N.B., add the offending character onto the end of the "bad" token
@@ -229,7 +231,8 @@ function tokenizeCharLiteral (src: string, st: LexerState): Result<Token> {
       }
     } else if (st.i >= src.length - 1 ||
                (isWhitespace(src[st.i]) && !isWhitespace(src[st.i + 1])) ||
-               (!isWhitespace(src[st.i]) && isWhitespace(src[st.i + 1]))) {
+               (!isWhitespace(src[st.i]) && (isWhitespace(src[st.i + 1]) ||
+                                             isBracket(src[st.i + 1])))) {
       st.append(src[st.i])
       if (src[st.i] === '\n') {
         st.advanceLine()

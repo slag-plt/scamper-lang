@@ -97,7 +97,7 @@ export const namedCharValues = new Map([
   ['newline', String.fromCharCode(9)],
   ['null', String.fromCharCode(-1)],
   ['return', String.fromCharCode(12)],
-  ['space', String.fromCharCode(31)],
+  ['space', ' '],
   ['tab', String.fromCharCode(8)]
 ])
 

@@ -1,5 +1,5 @@
 import * as L from '../lang.js'
-import { ICE, ok, Result, rethrow } from '../result.js'
+import { join, ICE, ok, Result } from '../result.js'
 import { evaluateExp, runtimeError } from '../runtime.js'
 import * as Utils from './utils.js'
 import { msg } from '../messages.js'
@@ -470,41 +470,114 @@ const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 // Characters (6.6)
 
 // TODO: implement:
-//   (char? obj)
-//   (char=? char1 ... chark)
-//   (char<? char1 ... chark)
-//   (char>? char1 ... chark)
-//   (char<=? char1 ... chark)
-//   (char>=? char1 ... chark)
-//   (char-ci=? char1 ... chark)
-//   (char-ci<? char1 ... chark)
-//   (char-ci>? char1 ... chark)
-//   (char-ci<=? char1 ... chark)
-//   (char-ci>=? char1 ... chark)
-//   (char-alphabetic? char)
-//   (char-numeric? char)
-//   (char-whitespace? letter)
-//   (char-upper-case? letter)
-//   (char-lower-case? letter)
-//   (digit-value char)
-//   (char->integer char)
-//   (integer->char n)
-//   (char-upcase char)
-//   (char-downcase char)
-//   (char-foldcase char)
+
+const charQPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char?', ['any'], undefined, args, app).andThen(_ =>
+    ok(L.nlebool(L.isChar(args[0]))))
+
+function pairwiseSatisfies<T> (f: (a: T, b: T) => boolean, xs: T[]): boolean {
+  if (xs.length <= 1) {
+    return true
+  } else {
+    for (let i = 0; i < xs.length - 1; i++) {
+      if (!f(xs[i], xs[i + 1])) {
+        return false
+      }
+    }
+    return true
+  }
+}
+
+function mkCharComparePrim (name: string, f: (a: string, b: string) => boolean): L.Prim {
+  return (_env, args, app) => {
+    const err = Utils.checkArgs(name, [], 'char?', args, app)
+    if (err) { return err }
+    return ok(L.nlebool(pairwiseSatisfies((a, b) => f(L.asChar_(a), L.asChar_(b)), args)))
+  }
+}
+
+const charEqPrim: L.Prim = mkCharComparePrim('char=?', (a, b) => a === b)
+const charLtPrim: L.Prim = mkCharComparePrim('char<?', (a, b) => a.codePointAt(0)! < b.codePointAt(0)!)
+const charGtPrim: L.Prim = mkCharComparePrim('char>?', (a, b) => a.codePointAt(0)! > b.codePointAt(0)!)
+const charLeqPrim: L.Prim = mkCharComparePrim('char<=?', (a, b) => a.codePointAt(0)! <= b.codePointAt(0)!)
+const charGeqPrim: L.Prim = mkCharComparePrim('char>=?', (a, b) => a.codePointAt(0)! >= b.codePointAt(0)!)
+const charEqCiPrim: L.Prim = mkCharComparePrim('char-ci=?', (a, b) => a.toLowerCase() === b.toLowerCase())
+const charLtCiPrim: L.Prim = mkCharComparePrim('char-ci<?', (a, b) => a.toLowerCase().codePointAt(0)! < b.toLowerCase().codePointAt(0)!)
+const charGtCiPrim: L.Prim = mkCharComparePrim('char-ci>?', (a, b) => a.toLowerCase().codePointAt(0)! > b.toLowerCase().codePointAt(0)!)
+const charLeqCiPrim: L.Prim = mkCharComparePrim('char-ci<=?', (a, b) => a.toLowerCase().codePointAt(0)! <= b.toLowerCase().codePointAt(0)!)
+const charGeqCiPrim: L.Prim = mkCharComparePrim('char-ci>=?', (a, b) => a.toLowerCase().codePointAt(0)! >= b.toLowerCase().codePointAt(0)!)
+
+function mkCharPredicatePrim (name: string, f: (a: string) => boolean): L.Prim {
+  return (_env, args, app) => {
+    const err = Utils.checkArgs(name, ['char?'], undefined, args, app)
+    if (err) { return err }
+    return ok(L.nlebool(f(L.asChar_(args[0]))))
+  }
+}
+
+const charAlphabeticPrim: L.Prim =
+  mkCharPredicatePrim('char-alphabetic?', (a) => /\p{L}/gu.test(a))
+const charNumericPrim: L.Prim =
+  mkCharPredicatePrim('char-numeric?', (a) => /\p{N}/gu.test(a))
+const charWhitespacePrim: L.Prim =
+  mkCharPredicatePrim('char-whitespace?', (a) => /\p{Z}/gu.test(a))
+const charUpperCasePrim: L.Prim =
+  mkCharPredicatePrim('char-upper-case?', (a) => /\p{Lu}/gu.test(a))
+const charLowerCasePrim: L.Prim =
+  mkCharPredicatePrim('char-lower-case?', (a) => /\p{Ll}/gu.test(a))
+
+const digitValuePrim: L.Prim = (_env, args, app) => {
+  const err = Utils.checkArgs('digit-value', ['char?'], undefined, args, app)
+  if (err) { return err }
+  const char = L.asChar_(args[0])
+  const n = parseInt(char, 10)
+  if (isNaN(n)) {
+    return runtimeError(msg('error-precondition-not-met', 'digit-value', 'decimal digit', char), app)
+  } else {
+    return ok(L.nlenumber(n))
+  }
+}
+
+const charIntegerPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char->integer', ['char?'], undefined, args, app).andThen(_ =>
+    ok(L.nlenumber(L.asChar_(args[0]).codePointAt(0)!)))
+
+const integerCharPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('integer->char', ['integer?'], undefined, args, app).andThen(_ =>
+    ok(L.nlechar(String.fromCodePoint(L.asNum_(args[0])))))
+
+const charUpcasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char-upcase', ['char?'], undefined, args, app).andThen(_ =>
+    ok(L.nlechar(L.asChar_(args[0]).toUpperCase())))
+
+const charDowncasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char-downcase', ['char?'], undefined, args, app).andThen(_ =>
+    ok(L.nlechar(L.asChar_(args[0]).toLowerCase())))
+
+// N.B., "folding" in Unicode returns a character to a "canonical" form, suitable for
+// comparison in a "case-insensitive" manner. toLowerCase is Unicode aware, so maybe
+// this implementation works. But... yea, maybe not!
 //
-// ...but there are no characters in Javascript. How should we implement them?
+// See: https://unicode.org/reports/tr18/#General_Category_Property
+const charFoldcasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('char-foldcase', ['char?'], 'char?', args, app).andThen(_ =>
+    ok(L.nlechar(L.asChar_(args[0]).toLowerCase())))
 
 // Strings (6.7)
 
-const stringPrim: L.Prim = (_env, args, app) =>
+const stringQPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('string?', ['any'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(L.isString(args[0]))))
 
-// TODO: implement:
-//   (make-string k)
-//   (make-string k char)
-//   (string char ...)
+// N.B., we don't implement the (make-string k) variant because our strings are
+// immutable, so having an "empty" string of size k does not make sense.
+const makeStringPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('make-string', ['integer?', 'char?'], 'string?', args, app).andThen(_ =>
+    ok(L.nlestr(L.asChar_(args[1]).repeat(L.asNum_(args[0])))))
+
+const stringPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('string', ['char?'], 'char?', args, app).andThen(_ =>
+    ok(L.nlestr(args.map((e) => L.asChar_(e)).join(''))))
 
 const stringLengthPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('string-length', ['string?'], undefined, args, app).andThen(_ =>
@@ -524,44 +597,141 @@ const stringRefPrim: L.Prim = function (_env, args, app) {
 
 // N.B., string-set! is unimplemented since it is effectful.
 
-// TODO: implement:
-//   (string=? str1 ... strk)
-//   (string<? str1 ... strk)
-//   (string>? str1 ... strk)
-//   (string<=? str1 ... strk)
-//   (string>=? str1 ... strk)
-//   ...and their string-ci equivalents...
-//   (string-upcase str)
-//   (string-downcase str)
-//   (string-foldcase str)
-//   (substring str start end)
-//   (string-append str1 ... strk)
-//   (string->list string)
-//   (string->list string start end)
-//   (string->list string start end)
-//   (list->string list)
-//   (string-copy string)
-//   (string-copy string start)
-//   (string-copy string start end)
-//
-// ...or some subset of these, at least.
+function mkStringComparePrim (name: string, f: (a: string, b: string) => boolean): L.Prim {
+  return (_env, args, app) =>
+    Utils.checkArgsResult(name, [], 'string?', args, app).andThen(_ =>
+      ok(L.nlebool(pairwiseSatisfies((a, b) =>
+        f(L.asString_(a), L.asString_(b)), args))))
+}
 
-// N.B., string-copy! and string-fill! are unimplemented since they are effectful.
+const stringEqPrim: L.Prim = mkStringComparePrim('string=?', (a, b) => a === b)
+const stringLtPrim: L.Prim = mkStringComparePrim('string<?', (a, b) => a < b)
+const stringGtPrim: L.Prim = mkStringComparePrim('string>?', (a, b) => a > b)
+const stringLeqPrim: L.Prim = mkStringComparePrim('string<=?', (a, b) => a <= b)
+const stringGeqPrim: L.Prim = mkStringComparePrim('string>=?', (a, b) => a >= b)
+const stringEqCiPrim: L.Prim = mkStringComparePrim('string-ci=?', (a, b) => a.toLowerCase() === b.toLowerCase())
+const stringLtCiPrim: L.Prim = mkStringComparePrim('string-ci<?', (a, b) => a.toLowerCase() < b.toLowerCase())
+const stringGtCiPrim: L.Prim = mkStringComparePrim('string-ci>?', (a, b) => a.toLowerCase() > b.toLowerCase())
+const stringLeqCiPrim: L.Prim = mkStringComparePrim('string-ci<=?', (a, b) => a.toLowerCase() <= b.toLowerCase())
+const stringGeqCiPrim: L.Prim = mkStringComparePrim('string-ci>=?', (a, b) => a.toLowerCase() >= b.toLowerCase())
 
-// Additional functions from racket/string that are exported to racket.
+const stringUpcasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('string-upcase', ['string?'], undefined, args, app).andThen(_ =>
+    ok(L.nlestr(L.asString_(args[0]).toUpperCase())))
 
-const stringSplitPrim: L.Prim = (_env, args, app) =>
-  Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
-    ok(L.arrayToList(L.asString_(args[0]).split(L.asString_(args[1])).map(L.nlestr))))
+const stringDowncasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('string-downcase', ['string?'], undefined, args, app).andThen(_ =>
+    ok(L.nlestr(L.asString_(args[0]).toLowerCase())))
+
+const stringFoldcasePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('string-foldcase', ['string?'], undefined, args, app).andThen(_ =>
+    ok(L.nlestr(L.asString_(args[0]).toLowerCase())))
+
+const substringPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('substring', ['string?', 'integer?', 'integer?'], undefined, args, app).andThen(_ =>
+    ok(L.nlestr(L.asString_(args[0]).substring(L.asNum_(args[1]), L.asNum_(args[2])))))
 
 const stringAppendPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('string-append', ['string?'], 'string?', args, app).andThen(_ =>
     ok(L.nlestr(args.map(L.asString_).join(''))))
 
+const stringListPrim: L.Prim = (_env, args, app) => {
+  if (args.length !== 1 && args.length !== 3) {
+    return runtimeError(msg('error-arity', 'string->list', '1 or 3', args.length), app)
+  }
+  if (!L.isString(args[0])) {
+    return runtimeError(msg('error-type-expected-fun', 'string->list', 'string', args[0].tag), app)
+  }
+  const str = L.asString_(args[0])
+  let start, end
+  if (args.length === 1) {
+    start = 0
+    end = str.length
+  } else {
+    if (!L.isInteger(args[1])) {
+      return runtimeError(msg('error-type-expected-fun', 'string->list', 'integer', args[1].tag), app)
+    }
+    if (!L.isInteger(args[2])) {
+      return runtimeError(msg('error-type-expected-fun', 'string->list', 'integer', args[2].tag), app)
+    }
+    start = L.asNum_(args[1])
+    end = L.asNum_(args[2])
+  }
+  return ok(L.arrayToList(
+    str.substring(start, end).split('').map(L.nlechar)))
+}
+
+const listStringPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('list->string', ['list?'], undefined, args, app).andThen(_ => {
+    const lst = L.asList_(args[0])
+    for (const e of lst) {
+      if (!L.isChar(e)) {
+        return runtimeError(msg('error-type-expected-fun',
+          'list->string', 'list of chars', e), app)
+      }
+    }
+    return ok(L.nlestr(L.asList_(args[0]).map(L.asChar_).join('')))
+  })
+
+// N.B., the following functions:
+//
+//   (string-copy string)
+//   (string-copy string start)
+//   (string-copy string start end)
+//
+// and string-copy! and string-fill! are unimplemented since they don't make
+// sense in an immutable context.
+
+// Additional functions from racket/string.
+
+const stringSplitPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
+    ok(L.arrayToList(L.asString_(args[0]).split(L.asString_(args[1])).map(L.nlestr))))
+
 const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
-  ['string?', stringPrim, Docs.stringQ],
+  ['char?', charQPrim, Docs.charQ],
+  ['char=?', charEqPrim, Docs.charEq],
+  ['char<?', charLtPrim, Docs.charLt],
+  ['char>?', charGtPrim, Docs.charGt],
+  ['char<=?', charLeqPrim, Docs.charLeq],
+  ['char>=?', charGeqPrim, Docs.charGeq],
+  ['char-ci=?', charEqCiPrim, Docs.charEqCi],
+  ['char-ci<?', charLtCiPrim, Docs.charLtCi],
+  ['char-ci>?', charGtCiPrim, Docs.charGtCi],
+  ['char-ci<=?', charLeqCiPrim, Docs.charLeqCi],
+  ['char-ci>=?', charGeqCiPrim, Docs.charGeqCi],
+  ['char-alphabetic?', charAlphabeticPrim, Docs.charAlphabetic],
+  ['char-numeric?', charNumericPrim, Docs.charNumeric],
+  ['char-whitespace?', charWhitespacePrim, Docs.charWhitespace],
+  ['char-upper-case?', charUpperCasePrim, Docs.charUpperCase],
+  ['char-lower-case?', charLowerCasePrim, Docs.charLowerCase],
+  ['digit-value', digitValuePrim, Docs.digitValue],
+  ['char->integer', charIntegerPrim, Docs.charToInteger],
+  ['integer->char', integerCharPrim, Docs.integerToChar],
+  ['char-upcase', charUpcasePrim, Docs.charUpcase],
+  ['char-downcase', charDowncasePrim, Docs.charDowncase],
+  ['char-foldcase', charFoldcasePrim, Docs.charFoldcase],
+  ['string?', stringQPrim, Docs.stringQ],
+  ['make-string', makeStringPrim, Docs.makeString],
+  ['string', stringPrim, Docs.string],
   ['string-length', stringLengthPrim, Docs.stringLength],
   ['string-ref', stringRefPrim, Docs.stringRef],
+  ['string=?', stringEqPrim, Docs.stringEq],
+  ['string<?', stringLtPrim, Docs.stringLt],
+  ['string>?', stringGtPrim, Docs.stringGt],
+  ['string<=?', stringLeqPrim, Docs.stringLeq],
+  ['string>=?', stringGeqPrim, Docs.stringGeq],
+  ['string-ci=?', stringEqCiPrim, Docs.stringEqCi],
+  ['string-ci<?', stringLtCiPrim, Docs.stringLtCi],
+  ['string-ci>?', stringGtCiPrim, Docs.stringGtCi],
+  ['string-ci<=?', stringLeqCiPrim, Docs.stringLeqCi],
+  ['string-ci>=?', stringGeqCiPrim, Docs.stringGeqCi],
+  ['string-upcase', stringUpcasePrim, Docs.stringUpcase],
+  ['string-downcase', stringDowncasePrim, Docs.stringDowncase],
+  ['string-foldcase', stringFoldcasePrim, Docs.stringFoldcase],
+  ['substring', substringPrim, Docs.substring],
+  ['string->list', stringListPrim, Docs.stringList],
+  ['list->string', listStringPrim, Docs.listString],
   ['string-split', stringSplitPrim, Docs.stringSplit],
   ['string-append', stringAppendPrim, Docs.stringAppend]
 ]
@@ -585,9 +755,17 @@ const applyPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('apply', ['procedure?'], 'any', args, app).andThen(_ =>
     evaluateExp(env, L.nlecall(args[0], [...args.slice(1)])))
 
-
-// TODO: implement:
-//   (string-map fn str1 ... strk)
+const stringMapPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('string-map', ['procedure?', 'string?'], 'string?', args, app).andThen(_ =>
+    join(L.asString_(args[1]).split('').map(c =>
+      evaluateExp(env, L.nlecall(args[0], [L.nlestr(c)])))).andThen(vs => {
+        for (const v of vs) {
+          if (!L.isChar(v)) {
+            return runtimeError(msg('error-precondition-not-met', 'string-map', 1, 'produces a character', Pretty.expToString(0, v)), app)
+          }
+        }
+        return ok(L.nlestr(vs.map(v => L.asChar_(v)).join('')))
+      }))
 
 const mapPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('map', ['procedure?', 'list?'], 'any', args, app).andThen(_ =>
@@ -671,6 +849,7 @@ const qqPrim: L.Prim = (_env, args, app) =>
 const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['procedure?', procedurePrim, Docs.procedure],
   ['apply', applyPrim, Docs.apply],
+  ['string-map', stringMapPrim, Docs.stringMap],
   ['map', mapPrim, Docs.map],
   ['filter', filterPrim, Docs.filter],
   ['fold', foldPrim, Docs.fold],
