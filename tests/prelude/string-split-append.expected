@@ -1,0 +1,8 @@
+(list "HelloWorld")
+(list "Hello " "o" "" " World")
+null
+(list "00" "" "00" "" "")
+(list "1234" "67")
+"HelloWorldHello woww World"
+" 001100111234567"
+"12345678910111213141516"

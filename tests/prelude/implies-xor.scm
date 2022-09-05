@@ -1,0 +1,8 @@
+(implies #t #f)
+(implies #f #f)
+(implies #t #t)
+(implies #f #t)
+(xor #t #f)
+(xor #f #f)
+(xor #t #t)
+(xor #f #t)
