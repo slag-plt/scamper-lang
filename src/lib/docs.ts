@@ -599,6 +599,21 @@ export const stringQ: Doc = new Doc(
   'Returns `#t` if and only `v` is a string.'
 )
 
+export const makeString: Doc = new Doc(
+  '(make-string k c): string?', [
+    'k: integer?',
+    'c: char?',
+  ],
+  'Returns a string of length `k` with each character set to `c`.'
+)
+
+export const string: Doc = new Doc(
+  '(string c1 c2 ...): string?', [
+    'c: char?',
+  ],
+  'Returns a string consisting of the characters `c1`, `c2`, ...'
+)
+
 export const stringLength: Doc = new Doc(
   '(string-length v): integer?', [
     'v: string?',
@@ -614,12 +629,104 @@ export const stringRef: Doc = new Doc(
   'Returns the character at index `n` of string `s`.'
 )
 
-export const stringSplit: Doc = new Doc(
-  '(string-split s sep): list?', [
+export const stringEq: Doc = new Doc(
+  '(string=? s1 s2 ...): boolean?', [
     's: string?',
-    'sep: string?',
   ],
-  'Returns a list of strings obtained by splitting `s` at occurrences of `sep`.'
+  'Returns `#t` if and only `s1`, `s2`, ... are equivalent strings.'
+)
+
+export const stringLt: Doc = new Doc(
+  '(string<? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in strictly lexicographically increasing order.'
+)
+
+export const stringGt: Doc = new Doc(
+  '(string>? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in strictly lexicographically decreasing order.'
+)
+
+export const stringLeq: Doc = new Doc(
+  '(string<=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in lexicographical order.'
+)
+
+export const stringGeq: Doc = new Doc(
+  '(string>=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in reverse lexicographical order.'
+)
+
+export const stringEqCi: Doc = new Doc(
+  '(string-ci=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are equivalent strings, ignoring case.'
+)
+
+export const stringLtCi: Doc = new Doc(
+  '(string-ci<? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in strictly lexicographically increasing order, ignoring case.'
+)
+
+export const stringGtCi: Doc = new Doc(
+  '(string-ci>? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in strictly lexicographically decreasing order, ignoring case.'
+)
+
+export const stringLeqCi: Doc = new Doc(
+  '(string-ci<=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in lexicographical order, ignoring case.'
+)
+
+export const stringGeqCi: Doc = new Doc(
+  '(string-ci>=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in reverse lexicographical order, ignoring case.'
+)
+
+export const stringUpcase: Doc = new Doc(
+  '(string-upcase s): string?', [
+    's: string?',
+  ],
+  'Returns the upper-case version of `s`.'
+)
+
+export const stringDowncase: Doc = new Doc(
+  '(string-downcase s): string?', [
+    's: string?',
+  ],
+  'Returns the lower-case version of `s`.'
+)
+
+export const stringFoldcase: Doc = new Doc(
+  '(string-foldcase s): string?', [
+    's: string?',
+  ],
+  'Returns the case-folded version of `s`. This is a version of `s` that is appropriate for case-insensitive comparison.'
+)
+
+export const substring: Doc = new Doc(
+  '(substring s start end): string?', [
+    's: string?',
+    'start: integer?',
+    'end: integer?',
+  ],
+  'Returns the substring of `s` from index `start` (inclusive) to index `end` (exclusive).'
 )
 
 export const stringAppend: Doc = new Doc(
@@ -627,6 +734,28 @@ export const stringAppend: Doc = new Doc(
     's: string?',
   ],
   'Returns a string made by joining `s1`, `s2`, ... together.'
+)
+
+export const stringList: Doc = new Doc(
+  '(string->list s): list?', [
+    's: string?',
+  ],
+  'Returns a list of the characters in `s`.'
+)
+
+export const listString: Doc = new Doc(
+  '(list->string l): string?', [
+    'l: list?',
+  ],
+  'Returns a string made by joining the characters in `l` together.'
+)
+
+export const stringSplit: Doc = new Doc(
+  '(string-split s sep): list?', [
+    's: string?',
+    'sep: string?',
+  ],
+  'Returns a list of strings obtained by splitting `s` at occurrences of `sep`.'
 )
 
 export const procedure: Doc = new Doc(
@@ -642,6 +771,14 @@ export const apply: Doc = new Doc(
     'v: any',
   ],
   'Calls `f` with arguments `v1`, `v2`, ... .'
+)
+
+export const stringMap: Doc = new Doc(
+  '(string-map f s): string?', [
+    'f: procedure?, a function from characters to characters',
+    's: string?',
+  ],
+  'Returns a new string containing the results of applying `f` to each character of `s`.'
 )
 
 export const map: Doc = new Doc(
