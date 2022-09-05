@@ -1,6 +1,6 @@
 import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
-import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps } from './sexp.js'
+import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps, Token } from './sexp.js'
 import { msg } from './messages.js'
 
 const reservedWords = [
@@ -218,5 +218,5 @@ function parseProgram (src: string): Result<Program> {
 }
 
 export {
-  parseExp, parseProgram
+  parseExp, parseProgram, sexpsToProgram
 }
