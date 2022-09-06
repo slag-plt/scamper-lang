@@ -53,18 +53,21 @@ export function checkArgs(func: string, specs: ArgSpec[], restSpec: ArgSpec | un
     return runtimeError(msg('error-arity', func, specs.length, args.length), call) as Error<any>
   }
   // Now, check the types of the arguments.
-  specs.forEach((spec, i) => {
-    if (specToPred(spec)(args[i])) {
-      return runtimeError(msg('error-type-expected-fun', func, i, args[i].tag), call)
+  let i = 0
+  for (const spec of specs) {
+    if (!specToPred(spec)(args[i])) {
+      return runtimeError(msg('error-type-expected-fun', func, i, args[i].tag), call) as Error<any>
     }
-  })
+    i += 1
+  }
   // Finally, check the types of the rest parameters if needed.
   if (restSpec) {
-    args.slice(specs.length).forEach((arg, i) => {
-      if (specToPred(restSpec)(arg)) {
-        return runtimeError(msg('error-type-expected-fun', func, i + specs.length, arg.tag), call)
+    for (; i < args.length; i++) {
+      const arg = args[i]
+      if (!specToPred(restSpec)(arg)) {
+        return runtimeError(msg('error-type-expected-fun', func, i, arg.tag), call) as Error<any>
       }
-    })
+    }
   }
   // If we get this far, then we're ok. There are no errors to return!
   return undefined
