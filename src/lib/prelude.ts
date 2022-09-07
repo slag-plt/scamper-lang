@@ -139,7 +139,7 @@ const absPrim: L.Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x
 // To avoid clutter in the documentation.
 
 const quotientPrim: L.Prim = (_env, args, app) =>
-  numericBOp('quotient', (x, y) => Math.floor(x / y), args, app)
+  numericBOp('quotient', (x, y) => Math.trunc(x / y), args, app)
 
 const remainderPrim: L.Prim = (_env, args, app) =>
   numericBOp('remainder', (x, y) => x % y, args, app)
