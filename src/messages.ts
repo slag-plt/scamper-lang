@@ -7,6 +7,7 @@ const templates: Messages = new Map([
   ['error-arity', (vs) => `${vs[0]} expects ${vs[1]} arguments but ${vs[2]} arguments were given`],
   ['error-arity-atleast', (vs) => `${vs[0]} expects at least ${vs[1]} arguments but ${vs[2]} arguments were given`],
   ['error-cond-no-branch-applies', (_) => 'No guard of the conditional expression evaluated to #t'],
+  ['error-duplicate-name', (vs) => `Duplicate name ${vs[0]} given in definition.`],
   ['error-empty-app', (_) => 'Function application cannot be empty'],
   ['error-eof', (_) => 'Unexpected end of source code encountered'],
   ['error-eof-string', (_) => 'Unexpected end of source code encountered while parsing a string literal'],
