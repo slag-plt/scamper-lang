@@ -640,7 +640,7 @@ const stringListPrim: L.Prim = (_env, args, app) => {
     return runtimeError(msg('error-arity', 'string->list', '1 or 3', args.length), app)
   }
   if (!L.isString(args[0])) {
-    return runtimeError(msg('error-type-expected-fun', 'string->list', 'string', args[0].tag), app)
+    return runtimeError(msg('error-type-expected-fun', 1, 'string->list', 'string', args[0].tag), app)
   }
   const str = L.asString_(args[0])
   let start, end
@@ -649,10 +649,10 @@ const stringListPrim: L.Prim = (_env, args, app) => {
     end = str.length
   } else {
     if (!L.isInteger(args[1])) {
-      return runtimeError(msg('error-type-expected-fun', 'string->list', 'integer', args[1].tag), app)
+      return runtimeError(msg('error-type-expected-fun', 2, 'string->list', 'integer', args[1].tag), app)
     }
     if (!L.isInteger(args[2])) {
-      return runtimeError(msg('error-type-expected-fun', 'string->list', 'integer', args[2].tag), app)
+      return runtimeError(msg('error-type-expected-fun', 3, 'string->list', 'integer', args[2].tag), app)
     }
     start = L.asNum_(args[1])
     end = L.asNum_(args[2])
@@ -667,7 +667,7 @@ const listStringPrim: L.Prim = (_env, args, app) =>
     for (const e of lst) {
       if (!L.isChar(e)) {
         return runtimeError(msg('error-type-expected-fun',
-          'list->string', 'list of chars', e), app)
+          'list->string', 1, 'list of chars', e), app)
       }
     }
     return ok(L.nlestr(L.asList_(args[0]).map(L.asChar_).join('')))
@@ -758,7 +758,7 @@ const applyPrim: L.Prim = (env, args, app) =>
 const stringMapPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('string-map', ['procedure?', 'string?'], 'string?', args, app).andThen(_ =>
     join(L.asString_(args[1]).split('').map(c =>
-      evaluateExp(env, L.nlecall(args[0], [L.nlestr(c)])))).andThen(vs => {
+      evaluateExp(env, L.nlecall(args[0], [L.nlechar(c)])))).andThen(vs => {
         for (const v of vs) {
           if (!L.isChar(v)) {
             return runtimeError(msg('error-precondition-not-met', 'string-map', 1, 'produces a character', Pretty.expToString(0, v)), app)

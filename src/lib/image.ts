@@ -166,11 +166,11 @@ const pathPrim: Prim = (_env, args, app) => {
       if (isPair(e)) {
         const p = asPair_(e)
         if (!isNumber(p[0]) || !isNumber(p[1])) {
-          return runtimeError(msg('error-type-expected-fun', 'path', 'list of pairs of numbers', e.tag), e)
+          return runtimeError(msg('error-type-expected-fun', 3, 'path', 'list of pairs of numbers', e.tag), e)
         } 
         return ok([asNum_(p[0]), asNum_(p[1])])
       } else {
-        return runtimeError(msg('error-type-expected-fun', 'path', 'list of pairs of numbers', e.tag), e)
+        return runtimeError(msg('error-type-expected-fun', 3, 'path', 'list of pairs of numbers', e.tag), e)
       }
     }))
     return result.andThen((points: [number, number][]) =>

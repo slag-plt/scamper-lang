@@ -73,9 +73,9 @@ const notePrim: L.Prim = (_env, args, app) => {
   const octave = L.asNum_(args[1])
   const dur = L.fromObj_<Duration>(args[2])
   if (!isPitchClass(pitch)) {
-    return runtimeError(msg('error-type-expected-fun', 'note', 'pitch', args[0].tag), app)
+    return runtimeError(msg('error-type-expected-fun', 1, 'note', 'pitch', args[0].tag), app)
   } else if  (!isOctave(octave)) {
-    return runtimeError(msg('error-type-expected-fun', 'note', 'octave', args[1].tag), app)
+    return runtimeError(msg('error-type-expected-fun', 1, 'note', 'octave', args[1].tag), app)
   } else {
     return ok(L.nleobj('Composition', note(pitch, octave, dur)))
   }
