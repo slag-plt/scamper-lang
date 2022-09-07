@@ -758,7 +758,7 @@ const applyPrim: L.Prim = (env, args, app) =>
 const stringMapPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('string-map', ['procedure?', 'string?'], 'string?', args, app).andThen(_ =>
     join(L.asString_(args[1]).split('').map(c =>
-      evaluateExp(env, L.nlecall(args[0], [L.nlestr(c)])))).andThen(vs => {
+      evaluateExp(env, L.nlecall(args[0], [L.nlechar(c)])))).andThen(vs => {
         for (const v of vs) {
           if (!L.isChar(v)) {
             return runtimeError(msg('error-precondition-not-met', 'string-map', 1, 'produces a character', Pretty.expToString(0, v)), app)
