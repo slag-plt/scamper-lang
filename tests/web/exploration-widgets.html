@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div id="panel" class='scamper-exploration'>
+    <div id="controls">
+      <button appearance="primary" class="step-forward">Step (→)</button>
+      <button appearance="primary" class="step-backward">Step (←)</button>
+      <button appearance="secondary" class="stmt-forward">Stmt (→)</button>
+      <button appearance="secondary" class="stmt-backward">Stmt (←)</button>
+      <button appearance="secondary" class="eval">Evaluate</button>
+      <button appearance="secondary" class="reset">Reset</button>
+      <span id="step" class="step-counter">Step</span>
+    </div>
+    <div id="display">
+      <div id="program" style="font-family: monospace; white-space: pre;" class="program">
+        (import image)
+        
+        (circle 100 "solid" "red")
+      </div>
+      <form id="repl-form">
+        <textarea id="input" class="add-statement-input" placeholder="(+ 1 1)">Additional Statements</textarea>
+      </form>
+      <button appearance="primary" id="add" class="add-statement">Add</button>
+    </div>
+  </div>
+  <script src="../../dist/web/bundle.js"></script>
+  <script>
+    replaceCodeWidgets()
+  </script>
+</body>
+</html>
