@@ -18,14 +18,27 @@ function parserError <T> (message: string, s?: Sexp, hint?: string): Result<T> {
   return error(msg('phase-parser'), message, s?.range, s ? sexpToString(s) : undefined, hint)
 }
 
-function sexpToStringList (s: Sexp): Result<Name[]> {
+function checkDuplicateNames (names: Name[], s: Sexp): Result<Name[]> {
+  const soFar: string[] = []
+  for (const name of names) {
+    if (soFar.includes(name.value)) {
+      return parserError(msg('error-duplicate-name', name.value), s)
+    } else {
+      soFar.push(name.value)
+    }
+  }
+  return ok(names)
+} 
+
+function sexpToUniqueStringList (s: Sexp): Result<Name[]> {
   switch (s.tag) {
     case 'atom':
       return parserError(msg('error-type-expected', 'list', 'identifier'), s)
     case 'slist':
-      return join(s.list.map((x) => x.tag === 'atom'
+      return join<Name>(s.list.map((x) => x.tag === 'atom'
         ? ok(name(x.single, x.range))
         : parserError(msg('error-type-expected', 'identifier', 'list'), x)))
+            .andThen(names => checkDuplicateNames(names, s))
   }
 }
 
@@ -39,7 +52,7 @@ function sexpToBinding (s: Sexp): Result<[Name, Exp]> {
         : s.list[0].tag !== 'atom'
           ? parserError(msg('error-var-binding'), s)
           : sexpToExp(s.list[1]).andThen((e:Exp) =>
-            ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Exp]))
+              ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Exp]))
   }
 }
 
@@ -149,7 +162,7 @@ function sexpToExp (s: Sexp): Result<Exp> {
               case 'lambda':
                 return args.length !== 2
                   ? parserError(msg('error-arity', 'lambda', 2, args.length), s)
-                  : sexpToStringList(args[0]).andThen(xs =>
+                  : sexpToUniqueStringList(args[0]).andThen(xs =>
                     sexpToExp(args[1]).andThen(body =>
                       ok(elam(s.range, xs, body, s.bracket))))
               case 'if':
@@ -220,7 +233,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
         } else if (args[0].tag !== 'atom') {
           return parserError(msg('error-type-expected', 'struct name', args[0].tag), s)
         } else {
-          return sexpToStringList(args[1]).andThen(fields =>
+          return sexpToUniqueStringList(args[1]).andThen(fields =>
             ok(sstruct(name((args[0] as Atom).single, args[0].range), fields)))
         }
       } else {

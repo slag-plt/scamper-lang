@@ -1,0 +1,3 @@
+:9:0: Parser error:
+    Duplicate name x given in definition.
+    In program: (x x y)
