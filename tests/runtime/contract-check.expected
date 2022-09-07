@@ -1,13 +1,9 @@
-
-> scamper-lang@1.3.0 driver
-> dist/driver/index.js tests/runtime/contract-check.scm
-
 :1:0: Runtime error:
-    string-length expected an string? in position 0 but a pair was given
+    string-length expected an string? in position 1 but a pair was given
     In program: (string-length (list 1 2 3))
 :1:2: Runtime error:
-    + expected an number? in position 3 but a lit was given
+    + expected an number? in position 4 but a lit was given
     In program: (+ 1 2 3 "bye")
 :-1:-1: Runtime error:
-    char-upcase expected an char? in position 0 but a lit was given
+    char-upcase expected an char? in position 1 but a lit was given
     In program: ([prim charUpcasePrim] "h")
