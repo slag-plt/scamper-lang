@@ -56,7 +56,7 @@ export function checkArgs(func: string, specs: ArgSpec[], restSpec: ArgSpec | un
   let i = 0
   for (const spec of specs) {
     if (!specToPred(spec)(args[i])) {
-      return runtimeError(msg('error-type-expected-fun', func, i, args[i].tag), call) as Error<any>
+      return runtimeError(msg('error-type-expected-fun', func, spec, i+1, args[i].tag), call) as Error<any>
     }
     i += 1
   }
@@ -65,7 +65,7 @@ export function checkArgs(func: string, specs: ArgSpec[], restSpec: ArgSpec | un
     for (; i < args.length; i++) {
       const arg = args[i]
       if (!specToPred(restSpec)(arg)) {
-        return runtimeError(msg('error-type-expected-fun', func, i, arg.tag), call) as Error<any>
+        return runtimeError(msg('error-type-expected-fun', func, restSpec, i+1, arg.tag), call) as Error<any>
       }
     }
   }
