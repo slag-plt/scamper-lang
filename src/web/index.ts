@@ -113,10 +113,14 @@ function replaceExplorationWidgets(): void {
               trace.addStmt(input.value)
               trace.evaluateProg()
               input.value = ''
+              update()
             }
           }
         }
       })
+      // N.B., after setting up the panel, update the program panel to reflect
+      // the initial state of the program.
+      update()
     } 
   }
 }
