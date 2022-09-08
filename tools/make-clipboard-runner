@@ -1,0 +1,33 @@
+#!/bin/bash
+
+cat <<EOF
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Scamper Web Runner</title>
+  </head>
+  <body>
+    <div>
+      Scamper $(jq -r '.version' package.json)
+      <button onclick="runFromClipboard()">Run from clipboard</button>
+    </div>
+    <hr>
+    <div id="output" class="scamper-output output-prog" style="white-space: pre; font-family: monospace;"></div>
+  </body>
+  <script>
+  $(cat "dist/web/bundle.js")
+  </script>
+  <script>
+    function runFromClipboard() {
+      navigator.clipboard.readText().then(
+        (clipText) => {
+          document.getElementById("output").innerHTML = clipText.replace("<?", "&lt;?")
+          replaceCodeWidgets()
+        })
+    }
+  </script>
+</html>
+EOF

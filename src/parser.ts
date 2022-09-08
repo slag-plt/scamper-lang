@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
+import { eand, ebool, ecall, echar, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps, Token } from './sexp.js'
 import { msg } from './messages.js'
@@ -18,14 +18,27 @@ function parserError <T> (message: string, s?: Sexp, hint?: string): Result<T> {
   return error(msg('phase-parser'), message, s?.range, s ? sexpToString(s) : undefined, hint)
 }
 
-function sexpToStringList (s: Sexp): Result<Name[]> {
+function checkDuplicateNames (names: Name[], s: Sexp): Result<Name[]> {
+  const soFar: string[] = []
+  for (const name of names) {
+    if (soFar.includes(name.value)) {
+      return parserError(msg('error-duplicate-name', name.value), s)
+    } else {
+      soFar.push(name.value)
+    }
+  }
+  return ok(names)
+} 
+
+function sexpToUniqueStringList (s: Sexp): Result<Name[]> {
   switch (s.tag) {
     case 'atom':
       return parserError(msg('error-type-expected', 'list', 'identifier'), s)
     case 'slist':
-      return join(s.list.map((x) => x.tag === 'atom'
+      return join<Name>(s.list.map((x) => x.tag === 'atom'
         ? ok(name(x.single, x.range))
         : parserError(msg('error-type-expected', 'identifier', 'list'), x)))
+            .andThen(names => checkDuplicateNames(names, s))
   }
 }
 
@@ -39,7 +52,7 @@ function sexpToBinding (s: Sexp): Result<[Name, Exp]> {
         : s.list[0].tag !== 'atom'
           ? parserError(msg('error-var-binding'), s)
           : sexpToExp(s.list[1]).andThen((e:Exp) =>
-            ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Exp]))
+              ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Exp]))
   }
 }
 
@@ -89,6 +102,18 @@ function tryParseString (s: string): string | undefined {
 const intRegex = /^[+-]?\d+$/
 const floatRegex = /^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/
 
+export const namedCharValues = new Map([
+  ['alarm', String.fromCharCode(9)], 
+  ['backspace', String.fromCharCode(7)],
+  ['delete', String.fromCharCode(126)],
+  ['escape', String.fromCharCode(26)],
+  ['newline', String.fromCharCode(9)],
+  ['null', String.fromCharCode(-1)],
+  ['return', String.fromCharCode(12)],
+  ['space', ' '],
+  ['tab', String.fromCharCode(8)]
+])
+
 function sexpToExp (s: Sexp): Result<Exp> {
   switch (s.tag) {
     case 'atom': {
@@ -108,6 +133,16 @@ function sexpToExp (s: Sexp): Result<Exp> {
         return ok(ebool(s.range, true))
       } else if (s.single === '#f' || s.single === '#false') {
         return ok(ebool(s.range, false))
+      } else if (s.single.startsWith('#\\')) {
+        const result = s.single.slice(2)
+        if (result.length === 1) {
+          return ok(echar(s.range, result))
+        } else {
+          // N.B., the char is a named character. We already checked that
+          // the named character was valid in the lexer, so we can simply
+          // translate the name into the appropriate character value.
+          return ok(echar(s.range, namedCharValues.get(result)!))
+        }
       } else if (reservedWords.includes(s.single)) {
         return parserError(msg('error-reserved-word'), s)
       } else {
@@ -127,7 +162,7 @@ function sexpToExp (s: Sexp): Result<Exp> {
               case 'lambda':
                 return args.length !== 2
                   ? parserError(msg('error-arity', 'lambda', 2, args.length), s)
-                  : sexpToStringList(args[0]).andThen(xs =>
+                  : sexpToUniqueStringList(args[0]).andThen(xs =>
                     sexpToExp(args[1]).andThen(body =>
                       ok(elam(s.range, xs, body, s.bracket))))
               case 'if':
@@ -198,7 +233,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
         } else if (args[0].tag !== 'atom') {
           return parserError(msg('error-type-expected', 'struct name', args[0].tag), s)
         } else {
-          return sexpToStringList(args[1]).andThen(fields =>
+          return sexpToUniqueStringList(args[1]).andThen(fields =>
             ok(sstruct(name((args[0] as Atom).single, args[0].range), fields)))
         }
       } else {

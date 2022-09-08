@@ -326,7 +326,7 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
             args.length !== 1
               ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
               : !isStructKind(args[0], name)
-                ? runtimeError(msg('error-type-expected-fun', fieldName, `struct ${name}`, args[0].tag))
+                ? runtimeError(msg('error-type-expected-fun', 1, fieldName, `struct ${name}`, args[0].tag))
                 : ok((asStruct_(args[0]) as any)[f.value] as Exp)),
           `struct ${name}`,
           f.range

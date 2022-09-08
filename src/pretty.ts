@@ -1,11 +1,18 @@
 import * as L from './lang.js'
 import { detailsToCompleteString } from './result.js'
+import * as P from './parser.js'
+
+const namedCharTable = new Map(Array.from(P.namedCharValues.entries()).map(([name, value]) => [value, name]))
+
+function charToName (s: string): string {
+  return namedCharTable.get(s) ?? s
+}
 
 function litToString (l: L.Lit): string {
   switch (l.tag) {
     case 'bool': return l.value ? '#t' : '#f'
     case 'num': return l.value.toString()
-    case 'char': return `#${l.value}`
+    case 'char': return `#\\${charToName(l.value)}`
     case 'str': return `"${l.value}"`
   }
 }

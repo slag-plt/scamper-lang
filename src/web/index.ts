@@ -23,6 +23,15 @@ function renderRichWidgets(root: Element | Document): void {
   forEachByClass(document, 'composition', e => Music.emitCompositionWidget(SYNTH, e))
 }
 
+function sanitize(s: string): string {
+  // N.B., pre does not guard against <?---replace for now, but it seems like
+  // we need to escape all entities in pre blocks even though they seem to
+  // work in other cases. This requires more investigation because if we need
+  // to escape _all_ tags, then we need to becareful with our inline html
+  // blocks. Maybe we'll need to custom parse output instead...
+  return s.replace('<?', '&lt;?')
+}
+
 function replaceOutputWidgets() {
   for (const element of document.getElementsByClassName('scamper-output')) {
     const classes = element.className.split(' ')
@@ -40,14 +49,14 @@ function replaceOutputWidgets() {
       for (var i = 0; i < result.value.statements.length; i++) {
         if (outputProg) {
           element.innerHTML += [
-            `&gt; ${Scamper.stmtToString(0, result.value.statements[i], false, true)}`,
-            Scamper.stmtToString(0, result.value.outputs[i], true, true),
-            // N.B., extra spacing to 
+            `&gt; ${sanitize(Scamper.stmtToString(0, result.value.statements[i], false, true))}`,
+            sanitize(Scamper.stmtToString(0, result.value.outputs[i], true, true)),
+            // N.B., extra spacing to make output pretty
             '',   
             ''
           ].join('\n')
         } else {
-          const line = Scamper.stmtToString(0, result.value.outputs[i], false, true)
+          const line = sanitize(Scamper.stmtToString(0, result.value.outputs[i], false, true))
           if (line.trim().length > 0) {
             element.innerHTML += `${line}\n`
           }
@@ -79,7 +88,7 @@ function replaceExplorationWidgets(): void {
       const trace = new Scamper.ProgramTrace(new Scamper.ProgramState(result.value))
       const update = () => {
         forEachByClass(element, 'step-counter', e => { e.innerHTML = `Step ${trace.currentStep()}` })
-        programElement.innerHTML = Scamper.progToString(0, trace.currentState().prog, true, true)
+        programElement.innerHTML = sanitize(Scamper.progToString(0, trace.currentState().prog, true, true))
         renderRichWidgets(programElement)
       }
     
@@ -113,10 +122,14 @@ function replaceExplorationWidgets(): void {
               trace.addStmt(input.value)
               trace.evaluateProg()
               input.value = ''
+              update()
             }
           }
         }
       })
+      // N.B., after setting up the panel, update the program panel to reflect
+      // the initial state of the program.
+      update()
     } 
   }
 }

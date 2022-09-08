@@ -438,11 +438,180 @@ export const reverse: Doc = new Doc(
   'Returns a new list containing the elements of `l` in reverse order.'
 )
 
+export const charQ: Doc = new Doc(
+  '(char? v): boolean?', [
+    'v: any',
+  ],
+  'Returns `#t` if and only `v` is a character.'
+)
+
+export const charEq: Doc = new Doc(
+  '(char=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... are all equivalent characters.'
+)
+
+export const charLt: Doc = new Doc(
+  '(char<? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have strictly increasing character values.'
+)
+
+export const charGt: Doc = new Doc(
+  '(char>? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have strictly decreasing character values.'
+)
+
+export const charLeq: Doc = new Doc(
+  '(char<=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have non-decreasing character values.'
+)
+
+export const charGeq: Doc = new Doc(
+  '(char>=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have non-increasing character values.'
+)
+
+export const charEqCi: Doc = new Doc(
+  '(char-ci=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... are all equivalent characters, ignoring case.'
+)
+
+export const charLtCi: Doc = new Doc(
+  '(char-ci<? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have strictly increasing character values, ignoring case.'
+)
+
+export const charGtCi: Doc = new Doc(
+  '(char-ci>? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have strictly decreasing character values, ignoring case.'
+)
+
+export const charLeqCi: Doc = new Doc(
+  '(char-ci<=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have non-decreasing character values, ignoring case.'
+)
+
+export const charGeqCi: Doc = new Doc(
+  '(char-ci>=? c1 c2 ...): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c1`, `c2`, ... have non-increasing character values, ignoring case.'
+)
+
+export const charAlphabetic: Doc = new Doc(
+  '(char-alphabetic? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is an alphabetic character.'
+)
+
+export const charNumeric: Doc = new Doc(
+  '(char-numeric? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is a numeric character.'
+)
+
+export const charWhitespace: Doc = new Doc(
+  '(char-whitespace? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is a whitespace character.'
+)
+
+export const charUpperCase: Doc = new Doc(
+  '(char-upper-case? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is an upper-case character.'
+)
+
+export const charLowerCase: Doc = new Doc(
+  '(char-lower-case? c): boolean?', [
+    'c: char?',
+  ],
+  'Returns `#t` if and only `c` is a lower-case character.'
+)
+
+export const digitValue: Doc = new Doc(
+  '(digit-value c): integer?', [
+    'c: char?',
+  ],
+  'Returns the numeric value of `c` if `c` is a decimal digit (0-10), otherwise raises an error.'
+)
+
+export const charToInteger: Doc = new Doc(
+  '(char->integer c): integer?', [
+    'c: char?',
+  ],
+  'Returns the codepoint value of character `c`.'
+)
+
+export const integerToChar: Doc = new Doc(
+  '(integer->char n): char?', [
+    'n: integer?',
+  ],
+  'Returns the character with codepoint value `n`.'
+)
+
+export const charUpcase: Doc = new Doc(
+  '(char-upcase c): char?', [
+    'c: char?',
+  ],
+  'Returns the upper-case equivalent of `c`.'
+)
+
+export const charDowncase: Doc = new Doc(
+  '(char-downcase c): char?', [
+    'c: char?',
+  ],
+  'Returns the lower-case equivalent of `c`.'
+)
+
+export const charFoldcase: Doc = new Doc(
+  '(char-foldcase c): char?', [
+    'c: char?',
+  ],
+  'Returns the case-folded equivalent of `c`. This is a version of `c` that is appropriate for case-insensitive comparison.'
+)
+
 export const stringQ: Doc = new Doc(
   '(string? v): boolean?', [
     'v: any',
   ],
   'Returns `#t` if and only `v` is a string.'
+)
+
+export const makeString: Doc = new Doc(
+  '(make-string k c): string?', [
+    'k: integer?',
+    'c: char?',
+  ],
+  'Returns a string of length `k` with each character set to `c`.'
+)
+
+export const string: Doc = new Doc(
+  '(string c1 c2 ...): string?', [
+    'c: char?',
+  ],
+  'Returns a string consisting of the characters `c1`, `c2`, ...'
 )
 
 export const stringLength: Doc = new Doc(
@@ -460,12 +629,104 @@ export const stringRef: Doc = new Doc(
   'Returns the character at index `n` of string `s`.'
 )
 
-export const stringSplit: Doc = new Doc(
-  '(string-split s sep): list?', [
+export const stringEq: Doc = new Doc(
+  '(string=? s1 s2 ...): boolean?', [
     's: string?',
-    'sep: string?',
   ],
-  'Returns a list of strings obtained by splitting `s` at occurrences of `sep`.'
+  'Returns `#t` if and only `s1`, `s2`, ... are equivalent strings.'
+)
+
+export const stringLt: Doc = new Doc(
+  '(string<? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in strictly lexicographically increasing order.'
+)
+
+export const stringGt: Doc = new Doc(
+  '(string>? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in strictly lexicographically decreasing order.'
+)
+
+export const stringLeq: Doc = new Doc(
+  '(string<=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in lexicographical order.'
+)
+
+export const stringGeq: Doc = new Doc(
+  '(string>=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in reverse lexicographical order.'
+)
+
+export const stringEqCi: Doc = new Doc(
+  '(string-ci=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are equivalent strings, ignoring case.'
+)
+
+export const stringLtCi: Doc = new Doc(
+  '(string-ci<? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in strictly lexicographically increasing order, ignoring case.'
+)
+
+export const stringGtCi: Doc = new Doc(
+  '(string-ci>? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in strictly lexicographically decreasing order, ignoring case.'
+)
+
+export const stringLeqCi: Doc = new Doc(
+  '(string-ci<=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in lexicographical order, ignoring case.'
+)
+
+export const stringGeqCi: Doc = new Doc(
+  '(string-ci>=? s1 s2 ...): boolean?', [
+    's: string?',
+  ],
+  'Returns `#t` if and only `s1`, `s2`, ... are in reverse lexicographical order, ignoring case.'
+)
+
+export const stringUpcase: Doc = new Doc(
+  '(string-upcase s): string?', [
+    's: string?',
+  ],
+  'Returns the upper-case version of `s`.'
+)
+
+export const stringDowncase: Doc = new Doc(
+  '(string-downcase s): string?', [
+    's: string?',
+  ],
+  'Returns the lower-case version of `s`.'
+)
+
+export const stringFoldcase: Doc = new Doc(
+  '(string-foldcase s): string?', [
+    's: string?',
+  ],
+  'Returns the case-folded version of `s`. This is a version of `s` that is appropriate for case-insensitive comparison.'
+)
+
+export const substring: Doc = new Doc(
+  '(substring s start end): string?', [
+    's: string?',
+    'start: integer?',
+    'end: integer?',
+  ],
+  'Returns the substring of `s` from index `start` (inclusive) to index `end` (exclusive).'
 )
 
 export const stringAppend: Doc = new Doc(
@@ -473,6 +734,28 @@ export const stringAppend: Doc = new Doc(
     's: string?',
   ],
   'Returns a string made by joining `s1`, `s2`, ... together.'
+)
+
+export const stringList: Doc = new Doc(
+  '(string->list s): list?', [
+    's: string?',
+  ],
+  'Returns a list of the characters in `s`.'
+)
+
+export const listString: Doc = new Doc(
+  '(list->string l): string?', [
+    'l: list?',
+  ],
+  'Returns a string made by joining the characters in `l` together.'
+)
+
+export const stringSplit: Doc = new Doc(
+  '(string-split s sep): list?', [
+    's: string?',
+    'sep: string?',
+  ],
+  'Returns a list of strings obtained by splitting `s` at occurrences of `sep`.'
 )
 
 export const procedure: Doc = new Doc(
@@ -488,6 +771,14 @@ export const apply: Doc = new Doc(
     'v: any',
   ],
   'Calls `f` with arguments `v1`, `v2`, ... .'
+)
+
+export const stringMap: Doc = new Doc(
+  '(string-map f s): string?', [
+    'f: procedure?, a function from characters to characters',
+    's: string?',
+  ],
+  'Returns a new string containing the results of applying `f` to each character of `s`.'
 )
 
 export const map: Doc = new Doc(
@@ -535,7 +826,19 @@ export const qq: Doc = new Doc(
   'A placeholder for an expression that is not yet implemented.'
 )
 
+export const elseV: Doc = new Doc(
+  'else: ?boolean', [], 
+  'A synonym for `#t` appropriate for use as the final guard of a `cond` expression.'
+)
+
 ///// image ////////////////////////////////////////////////////////////////////
+
+export const image: Doc = new Doc(
+  '(image? v): boolean?', [
+    'v: any',
+  ],
+  'Returns `#t` if and only `v` is an image.'
+)
 
 export const color: Doc = new Doc(
   '(color r b g a): string?', [
@@ -736,4 +1039,28 @@ export const seq: Doc = new Doc(
     'comp: composition?',
   ],
   'Creates a new composition that plays `comp1`, `comp2`, ..., in sequence.'
+)
+
+export const mod: Doc = new Doc(
+  '(mod kind comp): composition?', [
+    'kind: mod?',
+    'comp: composition?',
+  ],
+  'Creates a new composition that plays `comp` with the given modification `mod`.'
+)
+
+export const bend: Doc = new Doc(
+  '(bend amount): composition?', [
+    'amount: number?, -1 <= amount <= 1',
+  ],
+  'Creates a new composition where the pitch is bent by a factor of `amount × 2` semitones. If `amount = 0`, then the pitch is played normally.'
+)
+
+export const tempo: Doc = new Doc(
+  '(tempo beat bpm comp): composition?', [
+    'beat: dur?, the pulse of the tempo',
+    'bpm: number?, beats per minute',
+    'comp: composition?',
+  ],
+  'Creates a new composition that plays `comp` at the given `beat` and `bpm`.'
 )

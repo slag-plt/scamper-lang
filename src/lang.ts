@@ -368,6 +368,10 @@ function asBool_ (e: Exp): boolean {
   return ((e as ELit).value as LBool).value
 }
 
+function asChar_ (e: Exp): string {
+  return ((e as ELit).value as LChar).value
+}
+
 function asString_ (e: Exp): string {
   return ((e as ELit).value as LStr).value
 }
@@ -533,7 +537,7 @@ export {
   nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nlestruct, nleobj, nleprim,
   litToString, arrayToList, unsafeListToArray, expToString, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isStruct, isStructKind, isObjKind, isProcedure,
-  asNum_, asBool_, asString_, asList_, asPair_, asStruct_, asObj_, fromObj_,
+  asNum_, asBool_, asChar_, asString_, asList_, asPair_, asStruct_, asObj_, fromObj_,
   Stmt, serror, sbinding, svalue, simported, sdefine, sstruct, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }

@@ -108,6 +108,18 @@ class LexerState {
   }
 }
 
+function tokenizeWord (word: string, src: string, st: LexerState): Result<null> {
+  for (let i = 0; i < word.length; i++) {
+    if (word[i] !== src[st.i]) {
+      throw new ICE('tokenizeWord', `Encountered ${src[st.i]} while parsing ${word}`)
+    } else {
+      st.append(src[st.i])
+      st.advanceColumn()
+    }
+  }
+  return ok(null)
+}
+
 function tokenizeLineComment (src: string, st: LexerState): Token {
   if (src[st.i] !== ';') {
     throw new ICE('tokenizeLineComment', `Beginning character is not a semicolon: ${src[st.i]}`)
@@ -164,6 +176,79 @@ function tokenizeBlockComment (src: string, st: LexerState): Result<Token> {
     }
     // We did not terminate the block comment; raise an error!
     return lexerError(msg('error-eof-block-comment'))
+  }
+}
+
+function tokenizeCharLiteral (src: string, st: LexerState): Result<Token> {
+  const namedChars = [
+    'alarm',
+    'backspace',
+    'delete',
+    'escape',
+    'newline',
+    'null',
+    'return',
+    'space',
+    'tab'
+  ]
+  const startsWithNamedChar = (src: string, st: LexerState): string | undefined => {
+    for (const n of namedChars) {
+      if (src.startsWith(n, st.i)) {
+        return n
+      }
+    }
+    return undefined
+  }
+  // N.B., the Racket standard defines leading "terminators" for char constants
+  // to be "(non-)alphabetic" characters. Just maximally chomping the token
+  // seems much more sensible.
+  const isWhitespace = (c: string): boolean => /\s/.test(c)
+  const isBracket = (c: string): boolean =>
+    c === '(' || c === ')' || c === '[' || c === ']' || c === '{' || c === '}'
+
+  if (!(st.i < src.length - 1) && src[st.i] !== '#' && src[st.i + 1] !== '\\') {
+    throw new ICE('tokenizeCharLiteral', `Beginning characters are not hash-slash: ${src[st.i]}`)
+  } else {
+    st.startTracking('#\\')
+    st.advanceColumn()
+    st.advanceColumn()
+    let namedChar = startsWithNamedChar(src, st)
+    if (namedChar !== undefined) {
+      tokenizeWord(namedChar, src, st)
+      if (st.i >= src.length || (isWhitespace(src[st.i]) || isBracket(src[st.i]))) {
+        return ok(st.emitToken())
+      } else {
+        // N.B., add the offending character onto the end of the "bad" token
+        // and spit out an error.
+        st.append(src[st.i])
+        if (src[st.i] === '\n') {
+          st.advanceLine()
+        } else {
+          st.advanceColumn()
+        }
+        const tok = st.emitToken()
+        return lexerError(msg('error-invalid-char-constant'), tok)
+      }
+    } else if (st.i >= src.length - 1 ||
+               (isWhitespace(src[st.i]) && !isWhitespace(src[st.i + 1])) ||
+               (!isWhitespace(src[st.i]) && (isWhitespace(src[st.i + 1]) ||
+                                             isBracket(src[st.i + 1])))) {
+      st.append(src[st.i])
+      if (src[st.i] === '\n') {
+        st.advanceLine()
+      } else {
+        st.advanceColumn()
+      }
+      return ok(st.emitToken())
+    } else {
+      // TODO: ugh, should update line/col info here, but it is a pain.
+      // Really need to refactor the code so that line/col updates are
+      // handled by LexerState.
+      st.append(src[st.i])
+      st.append(src[st.i+1])
+      const tok = st.emitToken()
+      return lexerError(msg('error-invalid-char-constant'), tok)
+    }
   }
 }
 
@@ -308,18 +393,27 @@ function tokenize (src: string): Result<Token[]> {
       if (st.isTracking()) {
         result.push(st.emitToken())
       }
-      // N.B., ignore the comment for now!
       const _comment = tokenizeLineComment(src, st)
-      // result.push(comment)
-    // 5. Check if we hit '#|. If so, then parse a block comment
-    } else if (st.i < src.length - 1 && src[st.i] === '#' && src[st.i + 1] === '|') {
       // N.B., ignore the comment for now!
+      // result.push(comment)
+    // 5. Check if we hit '#|'. If so, then parse a block comment
+    } else if (st.i < src.length - 1 && src[st.i] === '#' && src[st.i + 1] === '|') {
       const _comment = tokenizeBlockComment(src, st)
       switch (_comment.tag) {
         case 'error':
           return rethrow(_comment)
         case 'ok':
+          // N.B., ignore the comment for now!
           // result.push(comment)
+      }
+    // 6. CHeck if we hit '#\'. If so, then parse a character literal.
+    } else if (st.i < src.length - 1 && src[st.i] === '#' && src[st.i + 1] === '\\') {
+      const charConst = tokenizeCharLiteral(src, st)
+      switch (charConst.tag) {
+        case 'error':
+          return rethrow(charConst)
+        case 'ok':
+          result.push(charConst.value)
       }
     // 6. Any other characters are tracked as a multi-character token.
     } else {

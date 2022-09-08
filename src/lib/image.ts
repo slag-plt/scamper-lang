@@ -1,6 +1,6 @@
 import { join, ok, Result } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber } from '../lang.js'
+import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber, nlebool } from '../lang.js'
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
@@ -53,6 +53,10 @@ type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
 export type Drawing = Ellipse | Rectangle | Triangle | Path | Beside | Above | Overlay | OverlayOffset | Rotate | WithDash
+
+const imagePrim: Prim = (_env, args, app) =>
+  Utils.checkArgsResult('image?', ['any'], undefined, args, app).andThen(_ =>
+    ok(nlebool(isObjKind_(args[0], 'Drawing'))))
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -166,11 +170,11 @@ const pathPrim: Prim = (_env, args, app) => {
       if (isPair(e)) {
         const p = asPair_(e)
         if (!isNumber(p[0]) || !isNumber(p[1])) {
-          return runtimeError(msg('error-type-expected-fun', 'path', 'list of pairs of numbers', e.tag), e)
+          return runtimeError(msg('error-type-expected-fun', 3, 'path', 'list of pairs of numbers', e.tag), e)
         } 
         return ok([asNum_(p[0]), asNum_(p[1])])
       } else {
-        return runtimeError(msg('error-type-expected-fun', 'path', 'list of pairs of numbers', e.tag), e)
+        return runtimeError(msg('error-type-expected-fun', 3, 'path', 'list of pairs of numbers', e.tag), e)
       }
     }))
     return result.andThen((points: [number, number][]) =>
@@ -261,21 +265,41 @@ const overlayAlignPrim: Prim = (_env, args, app) => {
 }
 
 type OverlayOffset = { tag: 'overlayOffset', dx: number, dy: number, width: number, height: number, d1: Drawing, d2: Drawing }
-const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => ({
-  tag: 'overlayOffset',
-  dx,
-  dy,
-  width:
-    dx > 0
-      ? Math.max(d1.width, d2.width + dx)
-      : Math.abs(dx) + d1.width,
-  height:
-    dy > 0
-      ? Math.max(d1.height, d2.height + dy)
-      : Math.abs(dy) + d1.height,
-  d1,
-  d2
-})
+const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => {
+  // N.B., tricky! Need to account for whether (a) we are shifting the smaller
+  // or larger image and (b) whether we are shifting it positively or
+  // negatively.
+  let width;
+  if (d1.width >= d2.width) {
+    width = dx >= 0
+      ? Math.max(d1.width, d2.width + Math.abs(dx))
+      : Math.abs(dx) + d1.width
+  } else {
+    width = dx <= 0
+      ? Math.max(d2.width, d1.width + Math.abs(dx))
+      : Math.abs(dx) + d2.width
+  }
+  let height;
+  if (d1.height >= d2.height) {
+    height = dy >= 0
+      ? Math.max(d1.height, d2.height + Math.abs(dy))
+      : Math.abs(dy) + d1.height
+  } else {
+    height = dy <= 0
+      ? Math.max(d2.height, d1.height + Math.abs(dy))
+      : Math.abs(dy) + d2.height
+  }
+  return {
+    tag: 'overlayOffset',
+    dx,
+    dy,
+    // BUG: what if d2 is actually bigger than d1? Then the calculation needs to mirror!
+    width,
+    height,
+    d1,
+    d2
+  }
+}
 
 const overlayOffsetPrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('overlay-offset', ['Drawing', 'number?', 'number?', 'Drawing'], undefined, args, app)
@@ -366,6 +390,7 @@ const withDashPrim: Prim = (_env, args, app) => {
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
 
 export const imageLib: Env = new Env([
+  ['image?', imageEntry(imagePrim, Docs.image)],
   ['color', imageEntry(colorPrim, Docs.color)],
   ['ellipse', imageEntry(ellipsePrim, Docs.ellipse)],
   ['circle', imageEntry(circlePrim, Docs.circle)],
@@ -383,3 +408,7 @@ export const imageLib: Env = new Env([
   ['rotate', imageEntry(rotatePrim, Docs.rotate)],
   ['with-dashes', imageEntry(withDashPrim, Docs.withDashes)],
 ])
+function isObjKind_(arg0: Exp, arg1: string): boolean {
+  throw new Error('Function not implemented.')
+}
+
