@@ -1043,3 +1043,12 @@ export const bend: Doc = new Doc(
   ],
   'Creates a new composition where the pitch is bent by a factor of `amount × 2` semitones. If `amount = 0`, then the pitch is played normally.'
 )
+
+export const tempo: Doc = new Doc(
+  '(tempo beat bpm comp): composition?', [
+    'beat: dur?, the pulse of the tempo',
+    'bpm: number?, beats per minute',
+    'comp: composition?',
+  ],
+  'Creates a new composition that plays `comp` at the given `beat` and `bpm`.'
+)

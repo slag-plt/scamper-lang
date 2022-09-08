@@ -1,4 +1,5 @@
 import * as Music from '../lib/music.js'
+import { ICE } from '../result.js'
 import * as JZZ from './jzz/jzz-combined.cjs'
 
 type Duration = Music.Duration
@@ -66,16 +67,18 @@ function compositionToMsgs(beat: Duration, bpm: number, startTime: number, compo
 
     case 'mod': {
       // TODO: fill in once we have mods!
-      const msgs = []
-      let endTime = 0
       if (composition.mod.tag === 'pitchBend') {
+        const msgs = []
         const data = compositionToMsgs(beat, bpm, startTime, composition.note)
         msgs.push({ time: startTime, data: JZZ.MIDI.pitchBendF(0, composition.mod.amount) })
         msgs.push(...data.msgs)
         msgs.push({ time: data.endTime, data: JZZ.MIDI.pitchBendF(0, 0) })
-        endTime = data.endTime
+        return { msgs, endTime: data.endTime }
+      } else if (composition.mod.tag === 'tempo') {
+        return compositionToMsgs(composition.mod.beat, composition.mod.bpm, startTime, composition.note)
+      } else {
+        throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod.tag}`)
       }
-      return { endTime, msgs }
     }
   }
 }

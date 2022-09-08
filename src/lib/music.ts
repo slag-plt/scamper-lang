@@ -31,7 +31,7 @@ const par = (notes: Composition[]): Par => ({ tag: 'par', notes })
 type Seq = { tag: 'seq', notes: Composition[] }
 const seq = (notes: Composition[]): Seq => ({ tag: 'seq', notes })
 
-type ModKind = Instrument | PitchBend
+type ModKind = Instrument | PitchBend | Tempo
 
 type Instrument = { tag: 'instrument', name: string }
 const instrument = (name: string): Instrument => ({ tag: 'instrument', name })
@@ -42,10 +42,21 @@ const pitchBendPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('bend', ['number?'], undefined, args, app).andThen(_ => {
     const amount = L.asNum_(args[0])
     if (amount < -1 || amount > 1) {
-      return runtimeError(msg('error-precondition-not-met', 'bend', 1, '-1 <= amount <= 1', Pretty.expToString(0, args[0])))
+      return runtimeError(msg('error-precondition-not-met', 'bend', 1, '-1 <= amount <= 1', Pretty.expToString(0, args[0])), app)
     } else {
       return ok(L.nleobj('Mod', pitchBend(amount)))
     }
+  })
+
+type Tempo = { tag: 'tempo', beat: Duration, bpm: number }
+const tempo = (beat: Duration, bpm: number): Tempo => ({ tag: 'tempo', beat, bpm })
+const tempoPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('tempo', ['Duration', 'number?'], undefined, args, app).andThen(_ => {
+    const beat = L.fromObj_<Duration>(args[0])
+    const value = L.asNum_(args[1])
+    return value < 0
+      ? runtimeError(msg('error-precondition-not-met', 'tempo', 1, 'tempo >= 0', Pretty.expToString(0, args[1])), app)
+      : ok(L.nleobj('Mod', tempo(beat, value)))
   })
 
 /*
@@ -131,5 +142,6 @@ export const musicLib: L.Env = new L.Env([
   ['par', musicEntry(parPrim, Docs.par)],
   ['seq', musicEntry(seqPrim, Docs.seq)],
   ['mod', musicEntry(modPrim, Docs.mod)],
-  ['bend', musicEntry(pitchBendPrim, Docs.bend)]
+  ['bend', musicEntry(pitchBendPrim, Docs.bend)],
+  ['tempo', musicEntry(tempoPrim, Docs.tempo)]
 ])
