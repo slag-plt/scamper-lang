@@ -147,8 +147,8 @@ export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean 
     case 'define': {
       const preamble = `(define ${stmt.name.value}`
       return isSimpleExp(stmt.value)
-        ? `${preamble} ${expToString(col, stmt.value, htmlOutput)}`
-        : `${preamble}\n${indent(col + 2, expToString(col + 2, stmt.value, htmlOutput))}`
+        ? `${preamble} ${expToString(col, stmt.value, htmlOutput)})`
+        : `${preamble}\n${indent(col + 2, expToString(col + 2, stmt.value, htmlOutput))})`
     }
     case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
     case 'exp': return expToString(col, stmt.value, htmlOutput)
@@ -160,9 +160,11 @@ export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean 
   }
 }
 
-export function progToString(col: number, prog: L.Program, outputBindings: boolean = false, htmlOutput: boolean = false): string {
+export function progToString(
+  col: number, prog: L.Program, outputBindings: boolean = false,
+  htmlOutput: boolean = false, lineSep: string = '\n'): string {
   return prog.statements
     .map(s => stmtToString(col, s, outputBindings, htmlOutput))
     .filter(s => s.length > 0)
-    .join('\n')
+    .join(lineSep)
 }

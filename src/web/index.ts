@@ -43,7 +43,7 @@ function replaceOutputWidgets() {
         outputs: new Scamper.ProgramState(prog).evaluate().prog.statements
       }))
     if (result.tag === 'error') {
-      element.innerHTML = Scamper.errorToString(result)
+      element.innerHTML = sanitize(Scamper.errorToString(result))
     } else {
       element.innerHTML = ""
       for (var i = 0; i < result.value.statements.length; i++) {
@@ -58,7 +58,7 @@ function replaceOutputWidgets() {
         } else {
           const line = sanitize(Scamper.stmtToString(0, result.value.outputs[i], false, true))
           if (line.trim().length > 0) {
-            element.innerHTML += `${line}\n`
+            element.innerHTML += `${line}\n\n`
           }
         }
       }
@@ -82,13 +82,13 @@ function replaceExplorationWidgets(): void {
     const src = programElement.textContent!
     const result = Scamper.compileProgram(src)
     if (result.tag === 'error') {
-      element.innerHTML = Scamper.errorToString(result)
+      element.innerHTML = sanitize(Scamper.errorToString(result))
       return
     } else {
       const trace = new Scamper.ProgramTrace(new Scamper.ProgramState(result.value))
       const update = () => {
         forEachByClass(element, 'step-counter', e => { e.innerHTML = `Step ${trace.currentStep()}` })
-        programElement.innerHTML = sanitize(Scamper.progToString(0, trace.currentState().prog, true, true))
+        programElement.innerHTML = sanitize(Scamper.progToString(0, trace.currentState().prog, true, true, '\n\n'))
         renderRichWidgets(programElement)
       }
     
