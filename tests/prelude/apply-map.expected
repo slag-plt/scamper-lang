@@ -1,0 +1,9 @@
+10
+(list "HelloWorld" "HelloWorld" "HelloWorld")
+(list "He" "" "oWor" "d")
+55
+450
+(list 10 10 10 10 10 10 10 10 10 10)
+(list #t #t #t #t)
+(list 2 "a" "first")
+(list 4 "b" "second")

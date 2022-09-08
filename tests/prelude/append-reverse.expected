@@ -1,0 +1,10 @@
+(list "ab" "ba" 1 2 3)
+null
+(list "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "Hello" "World")
+(list #t #t #t #t #f #f #f #f "a" "a")
+(list 10 10 10 10 10 #t #t "abab" "abab")
+(list "ba" "ab")
+null
+(list "World" "Hello")
+(list "abab" "abab")
+(list 3 2 1)

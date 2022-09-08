@@ -1,0 +1,8 @@
+(filter string? (list 4 "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" #t "HelloWorld" "HelloWorld" "HelloWorld" list))
+(filter procedure? (list string-length list? + - "true" #f = string?))
+(filter null? (list (pair 2 4) (pair "a" "b") (pair "first" "second") (list) (list 4 5 6)))
+(filter list? (list (pair 2 4) (pair "a" "b") (pair "first" "second") (list) (list 4 5 6)))
+(fold + 5 (list 0 1 2 3 4))
+(fold - 5 (list 10 9 8 7 6))
+(reduce + (list 5 0 1 2 3 4))
+(reduce - (list 5 10 9 8 7 6))

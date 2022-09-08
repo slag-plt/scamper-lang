@@ -1,0 +1,5 @@
+(pair? (cons #t #f))
+(pair? (+ 1 2))
+(pair? "bye")
+(pair? (cons "a" "b"))
+(pair? (/ 100 1))

@@ -1,0 +1,16 @@
+#f
+#t
+:1:2: Runtime error:
+    not expected an boolean? in position 1 but a lit was given
+    In program: (not 1)
+:1:3: Runtime error:
+    not expected an boolean? in position 1 but a lit was given
+    In program: (not 0)
+:1:4: Runtime error:
+    not expected an boolean? in position 1 but a lit was given
+    In program: (not 2)
+#t
+#t
+#f
+#f
+#f
