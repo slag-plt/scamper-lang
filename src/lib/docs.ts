@@ -826,6 +826,11 @@ export const qq: Doc = new Doc(
   'A placeholder for an expression that is not yet implemented.'
 )
 
+export const elseV: Doc = new Doc(
+  'else: ?boolean', [], 
+  'A synonym for `#t` appropriate for use as the final guard of a `cond` expression.'
+)
+
 ///// image ////////////////////////////////////////////////////////////////////
 
 export const image: Doc = new Doc(

@@ -874,6 +874,10 @@ const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 
 // N.B., not implemented, all operating system-specific stuff.
 
+// Additional constants
+
+const elseConst: L.EnvEntry = L.entry(L.nlebool(true), 'prelude', undefined, Docs.elseV)
+
 export const preludeEnv = new L.Env([
   ...equivalencePrimitives,
   ...numericPrimitives,
@@ -883,3 +887,4 @@ export const preludeEnv = new L.Env([
   ...stringPrimitives,
   ...controlPrimitives
 ].map(v => [v[0], L.entry(L.nleprim(v[1]), 'prelude', undefined, v[2])]))
+  .append('else', elseConst)
