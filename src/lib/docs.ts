@@ -828,6 +828,13 @@ export const qq: Doc = new Doc(
 
 ///// image ////////////////////////////////////////////////////////////////////
 
+export const image: Doc = new Doc(
+  '(image? v): boolean?', [
+    'v: any',
+  ],
+  'Returns `#t` if and only `v` is an image.'
+)
+
 export const color: Doc = new Doc(
   '(color r b g a): string?', [
     'r: integer?, 0 <= r <= 255',
@@ -1027,4 +1034,28 @@ export const seq: Doc = new Doc(
     'comp: composition?',
   ],
   'Creates a new composition that plays `comp1`, `comp2`, ..., in sequence.'
+)
+
+export const mod: Doc = new Doc(
+  '(mod kind comp): composition?', [
+    'kind: mod?',
+    'comp: composition?',
+  ],
+  'Creates a new composition that plays `comp` with the given modification `mod`.'
+)
+
+export const bend: Doc = new Doc(
+  '(bend amount): composition?', [
+    'amount: number?, -1 <= amount <= 1',
+  ],
+  'Creates a new composition where the pitch is bent by a factor of `amount × 2` semitones. If `amount = 0`, then the pitch is played normally.'
+)
+
+export const tempo: Doc = new Doc(
+  '(tempo beat bpm comp): composition?', [
+    'beat: dur?, the pulse of the tempo',
+    'bpm: number?, beats per minute',
+    'comp: composition?',
+  ],
+  'Creates a new composition that plays `comp` at the given `beat` and `bpm`.'
 )
