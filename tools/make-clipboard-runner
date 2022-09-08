@@ -24,7 +24,7 @@ cat <<EOF
     function runFromClipboard() {
       navigator.clipboard.readText().then(
         (clipText) => {
-          document.getElementById("output").innerHTML = clipText
+          document.getElementById("output").innerHTML = clipText.replace("<?", "&lt;?")
           replaceCodeWidgets()
         })
     }

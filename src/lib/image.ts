@@ -1,6 +1,6 @@
 import { join, ok, Result } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber } from '../lang.js'
+import { Env, entry, asNum_, asString_, EObj, Exp, isInteger, isString, nleobj, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber, nlebool } from '../lang.js'
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
@@ -53,6 +53,10 @@ type Mode = 'solid' | 'outline'
 
 /* eslint-disable no-use-before-define */
 export type Drawing = Ellipse | Rectangle | Triangle | Path | Beside | Above | Overlay | OverlayOffset | Rotate | WithDash
+
+const imagePrim: Prim = (_env, args, app) =>
+  Utils.checkArgsResult('image?', ['any'], undefined, args, app).andThen(_ =>
+    ok(nlebool(isObjKind_(args[0], 'Drawing'))))
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -386,6 +390,7 @@ const withDashPrim: Prim = (_env, args, app) => {
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)
 
 export const imageLib: Env = new Env([
+  ['image?', imageEntry(imagePrim, Docs.image)],
   ['color', imageEntry(colorPrim, Docs.color)],
   ['ellipse', imageEntry(ellipsePrim, Docs.ellipse)],
   ['circle', imageEntry(circlePrim, Docs.circle)],
@@ -403,3 +408,7 @@ export const imageLib: Env = new Env([
   ['rotate', imageEntry(rotatePrim, Docs.rotate)],
   ['with-dashes', imageEntry(withDashPrim, Docs.withDashes)],
 ])
+function isObjKind_(arg0: Exp, arg1: string): boolean {
+  throw new Error('Function not implemented.')
+}
+

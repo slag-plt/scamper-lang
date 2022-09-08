@@ -35,6 +35,10 @@ type ModKind = Instrument | PitchBend | Tempo
 
 type Instrument = { tag: 'instrument', name: string }
 const instrument = (name: string): Instrument => ({ tag: 'instrument', name })
+/*const instrumentPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('instrument', ['string'], undefined, args, app).andThen(_ =>
+    )*/
+
 
 type PitchBend = { tag: 'pitchBend', amount: number }
 const pitchBend = (amount: number): PitchBend => ({ tag: 'pitchBend', amount })

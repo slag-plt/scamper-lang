@@ -828,6 +828,13 @@ export const qq: Doc = new Doc(
 
 ///// image ////////////////////////////////////////////////////////////////////
 
+export const image: Doc = new Doc(
+  '(image? v): boolean?', [
+    'v: any',
+  ],
+  'Returns `#t` if and only `v` is an image.'
+)
+
 export const color: Doc = new Doc(
   '(color r b g a): string?', [
     'r: integer?, 0 <= r <= 255',
