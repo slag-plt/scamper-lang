@@ -1028,3 +1028,18 @@ export const seq: Doc = new Doc(
   ],
   'Creates a new composition that plays `comp1`, `comp2`, ..., in sequence.'
 )
+
+export const mod: Doc = new Doc(
+  '(mod kind comp): composition?', [
+    'kind: mod?',
+    'comp: composition?',
+  ],
+  'Creates a new composition that plays `comp` with the given modification `mod`.'
+)
+
+export const bend: Doc = new Doc(
+  '(bend amount): composition?', [
+    'amount: number?, -1 <= amount <= 1',
+  ],
+  'Creates a new composition where the pitch is bent by a factor of `amount × 2` semitones. If `amount = 0`, then the pitch is played normally.'
+)

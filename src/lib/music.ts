@@ -4,6 +4,7 @@ import { msg } from '../messages.js'
 import { ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
 import * as Docs from './docs.js'
+import * as Pretty from '../pretty.js'
 import * as Utils from './utils.js'
 
 export type PitchClass = string
@@ -30,7 +31,22 @@ const par = (notes: Composition[]): Par => ({ tag: 'par', notes })
 type Seq = { tag: 'seq', notes: Composition[] }
 const seq = (notes: Composition[]): Seq => ({ tag: 'seq', notes })
 
-type ModKind = void
+type ModKind = Instrument | PitchBend
+
+type Instrument = { tag: 'instrument', name: string }
+const instrument = (name: string): Instrument => ({ tag: 'instrument', name })
+
+type PitchBend = { tag: 'pitchBend', amount: number }
+const pitchBend = (amount: number): PitchBend => ({ tag: 'pitchBend', amount })
+const pitchBendPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('bend', ['number?'], undefined, args, app).andThen(_ => {
+    const amount = L.asNum_(args[0])
+    if (amount < -1 || amount > 1) {
+      return runtimeError(msg('error-precondition-not-met', 'bend', 1, '-1 <= amount <= 1', Pretty.expToString(0, args[0])))
+    } else {
+      return ok(L.nleobj('Mod', pitchBend(amount)))
+    }
+  })
 
 /*
 The Mod datatype from HSM:
@@ -43,7 +59,14 @@ The Mod datatype from HSM:
 */
 
 export type Mod = { tag: 'mod', note: Composition, mod: ModKind }
-const mod = (note: Composition, mod: ModKind): Mod => ({ tag: 'mod', note, mod })
+export const mod = (mod: ModKind, note: Composition): Mod => ({ tag: 'mod', note, mod })
+export const modPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('mod', ['Mod', 'Composition'], undefined, args, app)
+    .andThen(_ => ok(L.nleobj(
+      'Composition',
+      mod(
+        L.fromObj_<ModKind>(args[0]),
+        L.fromObj_<Composition>(args[1])))))
 
 export type Composition = Note | Rest | Par | Seq | Mod
 
@@ -106,5 +129,7 @@ export const musicLib: L.Env = new L.Env([
   ['note', musicEntry(notePrim, Docs.note)],
   ['rest', musicEntry(restPrim, Docs.rest)],
   ['par', musicEntry(parPrim, Docs.par)],
-  ['seq', musicEntry(seqPrim, Docs.seq)]
+  ['seq', musicEntry(seqPrim, Docs.seq)],
+  ['mod', musicEntry(modPrim, Docs.mod)],
+  ['bend', musicEntry(pitchBendPrim, Docs.bend)]
 ])

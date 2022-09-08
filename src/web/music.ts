@@ -64,15 +64,26 @@ function compositionToMsgs(beat: Duration, bpm: number, startTime: number, compo
       return { endTime: time, msgs }
     }
 
-    case 'mod':
+    case 'mod': {
       // TODO: fill in once we have mods!
-      return compositionToMsgs(beat, bpm, startTime, composition.note)
+      const msgs = []
+      let endTime = 0
+      if (composition.mod.tag === 'pitchBend') {
+        const data = compositionToMsgs(beat, bpm, startTime, composition.note)
+        msgs.push({ time: startTime, data: JZZ.MIDI.pitchBendF(0, composition.mod.amount) })
+        msgs.push(...data.msgs)
+        msgs.push({ time: data.endTime, data: JZZ.MIDI.pitchBendF(0, 0) })
+        endTime = data.endTime
+      }
+      return { endTime, msgs }
+    }
   }
 }
 
 function playback(synth: Synth, composition: Composition): number {
   const startTime = window.performance.now()
   const msgs = compositionToMsgs({num: 1, den: 4}, 120, 0, composition).msgs
+  console.log(msgs)
   let i = 0
   const id = window.setInterval(() => {
     const now = window.performance.now()
