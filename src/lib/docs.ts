@@ -1012,12 +1012,11 @@ export const dur: Doc = new Doc(
 )
 
 export const note: Doc = new Doc(
-  '(note pit oct dur): composition?', [
-    'pit: pitch?',
-    'oct: integer?',
+  '(note midi-note dur): composition?', [
+    'midi-note: integer?, 0 <= midi-note <= 127',
     'dur: dur?'
   ],
-  'Creates a new composition consisting of a single note from the given pitch, octave, and duration.'
+  'Creates a new composition consisting of a single note from the given MIDI note value and duration.'
 )
 
 export const rest: Doc = new Doc(
@@ -1063,4 +1062,36 @@ export const tempo: Doc = new Doc(
     'comp: composition?',
   ],
   'Creates a new composition that plays `comp` at the given `beat` and `bpm`.'
+)
+
+export const dynamics: Doc = new Doc(
+  '(dynamics velocity comp): composition?', [
+    'velocity: integer?, 0 <= level <= 127',
+    'comp: composition?',
+  ],
+  'Creates a new composition that plays `comp` at the given MIDI `velocity` value. Note that a `velocity` of `127` corresponds to full volume for that note.'
+)
+
+export const wn: Doc = new Doc(
+  'wn: dur?', [], 'A whole note duration (4/4).'
+)
+
+export const hn: Doc = new Doc(
+  'hn: dur?', [], 'A half note duration (2/4).'
+)
+
+export const qn: Doc = new Doc(
+  'qn: dur?', [], 'A quarter note duration (1/4).'
+)
+
+export const en: Doc = new Doc(
+  'en: dur?', [], 'An eighth note duration (1/8).'
+)
+
+export const sn: Doc = new Doc(
+  'sn: dur?', [], 'A sixteenth note duration (1/16).'
+)
+
+export const tn: Doc = new Doc(
+  'tn: dur?', [], 'A thirty-secondth note duration (1/32).'
 )

@@ -16,7 +16,7 @@ function durationToTimeMs(beat: Duration, bpm: number, dur: Duration) {
   return ratioToDouble(dur) / (ratioToDouble(beat) * bpm) * 60 * 1000
 }
 
-function compositionToMsgs(beat: Duration, bpm: number, startTime: number, composition: Composition): { endTime: number, msgs: Msg[] } {
+function compositionToMsgs(beat: Duration, bpm: number, velocity: number, startTime: number, composition: Composition): { endTime: number, msgs: Msg[] } {
   switch (composition.tag) {
     case 'note':
       const endTime = startTime + durationToTimeMs(beat, bpm, composition.duration)
@@ -25,11 +25,11 @@ function compositionToMsgs(beat: Duration, bpm: number, startTime: number, compo
         msgs: [
           {
             time: startTime,
-            data: JZZ.MIDI.noteOn(0, composition.pitch + composition.octave, 127)
+            data: JZZ.MIDI.noteOn(0, composition.note, velocity)
           },
           {
             time: endTime,
-            data: JZZ.MIDI.noteOff(0, composition.pitch + composition.octave, 127)
+            data: JZZ.MIDI.noteOff(0, composition.note, velocity)
           }
         ]
       }
@@ -44,7 +44,7 @@ function compositionToMsgs(beat: Duration, bpm: number, startTime: number, compo
       const msgs: Msg[] = []
       let endTime = 0
       composition.notes.forEach(note => {
-        const result = compositionToMsgs(beat, bpm, startTime, note)
+        const result = compositionToMsgs(beat, bpm, velocity, startTime, note)
         msgs.push(...result.msgs)
         endTime = Math.max(result.endTime, endTime)
       })
@@ -56,7 +56,7 @@ function compositionToMsgs(beat: Duration, bpm: number, startTime: number, compo
       const msgs: Msg[] = []
       let time = startTime
       composition.notes.forEach(note => {
-        const result = compositionToMsgs(beat, bpm, time, note)
+        const result = compositionToMsgs(beat, bpm, velocity, time, note)
         msgs.push(...result.msgs)
         time = result.endTime
         console.log(time)
@@ -69,15 +69,17 @@ function compositionToMsgs(beat: Duration, bpm: number, startTime: number, compo
       // TODO: fill in once we have mods!
       if (composition.mod.tag === 'pitchBend') {
         const msgs = []
-        const data = compositionToMsgs(beat, bpm, startTime, composition.note)
+        const data = compositionToMsgs(beat, bpm, velocity, startTime, composition.note)
         msgs.push({ time: startTime, data: JZZ.MIDI.pitchBendF(0, composition.mod.amount) })
         msgs.push(...data.msgs)
         msgs.push({ time: data.endTime, data: JZZ.MIDI.pitchBendF(0, 0) })
         return { msgs, endTime: data.endTime }
       } else if (composition.mod.tag === 'tempo') {
-        return compositionToMsgs(composition.mod.beat, composition.mod.bpm, startTime, composition.note)
+        return compositionToMsgs(composition.mod.beat, composition.mod.bpm, velocity, startTime, composition.note)
+      } else if (composition.mod.tag === 'dynamics'){
+        return compositionToMsgs(beat, bpm, composition.mod.amount, startTime, composition.note)
       } else {
-        throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod.tag}`)
+        throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod}`)
       }
     }
   }
@@ -85,7 +87,7 @@ function compositionToMsgs(beat: Duration, bpm: number, startTime: number, compo
 
 function playback(synth: Synth, composition: Composition): number {
   const startTime = window.performance.now()
-  const msgs = compositionToMsgs({num: 1, den: 4}, 120, 0, composition).msgs
+  const msgs = compositionToMsgs({num: 1, den: 4}, 120, 64, 0, composition).msgs
   console.log(msgs)
   let i = 0
   const id = window.setInterval(() => {

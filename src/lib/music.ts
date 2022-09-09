@@ -17,9 +17,12 @@ const isPitchClass = (s: string): boolean =>
 const isOctave = (n: number): boolean =>
   n >= 0 && n <= 10
 
-export type Note = { tag: 'note', pitch: PitchClass, octave: Octave, duration: Duration }
-const note = (pitch: PitchClass, octave: Octave, duration: Duration): Note => ({
-  tag: 'note', pitch, octave, duration
+const isValidMidiNote = (n: number): boolean =>
+  n >= 0 && n <= 127
+
+export type Note = { tag: 'note', note: number, duration: Duration }
+const note = (note: number, duration: Duration): Note => ({
+  tag: 'note', note, duration
 })
 
 type Rest = { tag: 'rest', duration: Duration }
@@ -31,14 +34,7 @@ const par = (notes: Composition[]): Par => ({ tag: 'par', notes })
 type Seq = { tag: 'seq', notes: Composition[] }
 const seq = (notes: Composition[]): Seq => ({ tag: 'seq', notes })
 
-type ModKind = Instrument | PitchBend | Tempo
-
-type Instrument = { tag: 'instrument', name: string }
-const instrument = (name: string): Instrument => ({ tag: 'instrument', name })
-/*const instrumentPrim: L.Prim = (_env, args, app) =>
-  Utils.checkArgsResult('instrument', ['string'], undefined, args, app).andThen(_ =>
-    )*/
-
+type ModKind = PitchBend | Tempo | Dynamics
 
 type PitchBend = { tag: 'pitchBend', amount: number }
 const pitchBend = (amount: number): PitchBend => ({ tag: 'pitchBend', amount })
@@ -63,15 +59,18 @@ const tempoPrim: L.Prim = (_env, args, app) =>
       : ok(L.nleobj('Mod', tempo(beat, value)))
   })
 
-/*
-The Mod datatype from HSM:
+type Dynamics = { tag: 'dynamics', amount: number }
+const dynamics = (amount: number): Dynamics => ({ tag: 'dynamics', amount })
+const dynamicsPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('dynamics', ['number?'], undefined, args, app).andThen(_ => {
+    const amount = L.asNum_(args[0])
+    if (amount < 0 || amount > 127) {
+      return runtimeError(msg('error-precondition-not-met', 'dynamics', 1, '0 <= amount <= 127', Pretty.expToString(0, args[0])), app)
+    } else {
+      return ok(L.nleobj('Mod', dynamics(amount)))
+    }
+  })
 
-| Tempo Rational -- scale the tempo
-| Transpose AbsPitch -- transposition
-| Instrument InstrumentName -- instrument label
-| Phrase [PhraseAttribute ] -- phrase attributes
-| Player PlayerName -- player label
-*/
 
 export type Mod = { tag: 'mod', note: Composition, mod: ModKind }
 export const mod = (mod: ModKind, note: Composition): Mod => ({ tag: 'mod', note, mod })
@@ -85,7 +84,7 @@ export const modPrim: L.Prim = (_env, args, app) =>
 
 export type Composition = Note | Rest | Par | Seq | Mod
 
-const pitchPrim: L.Prim = (_env, args, app) =>
+const pitchQPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.isString(args[0]) && isPitchClass(L.asString_(args[0])))))
 
@@ -104,20 +103,17 @@ const durPrim: L.Prim = (_env, args, app) =>
       den: L.asNum_(args[1])
     })))
 
-const notePrim: L.Prim = (_env, args, app) => {
-  const argErr = Utils.checkArgs('note', ['string?', 'integer?', 'Duration'], undefined, args, app)
-  if (argErr) { return argErr }
-  const pitch = L.asString_(args[0])
-  const octave = L.asNum_(args[1])
-  const dur = L.fromObj_<Duration>(args[2])
-  if (!isPitchClass(pitch)) {
-    return runtimeError(msg('error-type-expected-fun', 1, 'note', 'pitch', args[0].tag), app)
-  } else if  (!isOctave(octave)) {
-    return runtimeError(msg('error-type-expected-fun', 1, 'note', 'octave', args[1].tag), app)
-  } else {
-    return ok(L.nleobj('Composition', note(pitch, octave, dur)))
-  }
-}
+const notePrim: L.Prim = (_env, args, app) => 
+  Utils.checkArgsResult('note', ['integer?', 'Duration'], undefined, args, app).andThen(_ => {
+    const midiNote = L.asNum_(args[0])
+    const dur = L.fromObj_<Duration>(args[1])
+    if (!isValidMidiNote(midiNote)) {
+      return runtimeError(msg('error-precondition-not-met', 'note', 1,
+        '0 <= amount <= 128', Pretty.expToString(0, args[0])), app)
+    } else {
+      return ok(L.nleobj('Composition', note(midiNote, dur)))
+    }
+  })
 
 const restPrim: L.Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('rest', ['Duration'], undefined, args, app)
@@ -137,7 +133,7 @@ const seqPrim: L.Prim = (_env, args, app) =>
 const musicEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'music', undefined, docs)
 
 export const musicLib: L.Env = new L.Env([
-  ['pitch?', musicEntry(pitchPrim, Docs.pitch)],
+  ['pitch?', musicEntry(pitchQPrim, Docs.pitch)],
   ['octave?', musicEntry(octavePrim, Docs.octave)],
   ['dur?', musicEntry(durQPrim, Docs.durQ)],
   ['dur', musicEntry(durPrim, Docs.dur)],
@@ -147,5 +143,12 @@ export const musicLib: L.Env = new L.Env([
   ['seq', musicEntry(seqPrim, Docs.seq)],
   ['mod', musicEntry(modPrim, Docs.mod)],
   ['bend', musicEntry(pitchBendPrim, Docs.bend)],
-  ['tempo', musicEntry(tempoPrim, Docs.tempo)]
+  ['tempo', musicEntry(tempoPrim, Docs.tempo)],
+  ['dynamics', musicEntry(dynamicsPrim, Docs.dynamics)],
+  ['wn', L.entry(L.nleobj('Duration', { num: 1, den: 1 }), 'music', undefined, Docs.wn)],
+  ['hn', L.entry(L.nleobj('Duration', { num: 1, den: 2 }), 'music', undefined, Docs.hn)],
+  ['qn', L.entry(L.nleobj('Duration', { num: 1, den: 4 }), 'music', undefined, Docs.qn)],
+  ['en', L.entry(L.nleobj('Duration', { num: 1, den: 8 }), 'music', undefined, Docs.en)],
+  ['sn', L.entry(L.nleobj('Duration', { num: 1, den: 16 }), 'music', undefined, Docs.sn)],
+  ['tn', L.entry(L.nleobj('Duration', { num: 1, den: 32 }), 'music', undefined, Docs.tn)],
 ])
