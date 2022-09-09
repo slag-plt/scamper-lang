@@ -106,3 +106,4 @@ dist
 dist/
 test.scm
 test.html
+scamper-runner.html

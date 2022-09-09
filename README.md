@@ -18,4 +18,7 @@ Scamper is:
 
 ## Dependencies
 
-Scamper uses [JZZ](https://github.com/jazz-soft/JZZ) for its MIDI playback facilities.
+Scamper uses:
+
++   [JZZ](https://github.com/jazz-soft/JZZ) for its MIDI playback facilities.
++   [Prism.js](https://prismjs.com) for syntax highlighting.

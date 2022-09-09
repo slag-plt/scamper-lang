@@ -131,9 +131,9 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
       return parens('(', [`struct ${e.kind}`, ...Object.keys(e.obj).map(k => expToString(col, (e.obj as any)[k], htmlOutput))])
     case 'obj':
       if (htmlOutput && e.kind === 'Drawing') {
-        return `<span class="drawing">${JSON.stringify(e.obj)}</span>`
+        return `</code><span class="drawing">${JSON.stringify(e.obj)}</span><code>`
       } else if (htmlOutput && e.kind === 'Composition') {
-        return `<span class="composition">${JSON.stringify(e.obj)}</span>`
+        return `</code><span class="composition">${JSON.stringify(e.obj)}</span><code>`
       } else {
         return `[object ${e.kind}]`
       }
@@ -166,5 +166,6 @@ export function progToString(
   return prog.statements
     .map(s => stmtToString(col, s, outputBindings, htmlOutput))
     .filter(s => s.length > 0)
+    .map(s => htmlOutput ? `<code>${s}</code>` : s)
     .join(lineSep)
 }
