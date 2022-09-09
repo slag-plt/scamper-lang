@@ -25,8 +25,8 @@ function forEachByClass(elt: Element | Document, cls: string, fn: (e: Element) =
 }
 
 function renderRichWidgets(root: Element | Document): void {
-  forEachByClass(document, 'drawing', Image.emitDrawingWidget)
-  forEachByClass(document, 'composition', e => Music.emitCompositionWidget(SYNTH, e))
+  forEachByClass(root, 'drawing', Image.emitDrawingWidget)
+  forEachByClass(root, 'composition', e => Music.emitCompositionWidget(SYNTH, e))
   Prism.highlightAll()
 }
 
