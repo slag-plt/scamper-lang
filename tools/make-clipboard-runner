@@ -8,6 +8,9 @@ cat <<EOF
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Scamper Web Runner</title>
+    <style>
+      $(cat "css/prism.css")
+    </style>
   </head>
   <body>
     <div>
@@ -15,7 +18,7 @@ cat <<EOF
       <button onclick="runFromClipboard()">Run from clipboard</button>
     </div>
     <hr>
-    <div id="output" class="scamper-output output-prog" style="white-space: pre; font-family: monospace;"></div>
+    <pre id="output" class="scamper-output output-prog language-racket"></pre>
   </body>
   <script>
   $(cat "dist/web/bundle.js")
