@@ -166,6 +166,6 @@ export function progToString(
   return prog.statements
     .map(s => stmtToString(col, s, outputBindings, htmlOutput))
     .filter(s => s.length > 0)
-    .map(s => `<code>${s}</code>`)
+    .map(s => htmlOutput ? `<code>${s}</code>` : s)
     .join(lineSep)
 }
