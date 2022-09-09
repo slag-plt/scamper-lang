@@ -1,3 +1,5 @@
+(import image)
+
 (define factorial
   (lambda (n)
     (cond
@@ -5,6 +7,17 @@
       [else (* n (factorial (- n 1)))])))
 
 120
+
+(define red-square (rectangle 15 15 "solid" "red"))
+
+(define type-of
+  (lambda (datum)
+    (cond
+      [(number? datum) "number"]
+      [(string? datum) "string"]
+      [else "some-other-type"])))
+
+(type-of red-square)
 
 (cond
   [#f "shouldn't get here!"]

@@ -1,4 +1,5 @@
 120
+"some-other-type"
 :-1:-1: Runtime error:
     No guard of the conditional expression evaluated to #t
     In program: (cond )

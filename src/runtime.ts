@@ -154,16 +154,18 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       if (!isValue(e.e1)) {
         return stepExp(env, e.e1).andThen(e1p => ok(eif(e.range, e1p, e.e2, e.e3)))
       } else {
-        switch (e.e1.tag) {
-          case 'lit':
-            if (e.e1.value.tag === 'bool') {
-              return e.e1.value.value ? ok(e.e2) : ok(e.e3)
-            } else {
-              return runtimeError(msg('error-type-expected-cond', e.e1.value.tag), e)
-            }
-          default:
-            return runtimeError(msg('error-type-expected-cond', e.e1.tag), e)
-        }
+        return substituteIfFreeVar(env, e.e1).andThen(e1 => {
+          switch (e1.tag) {
+            case 'lit':
+              if (e1.value.tag === 'bool') {
+                return e1.value.value ? ok(e.e2) : ok(e.e3)
+              } else {
+                return runtimeError(msg('error-type-expected-cond', e1.value.tag), e)
+              }
+            default:
+              return runtimeError(msg('error-type-expected-cond', e1.tag), e)
+          }
+        })
       }
     case 'nil':
       return ok(e)
@@ -206,18 +208,20 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       } else {
         const guard = e.branches[0][0]
         const body = e.branches[0][1]
-        if (isValue(e.branches[0][0])) {
-          if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === true) {
-            return ok(body)
-          } else if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === false) {
-            return ok(nlecond([...e.branches.slice(1)]))
+        return substituteIfFreeVar(env, guard).andThen(guard => {
+          if (isValue(guard)) {
+            if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === true) {
+              return ok(body)
+            } else if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === false) {
+              return ok(nlecond([...e.branches.slice(1)]))
+            } else {
+              return runtimeError(msg('error-type-expected-cond', guard.tag), e)
+            }
           } else {
-            return runtimeError(msg('error-type-expected-cond', guard.tag), e)
+            return stepExp(env, guard).andThen(guardp =>
+              ok(nlecond([[guardp, body], ...e.branches.slice(1)])))
           }
-        } else {
-          return stepExp(env, guard).andThen(guardp =>
-            ok(nlecond([[guardp, body], ...e.branches.slice(1)])))
-        }
+        })
       }
     case 'and':
       if (e.args.length === 0) {
