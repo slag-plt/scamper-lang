@@ -3,9 +3,15 @@ import * as Music from './music.js'
 import * as Scamper from '../index.js'
 import * as JZZ from './jzz/jzz-combined.cjs'
 
+import 'prismjs'
+
 // N.B., this module injects functions directly into window so that pages can
-// call the setup functions as needed.
+// call the setup functions as needed. We also call on modules that attach
+// to window that we assume that the page loads.
 const global = window as any
+
+// The Prism instance
+declare var Prism: any
 
 // The singleton instance of the JZZ.Tiny synth
 const SYNTH = JZZ.synth.Tiny()
@@ -21,6 +27,7 @@ function forEachByClass(elt: Element | Document, cls: string, fn: (e: Element) =
 function renderRichWidgets(root: Element | Document): void {
   forEachByClass(document, 'drawing', Image.emitDrawingWidget)
   forEachByClass(document, 'composition', e => Music.emitCompositionWidget(SYNTH, e))
+  Prism.highlightAll()
 }
 
 function sanitize(s: string): string {
@@ -49,8 +56,8 @@ function replaceOutputWidgets() {
       for (var i = 0; i < result.value.statements.length; i++) {
         if (outputProg) {
           element.innerHTML += [
-            `&gt; ${sanitize(Scamper.stmtToString(0, result.value.statements[i], false, true))}`,
-            sanitize(Scamper.stmtToString(0, result.value.outputs[i], true, true)),
+            `&gt; <code>${sanitize(Scamper.stmtToString(0, result.value.statements[i], false, true))}</code>`,
+            `<code>${sanitize(Scamper.stmtToString(0, result.value.outputs[i], true, true))}</code>`,
             // N.B., extra spacing to make output pretty
             '',   
             ''
@@ -58,7 +65,7 @@ function replaceOutputWidgets() {
         } else {
           const line = sanitize(Scamper.stmtToString(0, result.value.outputs[i], false, true))
           if (line.trim().length > 0) {
-            element.innerHTML += `${line}\n\n`
+            element.innerHTML += `<code>${line}</code>\n\n`
           }
         }
       }
