@@ -1,4 +1,4 @@
-import { ErrorDetails, errorDetails } from './result.js'
+import { ErrorDetails, errorDetails, ICE } from './result.js'
 import { Env, Exp, Program, name, Name } from './lang.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
@@ -43,14 +43,24 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
       return checkExp(bvars, e.e1).concat(checkExp(bvars, e.e2))
     case 'let': {
       let errors: ErrorDetails[] = []
-      e.bindings.forEach(binding => {
-        // if (bvars.includes(binding[0].value)) {
-        //   errors.push(shadowedVariableError(binding[0].value, binding[0].range))
-        // }
-        bvars = bvars.concat(binding[0].value)
-        errors = errors.concat(checkExp(bvars, binding[1]))
-      })
-      return errors.concat(checkExp(bvars, e.body))
+      if (e.kind === 'let') {
+        e.bindings.forEach(([_x, body]) => {
+          errors = errors.concat(checkExp(bvars, body))
+        })
+        return errors.concat(
+          checkExp(bvars.concat(
+            e.bindings.map(([x, _body]) => x.value)), e.body))
+      } else if (e.kind === 'let*') {
+        e.bindings.forEach(binding => {
+          bvars = bvars.concat(binding[0].value)
+          errors = errors.concat(checkExp(bvars, binding[1]))
+        })
+        return errors.concat(checkExp(bvars, e.body))
+      } else {
+        // TODO: when we implement letrec, bindings can refer to earlier
+        // ones, so we'll need to refine this check.
+        throw new ICE('checkExp', 'letrec unimplemented')
+      }
     }
     case 'cond':
       return e.branches.flatMap(b =>

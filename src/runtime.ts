@@ -1,5 +1,6 @@
-import { asObj_, entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, isObjKind, EnvEntry, nlestruct, asStruct_, isStructKind } from './lang.js'
-import { Result, error, join, ok, rethrow, errorDetails } from './result.js'
+import { asObj_, entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, isObjKind, EnvEntry, nlestruct, asStruct_, isStructKind
+, LetKind } from './lang.js'
+import { Result, error, join, ok, rethrow, errorDetails, ICE } from './result.js'
 import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
 import { imageLib } from './lib/image.js'
@@ -32,7 +33,16 @@ function substitute (e1: Exp, x: string, e2: Exp): Exp {
     case 'pair':
       return epair(e2.range, substitute(e1, x, e2.e1), substitute(e1, x, e2.e2))
     case 'let':
-      return elet(e2.range, substituteTelescope(e1, x, e2.bindings), inBindings(x, e2.bindings) ? e2.body : substitute(e1, x, e2.body))
+      return elet(
+        e2.range,
+        e2.kind,
+        substituteInBindings(e1, x, e2.bindings, e2.kind),
+        // N.B., we only substitute into the body if we didn't shadow x via one
+        // of our bindings. Note that this won't occur in the 'let' case.
+        // But it occurs in the other cases as long as one of the bindings
+        // mentions x.
+        e2.kind !== 'let' && inBindings(x, e2.bindings) ? e2.body : substitute(e1, x, e2.body)
+      )
     case 'cond':
       return econd(e2.range, e2.branches.map(b => [substitute(e1, x, b[0]), substitute(e1, x, b[1])]))
     case 'and':
@@ -57,20 +67,28 @@ function inBindings (x: string, bindings: [Name, Exp][]): boolean {
   return false
 }
 
-function substituteTelescope (e1: Exp, x: string, bindings: [Name, Exp][]): [Name, Exp][] {
+function substituteInBindings (e1: Exp, x: string, bindings: [Name, Exp][], kind: LetKind): [Name, Exp][] {
   const result = new Array(bindings.length)
   let seenVar = false
-  // N.B., when substituting into successive bindings, we ensure
-  // that we don't substitute for a shadowed occurrence of the
-  // variable.
   for (let i = 0; i < bindings.length; i++) {
-    if (seenVar) {
-      result[i] = bindings[i]
-    } else if (bindings[i][0].value === x) {
-      result[i] = bindings[i]
-      seenVar = true
+    const [y, body] = bindings[i]
+    // For a 'let', shadowing is local to each binding.
+    if (kind === 'let') {
+      result[i] = [y, x === y.value ? body : substitute(e1, x, body)]
+
+    // For a 'let' and 'letrec', shadowing telescopes from previous bindings.
     } else {
-      result[i] = [bindings[i][0], substitute(e1, x, bindings[i][1])]
+      if (seenVar) {
+        result[i] = [y, body]
+      } else if (y.value === x) {
+        // N.B., in the let* case, y is not visible in the body of this binding,
+        // but visible in _subsequent_ bindings. In the letrec case, the value
+        // is immediately visible so it is shadowed.
+        result[i] = kind === 'let*' ? [y, substitute(e1, x, body)] : [y, body]
+        seenVar = true
+      } else {
+        result[i] = [y, substitute(e1, x, body)]
+      }
     }
   }
   return result
@@ -185,19 +203,43 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
           return stepExp(env, e1).andThen(e1p => {
             const bindings = [...e.bindings]
             bindings[0] = [x, e1p]
-            return ok(elet(e.range, bindings, e.body))
+            return ok(elet(e.range, e.kind, bindings, e.body))
           })
+        } else if (e.bindings.length === 1) {
+          return ok(substitute(e1, x.value, e.body))
+        } else if (e.kind === 'let') {
+          return ok(elet(
+            e.range,
+            e.kind,
+            e.bindings.slice(1),
+            substitute(e1, x.value, e.body)
+          ))
+        } else if (e.kind === 'let*') {
+          return ok(elet(
+            e.range,
+            e.kind,
+            substituteInBindings(e1, x.value, e.bindings.slice(1), e.kind),
+            inBindings(x.value, e.bindings.slice(1)) ? e.body : substitute(e1, x.value, e.body)
+          ))
         } else {
-          return e.bindings.length === 1
-            ? ok(substitute(e1, x.value, e.body))
-            : ok(elet(
-                e.range,
-                substituteTelescope(e1, x.value, e.bindings.slice(1)),
-                // N.B., make sure that we only substitute into the body
-                // of the let if it isn't shadowed by a successive binding
-                e.bindings.slice(1).map(b => b[0].value).includes(x.value)
-                  ? e.body
-                  : substitute(e1, x.value, e.body)))
+          // TODO: the semantics we want... I think... is:
+          // 
+          // let recbind = { {letrec ([f (lambda (n) e)] f) / f} (lambda (n) e) / f }
+          //
+          //     (letrec ([f (lambda (n) e)] ... bindings) body)
+          // --> (letrec (recbind bindings) (recbind body))
+          //
+          // i.e., a version of f that carries an "unwrapping" package achieved via letrec.
+          // Note that:
+          //   (a) this only works for lambdas. If f mentions itself in its definition and f is
+          //   not a lambda, then we go into an infinite loop. For simplicity's sake, we should
+          //   allow for the body of the binding to evaluate to a value naturally without binding
+          //   its recursive occurrence.
+          //   (b) this... should? work for mutually recursive bindings by playing the same
+          //   trick for all recursive bindings mentioned in this one. Perhaps we need to evaluate
+          //   specially in this case, identifying which bindings are (mutually) recursive and
+          //   which are not.
+          throw new ICE('stepExp', 'letrec not yet implemented')
         }
       } else {
         return ok(e.body)
