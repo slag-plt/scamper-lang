@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, echar, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
+import { eand, ebool, ecall, echar, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, LetKind, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps, Token } from './sexp.js'
 import { msg } from './messages.js'
@@ -10,6 +10,9 @@ const reservedWords = [
   'if',
   'import',
   'lambda',
+  'let',
+  'let*',
+  'letrec',
   'or',
   'struct'
 ]
@@ -173,11 +176,13 @@ function sexpToExp (s: Sexp): Result<Exp> {
                       sexpToExp(args[2]).andThen(e3 =>
                         ok(eif(s.range, e1, e2, e3, s.bracket)))))
               case 'let':
+              case 'let*':
+              case 'letrec':
                 return args.length !== 2
                   ? parserError(msg('error-arity', 'let', 2, args.length), s)
                   : sexpToBindings(args[0]).andThen(bindings =>
                     sexpToExp(args[1]).andThen(body =>
-                      ok(elet(s.range, bindings, body, s.bracket))))
+                      ok(elet(s.range, head.single as LetKind, bindings, body, s.bracket))))
               case 'cond':
                 return args.length === 0
                   ? parserError(msg('error-arity-atleast', 'cond', '1', args.length), s)

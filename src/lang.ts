@@ -189,11 +189,14 @@ const epair = (range: Range, e1: Exp, e2: Exp, bracket: BracketKind = '('): EPai
   ({ tag: 'pair', range, e1, e2, bracket })
 const nlepair = (e1: Exp, e2: Exp): EPair => epair(noRange(), e1, e2)
 
-type ELet = { tag: 'let', range: Range, bindings: [Name, Exp][], body: Exp, bracket: BracketKind }
+type LetKind = 'let' | 'let*' | 'letrec'
+
+type ELet = { tag: 'let', range: Range, kind: LetKind, bindings: [Name, Exp][], body: Exp, bracket: BracketKind }
 // TODO: need to record individual BracketKinds for bindings
-const elet = (range: Range, bindings: [Name, Exp][], body: Exp, bracket: BracketKind = '('): ELet =>
-  ({ tag: 'let', range, bindings, body, bracket })
-const nlelet = (bindings: [string, Exp][], body: Exp): ELet => elet(noRange(), bindings.map(b => [nlname(b[0]), b[1]]), body)
+const elet = (range: Range, kind: LetKind, bindings: [Name, Exp][], body: Exp, bracket: BracketKind = '('): ELet =>
+  ({ tag: 'let', kind, range, bindings, body, bracket })
+const nlelet = (kind: LetKind, bindings: [string, Exp][], body: Exp): ELet =>
+  elet(noRange(), kind, bindings.map(b => [nlname(b[0]), b[1]]), body)
 
 type ECond = { tag: 'cond', range: Range, branches: [Exp, Exp][], bracket: BracketKind }
 // TODO: need to record individual BracketKinds for branches
@@ -436,7 +439,7 @@ function expEquals (e1: Exp, e2: Exp): boolean {
   } else if (e1.tag === 'pair' && e2.tag === 'pair') {
     return expEquals(e1.e1, e2.e1) && expEquals(e1.e2, e2.e2)
   } else if (e1.tag === 'let' && e2.tag === 'let') {
-    return e1.bindings.length === e2.bindings.length &&
+    return e1.kind === e2.kind && e1.bindings.length === e2.bindings.length &&
       e1.bindings.every(([x, e], i) => nameEquals(x, e2.bindings[i][0]) && expEquals(e, e2.bindings[i][1])) &&
       expEquals(e1.body, e2.body)
     // TODO: need cases for all the other value-style expression forms!
@@ -530,7 +533,7 @@ function indexOfCurrentStmt (prog: Program): number {
 export {
   Prim, Name, name, nlname,
   Lit, LBool, LNum, LChar, LStr,
-  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, ELet, ECond, EAnd, EOr, EStruct, EObj,
+  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, LetKind, ELet, ECond, EAnd, EOr, EStruct, EObj,
   lbool, lnum, lchar, lstr, ebool, enumber, echar, estr,
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor,
   nlebool, nlenumber, nlechar, nlestr,

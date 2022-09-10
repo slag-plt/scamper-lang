@@ -109,7 +109,7 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
         ? parens(e.bracket, ['list'].concat(L.unsafeListToArray(e).map(arg => expToString(col, arg, htmlOutput))))
         : parens(e.bracket, ['cons', expToString(col, e.e1, htmlOutput), expToString(col, e.e2, htmlOutput)])
     case 'let': {
-      const preamble = 'let '
+      const preamble = `${e.kind} `
       // N.B., this bracket is difficult to factor out using paren...
       const firstBinding = `${indent(col + 2, `([${e.bindings[0][0].value} ${expToString(col + 2 + e.bindings[0][0].value.length + 1, e.bindings[0][1], htmlOutput)}]`)}`
       const bindings = e.bindings.length == 1

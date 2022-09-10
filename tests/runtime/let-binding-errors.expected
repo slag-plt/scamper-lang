@@ -1,0 +1,9 @@
+:10:3: Scope error:
+    Variable x1 is not defined
+    In program: x1
+:7:9: Scope error:
+    Variable y2 is not defined
+    In program: y2
+:7:14: Scope error:
+    Variable y3 is not defined
+    In program: y3
