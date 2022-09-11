@@ -453,7 +453,7 @@ function expEquals (e1: Exp, e2: Exp): boolean {
 // #region Statement and program forms
 
 /* eslint-disable no-use-before-define */
-type SEffect = SImported | SError | SBinding | SValue
+type SEffect = SImported | SError | SBinding | STestResult | SValue
 /* eslint-enable */
 
 type SImported = { tag: 'imported', source: string }
@@ -465,11 +465,14 @@ const serror = (errors: ErrorDetails[]): SEffect => ({ tag: 'error', errors })
 type SBinding = { tag: 'binding', name: string }
 const sbinding = (name: string): SBinding => ({ tag: 'binding', name })
 
+type STestResult = { tag: 'testresult', desc: string, passed: boolean, reason?: string }
+const stestresult = (desc: string, passed: boolean, reason?: string): STestResult => ({ tag: 'testresult', desc, passed, reason })
+
 type SValue = { tag: 'value', value: Exp }
 const svalue = (value: Exp): SValue => ({ tag: 'value', value })
 
 /* eslint-disable no-use-before-define */
-type Stmt = SImport | SDefine | SExp | SStruct | SEffect
+type Stmt = SImport | SDefine | SExp | SStruct | STestCase | SEffect
 /* eslint-enable */
 
 type SImport = { tag: 'import', range: Range, source: string }
@@ -480,6 +483,9 @@ const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, val
 
 type SStruct = { tag: 'struct', id: Name, fields: Name[] }
 const sstruct = (id: Name, fields: Name[]): SStruct => ({ tag: 'struct', id, fields })
+
+type STestCase = { tag: 'testcase', desc: Exp, body: Exp }
+const stestcase = (desc: Exp, body: Exp): STestCase => ({ tag: 'testcase', desc, body })
 
 type SExp = { tag: 'exp', value: Exp }
 const sexp = (value: Exp): SExp => ({ tag: 'exp', value })
@@ -495,9 +501,13 @@ function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
     case 'define': return `(define ${stmt.name.value} ${expToString(stmt.value)})`
     case 'exp': return expToString(stmt.value)
     case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
+    case 'testcase': return `(test-case ${expToString(stmt.desc)} ${expToString(stmt.body)})`
     case 'import': return `(import ${stmt.source})`
     case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
     case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
+    case 'testresult': return stmt.passed
+      ? `[[ Test "${stmt.desc}": passed! ]]`
+      : `[[ Test "${stmt.desc}": failed!\n${stmt.reason} ]]`
     case 'value': return expToString(stmt.value)
     case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
   }
@@ -541,6 +551,6 @@ export {
   litToString, arrayToList, unsafeListToArray, expToString, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isStruct, isStructKind, isObjKind, isProcedure,
   asNum_, asBool_, asChar_, asString_, asList_, asPair_, asStruct_, asObj_, fromObj_,
-  Stmt, serror, sbinding, svalue, simported, sdefine, sstruct, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
+  Stmt, serror, sbinding, svalue, simported, sdefine, stestresult, sstruct, stestcase, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }

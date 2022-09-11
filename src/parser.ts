@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, echar, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, LetKind, Name, name, Program, sdefine, sexp, simport, sstruct, Stmt } from './lang.js'
+import { eand, ebool, ecall, echar, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, LetKind, Name, name, Program, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps, Token } from './sexp.js'
 import { msg } from './messages.js'
@@ -241,6 +241,16 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           return sexpToUniqueStringList(args[1]).andThen(fields =>
             ok(sstruct(name((args[0] as Atom).single, args[0].range), fields)))
         }
+      } else if (s.list[0].tag === 'atom' && s.list[0].single === 'test-case') {
+        const args = s.list.slice(1)
+        if (args.length !== 2) {
+          return parserError(msg('error-arity', 'test-case', 2, args.length), s)
+        } else {
+          return sexpToExp(args[0]).andThen(desc =>
+            sexpToExp(args[1]).andThen(test =>
+              ok(stestcase(desc, test))))
+        }
+
       } else {
         return sexpToExp(s).andThen(e => ok(sexp(e)))
       }
