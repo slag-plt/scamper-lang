@@ -34,7 +34,23 @@ const par = (notes: Composition[]): Par => ({ tag: 'par', notes })
 type Seq = { tag: 'seq', notes: Composition[] }
 const seq = (notes: Composition[]): Seq => ({ tag: 'seq', notes })
 
-type ModKind = PitchBend | Tempo | Dynamics
+type ModKind = Instrument | PitchBend | Tempo | Dynamics
+
+type Instrument = { tag: 'instrument', isPercussion: boolean, instrument: number, composition: Composition }
+const instrument = (isPercussion: boolean, instrument: number, composition: Composition): Instrument =>
+  ({ tag: 'instrument', isPercussion, instrument, composition, })
+const instrumentPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('instrument', ['boolean?', 'number', 'Composition'], undefined, args, app).andThen(_ => {
+    const isPercussion = L.asBool_(args[0])
+    const value = L.asNum_(args[1])
+    const composition = L.fromObj_<Composition>(args[2])
+    if ((!isPercussion && (value < 0 || value > 127)) ||
+        (isPercussion && (value < 35 || value > 81))) {
+      return runtimeError(msg('error-precondition-not-met', 'instrument', 2, 'valid instrument value', Pretty.expToString(0, args[1])), app)
+    } else {
+      return ok(L.nleobj('Instrument', instrument(isPercussion, value, composition)))
+    }
+  })
 
 type PitchBend = { tag: 'pitchBend', amount: number }
 const pitchBend = (amount: number): PitchBend => ({ tag: 'pitchBend', amount })
@@ -142,6 +158,7 @@ export const musicLib: L.Env = new L.Env([
   ['par', musicEntry(parPrim, Docs.par)],
   ['seq', musicEntry(seqPrim, Docs.seq)],
   ['mod', musicEntry(modPrim, Docs.mod)],
+  ['instrument', musicEntry(instrumentPrim, Docs.instrument)],
   ['bend', musicEntry(pitchBendPrim, Docs.bend)],
   ['tempo', musicEntry(tempoPrim, Docs.tempo)],
   ['dynamics', musicEntry(dynamicsPrim, Docs.dynamics)],

@@ -1048,6 +1048,15 @@ export const mod: Doc = new Doc(
   'Creates a new composition that plays `comp` with the given modification `mod`.'
 )
 
+export const instrument: Doc = new Doc(
+  '(instrument percussion? inst comp): composition?', [
+    'percussion?: boolean?',
+    'inst: integer?, a valid MIDI instrument number',
+    'comp: composition?',
+  ],
+  'Creates a new composition that plays composition `comp` with the given instrument `inst`. The valid values for instruments are drawn from the standard MIDI instrument list. If `percussion?` is `#t`, then `inst` is interpreted as a percussion instrument.'
+)
+
 export const bend: Doc = new Doc(
   '(bend amount): composition?', [
     'amount: number?, -1 <= amount <= 1',
