@@ -1,8 +1,7 @@
-import { join } from 'path'
 import * as L from '../lang.js'
 import { msg } from '../messages.js'
 import { ok } from '../result.js'
-import { runtimeError } from '../runtime.js'
+import { evaluateExp, runtimeError } from '../runtime.js'
 import * as Docs from './docs.js'
 import * as Pretty from '../pretty.js'
 import * as Utils from './utils.js'
@@ -25,6 +24,31 @@ const note = (note: number, duration: Duration): Note => ({
   tag: 'note', note, duration
 })
 
+const repeatPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('repeat', ['integer?', 'Composition'], undefined, args, app).andThen(_ => {
+    const n = L.asNum_(args[0]) 
+    if (n < 0) {
+      return runtimeError(msg('error-precondition-not-met', 'repeat', 1, 'non-negative integer', Pretty.expToString(0, args[0])))
+    } else {
+      return evaluateExp(env,
+        L.nleif(
+          L.nlecall(L.nlevar('='), [args[0], L.nlenumber(0)]),
+          L.nlevar('empty'),
+          L.nlecall(L.nlevar('seq'), [
+            args[1],
+            L.nlecall(L.nlevar('repeat'), [
+              L.nlecall(L.nlevar('-'), [args[0], L.nlenumber(1)]),
+              args[1]
+            ])
+          ])
+        )
+      )
+    }
+  })
+
+type Empty = { tag: 'empty' }
+const empty = (): Empty => ({ tag: 'empty' })
+
 type Rest = { tag: 'rest', duration: Duration }
 const rest = (duration: Duration): Rest => ({ tag: 'rest', duration })
 
@@ -34,23 +58,9 @@ const par = (notes: Composition[]): Par => ({ tag: 'par', notes })
 type Seq = { tag: 'seq', notes: Composition[] }
 const seq = (notes: Composition[]): Seq => ({ tag: 'seq', notes })
 
-type ModKind = Instrument | PitchBend | Tempo | Dynamics
-
-type Instrument = { tag: 'instrument', isPercussion: boolean, instrument: number, composition: Composition }
-const instrument = (isPercussion: boolean, instrument: number, composition: Composition): Instrument =>
-  ({ tag: 'instrument', isPercussion, instrument, composition, })
-const instrumentPrim: L.Prim = (_env, args, app) =>
-  Utils.checkArgsResult('instrument', ['boolean?', 'number', 'Composition'], undefined, args, app).andThen(_ => {
-    const isPercussion = L.asBool_(args[0])
-    const value = L.asNum_(args[1])
-    const composition = L.fromObj_<Composition>(args[2])
-    if ((!isPercussion && (value < 0 || value > 127)) ||
-        (isPercussion && (value < 35 || value > 81))) {
-      return runtimeError(msg('error-precondition-not-met', 'instrument', 2, 'valid instrument value', Pretty.expToString(0, args[1])), app)
-    } else {
-      return ok(L.nleobj('Instrument', instrument(isPercussion, value, composition)))
-    }
-  })
+type ModKind = Percussion | PitchBend | Tempo | Dynamics
+type Percussion = { tag: 'percussion' }
+const percussion = (): Percussion => ({ tag: 'percussion' })
 
 type PitchBend = { tag: 'pitchBend', amount: number }
 const pitchBend = (amount: number): PitchBend => ({ tag: 'pitchBend', amount })
@@ -98,7 +108,7 @@ export const modPrim: L.Prim = (_env, args, app) =>
         L.fromObj_<ModKind>(args[0]),
         L.fromObj_<Composition>(args[1])))))
 
-export type Composition = Note | Rest | Par | Seq | Mod
+export type Composition = Empty | Note | Rest | Par | Seq | Mod
 
 const pitchQPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>
@@ -153,15 +163,17 @@ export const musicLib: L.Env = new L.Env([
   ['octave?', musicEntry(octavePrim, Docs.octave)],
   ['dur?', musicEntry(durQPrim, Docs.durQ)],
   ['dur', musicEntry(durPrim, Docs.dur)],
+  ['empty', L.entry(L.nleobj('Composition', empty()), 'music', undefined, Docs.empty)],
   ['note', musicEntry(notePrim, Docs.note)],
   ['rest', musicEntry(restPrim, Docs.rest)],
   ['par', musicEntry(parPrim, Docs.par)],
   ['seq', musicEntry(seqPrim, Docs.seq)],
   ['mod', musicEntry(modPrim, Docs.mod)],
-  ['instrument', musicEntry(instrumentPrim, Docs.instrument)],
+  ['percussion', L.entry(L.nleobj('Mod', percussion()), 'music', undefined, Docs.percussion)],
   ['bend', musicEntry(pitchBendPrim, Docs.bend)],
   ['tempo', musicEntry(tempoPrim, Docs.tempo)],
   ['dynamics', musicEntry(dynamicsPrim, Docs.dynamics)],
+  ['repeat', musicEntry(repeatPrim, Docs.repeat)],
   ['wn', L.entry(L.nleobj('Duration', { num: 1, den: 1 }), 'music', undefined, Docs.wn)],
   ['hn', L.entry(L.nleobj('Duration', { num: 1, den: 2 }), 'music', undefined, Docs.hn)],
   ['qn', L.entry(L.nleobj('Duration', { num: 1, den: 4 }), 'music', undefined, Docs.qn)],

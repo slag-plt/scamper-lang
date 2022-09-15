@@ -1,3 +1,4 @@
+import { mod } from '../lib/docs.js'
 import * as Music from '../lib/music.js'
 import { ICE } from '../result.js'
 import * as JZZ from './jzz/jzz-combined.cjs'
@@ -7,16 +8,16 @@ type Composition = Music.Composition
 type MIDI = any  // TODO: ugh, how do I specify this type!?
 type Synth = any  // TODO: ...this one, too!
 
-type InstrInfo = { isPercussion: boolean, value: number }
+type Msg = MidiMsg
 
-type Msg = {
+type MidiMsg = {
+  tag: 'midi',
   time: number,
   data: MIDI,
-  instrument?: InstrInfo 
 }
 
-const msg = (time: number, data: MIDI, instrument?: InstrInfo): Msg =>
-  ({ time, data, instrument })
+const midiMsg = (time: number, data: MIDI): Msg =>
+  ({ tag: 'midi', time, data })
 
 function ratioToDouble(ratio: Duration) {
   return ratio.num / ratio.den
@@ -26,23 +27,31 @@ function durationToTimeMs(beat: Duration, bpm: number, dur: Duration) {
   return ratioToDouble(dur) / (ratioToDouble(beat) * bpm) * 60 * 1000
 }
 
+function setPrograms(synth: Synth, programMap: number[]) {
+  console.log(`setPrograms: ${programMap}`)
+  for (let i = 0; i < programMap.length; i++) {
+    synth.setSynth(i, synth.getSynth(programMap[i]))
+  }
+}
+
 function compositionToMsgs(
-    beat: Duration, bpm: number, velocity: number, isPercussion: boolean,
-    instrument: number, startTime: number, composition: Composition): { endTime: number, msgs: Msg[] } {
+    beat: Duration, bpm: number, velocity: number, startTime: number,
+    program: number, composition: Composition): { endTime: number, msgs: Msg[] } {
   switch (composition.tag) {
+    case 'empty':
+      return { endTime: startTime, msgs: [] }
     case 'note':
       const endTime = startTime + durationToTimeMs(beat, bpm, composition.duration)
       return {
         endTime: endTime,
         msgs: [
-          msg(
+          midiMsg(
             startTime,
-            JZZ.MIDI.noteOn(0, composition.note, velocity),
-            { isPercussion, value: instrument }
+            JZZ.MIDI.noteOn(program, composition.note, velocity),
           ),
-          msg(
+          midiMsg(
             endTime,
-            JZZ.MIDI.noteOff(0, composition.note, velocity)
+            JZZ.MIDI.noteOff(program, composition.note, velocity)
           )
         ]
       }
@@ -57,7 +66,7 @@ function compositionToMsgs(
       const msgs: Msg[] = []
       let endTime = 0
       composition.notes.forEach(note => {
-        const result = compositionToMsgs(beat, bpm, velocity, isPercussion, instrument, startTime, note)
+        const result = compositionToMsgs(beat, bpm, velocity, startTime, program, note)
         msgs.push(...result.msgs)
         endTime = Math.max(result.endTime, endTime)
       })
@@ -69,7 +78,7 @@ function compositionToMsgs(
       const msgs: Msg[] = []
       let time = startTime
       composition.notes.forEach(note => {
-        const result = compositionToMsgs(beat, bpm, velocity, isPercussion, instrument, time, note)
+        const result = compositionToMsgs(beat, bpm, velocity, time, program, note)
         msgs.push(...result.msgs)
         time = result.endTime
         console.log(time)
@@ -79,19 +88,19 @@ function compositionToMsgs(
     }
 
     case 'mod': {
-      if (composition.mod.tag === 'instrument') {
-        return compositionToMsgs(beat, bpm, velocity, false, composition.mod.instrument, startTime, composition.note)
+      if (composition.mod.tag === 'percussion') {
+        return compositionToMsgs(beat, bpm, velocity, startTime, 9, composition.note)
       } else if (composition.mod.tag === 'pitchBend') {
         const msgs = []
-        const data = compositionToMsgs(beat, bpm, velocity, isPercussion, instrument, startTime, composition.note)
-        msgs.push({ time: startTime, data: JZZ.MIDI.pitchBendF(0, composition.mod.amount) })
+        const data = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.note)
+        msgs.push(midiMsg(startTime, JZZ.MIDI.pitchBendF(0, composition.mod.amount)))
         msgs.push(...data.msgs)
-        msgs.push({ time: data.endTime, data: JZZ.MIDI.pitchBendF(0, 0) })
+        msgs.push(midiMsg(data.endTime, JZZ.MIDI.pitchBendF(0, 0)))
         return { msgs, endTime: data.endTime }
       } else if (composition.mod.tag === 'tempo') {
-        return compositionToMsgs(composition.mod.beat, composition.mod.bpm, velocity, isPercussion, instrument, startTime, composition.note)
+        return compositionToMsgs(composition.mod.beat, composition.mod.bpm, velocity, startTime, program, composition.note)
       } else if (composition.mod.tag === 'dynamics'){
-        return compositionToMsgs(beat, bpm, composition.mod.amount, isPercussion, instrument, startTime, composition.note)
+        return compositionToMsgs(beat, bpm, composition.mod.amount, startTime, program, composition.note)
       } else {
         throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod}`)
       }
@@ -101,7 +110,7 @@ function compositionToMsgs(
 
 function playback(synth: Synth, composition: Composition): number {
   const startTime = window.performance.now()
-  const msgs = compositionToMsgs({num: 1, den: 4}, 120, 64, false, 0, 0, composition).msgs
+  const msgs = compositionToMsgs({num: 1, den: 4}, 120, 64, 0, 0, composition).msgs
   console.log(msgs)
   let i = 0
   const id = window.setInterval(() => {
@@ -109,15 +118,11 @@ function playback(synth: Synth, composition: Composition): number {
     while (i < msgs.length) {
       const msg = msgs[i]
       if (msg.time + startTime <= now) {
-        if (msg.instrument && msg.instrument.isPercussion) {
-          synth.setSynth(1, synth.getSynth(msg.instrument.value, true), true)
-        } else if (msg.instrument && !msg.instrument.isPercussion) {
-          synth.setSynth(0, synth.getSynth(msg.instrument.value))
-        }
-        synth.send(msgs[i].data)
+        synth.send(msg.data)
         i += 1
+        continue // N.B., try to process the next message
       } else {
-        return
+        return  // N.B., wait for the next interval to process msgs again
       }
     }
     clearInterval(id)

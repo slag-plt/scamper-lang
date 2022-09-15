@@ -1011,6 +1011,10 @@ export const dur: Doc = new Doc(
   'Creates a new duration object representing the ratio `num/den`.'
 )
 
+export const empty: Doc = new Doc(
+  'empty: composition?', [], 'The empty composition.'
+)
+
 export const note: Doc = new Doc(
   '(note midi-note dur): composition?', [
     'midi-note: integer?, 0 <= midi-note <= 127',
@@ -1048,13 +1052,22 @@ export const mod: Doc = new Doc(
   'Creates a new composition that plays `comp` with the given modification `mod`.'
 )
 
-export const instrument: Doc = new Doc(
-  '(instrument percussion? inst comp): composition?', [
-    'percussion?: boolean?',
-    'inst: integer?, a valid MIDI instrument number',
-    'comp: composition?',
+export const band: Doc = new Doc(
+  '(band inst1 ... inst8): composition?', [
+    'inst: number?, a valid MIDI instrument program number (1--128)',
   ],
-  'Creates a new composition that plays composition `comp` with the given instrument `inst`. The valid values for instruments are drawn from the standard MIDI instrument list. If `percussion?` is `#t`, then `inst` is interpreted as a percussion instrument.'
+  'Creates a new composition that plays `comp` with the given instruments, where the _i_th instrument is assigned to the _i_th MIDI channel. Individual channels can be selected for playback using the `instrument` mod.'
+)
+
+export const instrument: Doc = new Doc(
+  '(instrument ch): composition?', [
+    'ch: integer?, a valid MIDI channel number (0--9)',
+  ],
+  'Creates a new composition that plays composition `comp` played through MIDI channel `ch`. The instruments voiced in each channel ber set with the `band` mod. Channel 9 is reserved for percussion sounds.'
+)
+
+export const percussion: Doc = new Doc(
+  'percussion: mod?', [], 'A modification that switches playback to percussion mode (MIDI channel 9). In percussion mode, each note corresponds to one percussion instrument.'
 )
 
 export const bend: Doc = new Doc(
@@ -1079,6 +1092,14 @@ export const dynamics: Doc = new Doc(
     'comp: composition?',
   ],
   'Creates a new composition that plays `comp` at the given MIDI `velocity` value. Note that a `velocity` of `127` corresponds to full volume for that note.'
+)
+
+export const repeat: Doc = new Doc(
+  '(repeat n comp): composition?', [
+    'n: integer?, n >= 0',
+    'comp: composition?',
+  ],
+  'Creates a new composition formed by repeating `comp` `n` times sequentially.'
 )
 
 export const wn: Doc = new Doc(
