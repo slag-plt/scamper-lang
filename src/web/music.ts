@@ -81,10 +81,34 @@ function compositionToMsgs(
         const result = compositionToMsgs(beat, bpm, velocity, time, program, note)
         msgs.push(...result.msgs)
         time = result.endTime
-        console.log(time)
       })
       msgs.sort((c1, c2) => c1.time - c2.time)
       return { endTime: time, msgs }
+    }
+
+    case 'pickup': {
+      const pickup = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.pickup)
+      const pickupDuration = pickup.endTime - startTime
+      let notes: { endTime: number, msgs: MidiMsg[] } | undefined = undefined
+      // If the pickup would start in negative time, then rebase the composition to start
+      // with the pickup instead.
+      if (startTime - pickupDuration < 0) {
+        pickup.msgs.forEach(msg => {
+          msg.time += pickupDuration
+        })
+        notes = compositionToMsgs(beat, bpm, velocity, pickupDuration, program, composition.notes)
+
+      // Otherwise, rebase pickup to start before the composition.
+      } else {
+        pickup.msgs.forEach(msg => {
+          msg.time -= pickupDuration
+        })
+        notes = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.notes)
+      }
+      const msgs: Msg[] = []
+      msgs.push(...pickup.msgs)
+      msgs.push(...notes.msgs)
+      return { endTime: notes.endTime, msgs } 
     }
 
     case 'mod': {

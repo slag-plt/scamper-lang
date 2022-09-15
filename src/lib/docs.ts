@@ -1011,6 +1011,20 @@ export const dur: Doc = new Doc(
   'Creates a new duration object representing the ratio `num/den`.'
 )
 
+export const numerator: Doc = new Doc(
+  '(numerator dur): integer?', [
+    'dur: duration?'
+  ],
+  'Returns the numerator of `dur`.'
+)
+
+export const denominator: Doc = new Doc(
+  '(denominator dur): integer?', [
+    'dur: duration?'
+  ],
+  'Returns the denominator of `dur`.'
+)
+
 export const empty: Doc = new Doc(
   'empty: composition?', [], 'The empty composition.'
 )
@@ -1042,6 +1056,14 @@ export const seq: Doc = new Doc(
     'comp: composition?',
   ],
   'Creates a new composition that plays `comp1`, `comp2`, ..., in sequence.'
+)
+
+export const pickup: Doc = new Doc(
+  '(pickup c1 c2): composition?', [
+    'c1: composition?',
+    'c2: composition?',
+  ],
+  'Creates a new composition that plays `c2` preceded by `c1`. `c1`\'s duration is not factored into the duration of the overall composition.'
 )
 
 export const mod: Doc = new Doc(

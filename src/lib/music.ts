@@ -58,6 +58,9 @@ const par = (notes: Composition[]): Par => ({ tag: 'par', notes })
 type Seq = { tag: 'seq', notes: Composition[] }
 const seq = (notes: Composition[]): Seq => ({ tag: 'seq', notes })
 
+type Pickup = { tag: 'pickup', pickup: Composition, notes: Composition }
+const pickup = (pickup: Composition, notes: Composition): Composition => ({ tag: 'pickup', pickup, notes })
+
 type ModKind = Percussion | PitchBend | Tempo | Dynamics
 type Percussion = { tag: 'percussion' }
 const percussion = (): Percussion => ({ tag: 'percussion' })
@@ -108,7 +111,7 @@ export const modPrim: L.Prim = (_env, args, app) =>
         L.fromObj_<ModKind>(args[0]),
         L.fromObj_<Composition>(args[1])))))
 
-export type Composition = Empty | Note | Rest | Par | Seq | Mod
+export type Composition = Empty | Note | Rest | Par | Seq | Pickup | Mod
 
 const pitchQPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>
@@ -156,6 +159,18 @@ const seqPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('seq', [], 'Composition', args, app).andThen(_ =>
     ok(L.nleobj('Composition', seq(args.map(e => L.fromObj_<Composition>(e))))))
 
+const pickupPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('pickup', ['Composition', 'Composition'], undefined, args, app).andThen(_ =>
+    ok(L.nleobj('Composition', pickup(L.fromObj_<Composition>(args[0]), L.fromObj_<Composition>(args[1])))))
+
+const numeratorPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('numerator', ['Duration'], undefined, args, app).andThen(_ =>
+    ok(L.nlenumber(L.fromObj_<Duration>(args[0]).num)))
+
+const denominatorPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('denominator', ['Duration'], undefined, args, app).andThen(_ =>
+    ok(L.nlenumber(L.fromObj_<Duration>(args[0]).den)))
+
 const musicEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'music', undefined, docs)
 
 export const musicLib: L.Env = new L.Env([
@@ -163,11 +178,14 @@ export const musicLib: L.Env = new L.Env([
   ['octave?', musicEntry(octavePrim, Docs.octave)],
   ['dur?', musicEntry(durQPrim, Docs.durQ)],
   ['dur', musicEntry(durPrim, Docs.dur)],
+  ['numerator', musicEntry(numeratorPrim, Docs.numerator)],
+  ['denominator', musicEntry(denominatorPrim, Docs.denominator)],
   ['empty', L.entry(L.nleobj('Composition', empty()), 'music', undefined, Docs.empty)],
   ['note', musicEntry(notePrim, Docs.note)],
   ['rest', musicEntry(restPrim, Docs.rest)],
   ['par', musicEntry(parPrim, Docs.par)],
   ['seq', musicEntry(seqPrim, Docs.seq)],
+  ['pickup', musicEntry(pickupPrim, Docs.pickup)],
   ['mod', musicEntry(modPrim, Docs.mod)],
   ['percussion', L.entry(L.nleobj('Mod', percussion()), 'music', undefined, Docs.percussion)],
   ['bend', musicEntry(pitchBendPrim, Docs.bend)],
