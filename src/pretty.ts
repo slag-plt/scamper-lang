@@ -151,10 +151,25 @@ export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean 
         : `${preamble}\n${indent(col + 2, expToString(col + 2, stmt.value, htmlOutput))})`
     }
     case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
+    case 'testcase':
+      return `(test-case ${expToString(col, stmt.desc, htmlOutput)} ${expToString(col, stmt.comp, htmlOutput)}\n${indent(col + 2, expToString(col + 2, stmt.expected, htmlOutput))}\n${indent(col + 2, expToString(col + 2, stmt.actual, htmlOutput))})`
     case 'exp': return expToString(col, stmt.value, htmlOutput)
     case 'import': return `(import ${stmt.source})`
     case 'error': return stmt.errors.map(err => detailsToCompleteString(err)).join('\n')
     case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
+    case 'testresult': {
+      if (stmt.passed) {
+        return `[[ Test "${stmt.desc}" passed! ]]`
+      } else {
+        const msg: string = stmt.reason
+          ? stmt.reason
+          : `  Expected: ${expToString(col, stmt.expected!, htmlOutput)}\n  Actual: ${expToString(col, stmt.actual!, htmlOutput)}`
+        return `[[ Test "${stmt.desc}" failed!\n${msg}\n]]`
+      }
+    }
+    case 'testresult': return stmt.passed
+      ? `[[${stmt.desc} passed!]]`
+      : `[[${stmt.desc} failed!\n${stmt.reason!}]]`
     case 'value': return expToString(col, stmt.value, htmlOutput)
     case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
   }

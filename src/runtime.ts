@@ -1,5 +1,12 @@
 import { asObj_, entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, isObjKind, EnvEntry, nlestruct, asStruct_, isStructKind
-, LetKind } from './lang.js'
+, LetKind, 
+nlecall,
+isString,
+isBoolean,
+asBool_,
+asString_,
+stestcase,
+stestresult} from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails, ICE } from './result.js'
 import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
@@ -340,6 +347,8 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       return [env, s]
     case 'binding':
       return [env, s]
+    case 'testresult':
+      return [env, s]
     case 'value':
       return [env, s]
     case 'imported':
@@ -396,6 +405,28 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
         ])),
         sbinding(`struct ${name}`)
       ]
+    }
+    case 'testcase': {
+      const result: Result<Stmt> = evaluateExp(env, s.desc).andThen(e1 =>
+        evaluateExp(env, s.expected).andThen(expected =>
+          evaluateExp(env, s.actual).andThen(actual =>
+            evaluateExp(env, nlecall(s.comp, [expected, actual])).andThen(e2 => {
+              if (!isString(e1)) {
+                return runtimeError(msg('error-type-expected', 'string', e1.tag), s.desc)
+              } else if (!isBoolean(e2)) {
+                return runtimeError(msg('error-type-expected', 'bool', e2.tag), s.comp)
+              }
+              const desc = asString_(e1)
+              const passed = asBool_(e2)
+              return ok(passed
+                ? stestresult(desc, true)
+                : stestresult(desc, false, undefined, expected, actual))
+            }))))
+      if (result.tag === 'error') {
+        return [env, serror(result.details)]
+      } else {
+        return [env, result.value]
+      }
     }
     // N.B., as a last step, substitute free variables away when they are values.
     case 'exp': {

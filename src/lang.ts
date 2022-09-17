@@ -465,8 +465,16 @@ const serror = (errors: ErrorDetails[]): SEffect => ({ tag: 'error', errors })
 type SBinding = { tag: 'binding', name: string }
 const sbinding = (name: string): SBinding => ({ tag: 'binding', name })
 
-type STestResult = { tag: 'testresult', desc: string, passed: boolean, reason?: string }
-const stestresult = (desc: string, passed: boolean, reason?: string): STestResult => ({ tag: 'testresult', desc, passed, reason })
+type STestResult = {
+  tag: 'testresult',
+  desc: string,
+  passed: boolean,
+  reason?: string,
+  expected?: Exp,
+  actual?: Exp
+}
+const stestresult = (desc: string, passed: boolean, reason?: string, expected?: Exp, actual?: Exp): STestResult =>
+  ({ tag: 'testresult', desc, passed, reason, expected, actual })
 
 type SValue = { tag: 'value', value: Exp }
 const svalue = (value: Exp): SValue => ({ tag: 'value', value })
@@ -484,8 +492,8 @@ const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, val
 type SStruct = { tag: 'struct', id: Name, fields: Name[] }
 const sstruct = (id: Name, fields: Name[]): SStruct => ({ tag: 'struct', id, fields })
 
-type STestCase = { tag: 'testcase', desc: Exp, body: Exp }
-const stestcase = (desc: Exp, body: Exp): STestCase => ({ tag: 'testcase', desc, body })
+type STestCase = { tag: 'testcase', desc: Exp, comp: Exp, expected: Exp, actual: Exp }
+const stestcase = (desc: Exp, comp: Exp, expected: Exp, actual: Exp): STestCase => ({ tag: 'testcase', desc, comp, expected, actual })
 
 type SExp = { tag: 'exp', value: Exp }
 const sexp = (value: Exp): SExp => ({ tag: 'exp', value })
@@ -501,13 +509,20 @@ function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
     case 'define': return `(define ${stmt.name.value} ${expToString(stmt.value)})`
     case 'exp': return expToString(stmt.value)
     case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
-    case 'testcase': return `(test-case ${expToString(stmt.desc)} ${expToString(stmt.body)})`
+    case 'testcase': return `(test-case ${expToString(stmt.desc)} ${expToString(stmt.comp)} ${expToString(stmt.expected)} ${expToString(stmt.actual)})`
     case 'import': return `(import ${stmt.source})`
     case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
     case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
-    case 'testresult': return stmt.passed
-      ? `[[ Test "${stmt.desc}": passed! ]]`
-      : `[[ Test "${stmt.desc}": failed!\n${stmt.reason} ]]`
+    case 'testresult': {
+      if (stmt.passed) {
+        return `[[ Test "${stmt.desc}": passed! ]]`
+      } else {
+        const msg: string = stmt.reason
+          ? stmt.reason
+          : `Expected: ${expToString(stmt.expected!)}\nActual: ${expToString(stmt.actual!)}`
+        return `[[ Test "${stmt.desc}": failed!\n${msg}]]`
+      }
+    }
     case 'value': return expToString(stmt.value)
     case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
   }
@@ -526,7 +541,7 @@ function isOutputEffect (stmt: Stmt): boolean {
 }
 
 function isStmtDone (stmt: Stmt): boolean {
-  return stmt.tag === 'error' || stmt.tag === 'binding' || stmt.tag === 'value' || stmt.tag === 'imported'
+  return stmt.tag === 'error' || stmt.tag === 'binding' || stmt.tag === 'value' || stmt.tag === 'imported' || stmt.tag === 'testresult'
 }
 
 function indexOfCurrentStmt (prog: Program): number {

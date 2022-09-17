@@ -14,7 +14,8 @@ const reservedWords = [
   'let*',
   'letrec',
   'or',
-  'struct'
+  'struct',
+  'test-case'
 ]
 
 function parserError <T> (message: string, s?: Sexp, hint?: string): Result<T> {
@@ -243,12 +244,14 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
         }
       } else if (s.list[0].tag === 'atom' && s.list[0].single === 'test-case') {
         const args = s.list.slice(1)
-        if (args.length !== 2) {
-          return parserError(msg('error-arity', 'test-case', 2, args.length), s)
+        if (args.length !== 4) {
+          return parserError(msg('error-arity', 'test-case', 4, args.length), s)
         } else {
           return sexpToExp(args[0]).andThen(desc =>
-            sexpToExp(args[1]).andThen(test =>
-              ok(stestcase(desc, test))))
+            sexpToExp(args[1]).andThen(comp =>
+              sexpToExp(args[2]).andThen(expected =>
+                sexpToExp(args[3]).andThen(actual =>
+                  ok(stestcase(desc, comp, expected, actual))))))
         }
 
       } else {
