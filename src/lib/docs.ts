@@ -307,6 +307,13 @@ export const atan: Doc = new Doc(
   'Returns the arc tangent of `v`.'
 )
 
+export const equalsEps: Doc = new Doc(
+  '(=eps n): procedure?', [
+    'n: number?',
+  ],
+  'Returns a function that takes two numbers `x` and `y` as input returns `#t` if `|x - y| < n`.'
+)
+
 export const not: Doc = new Doc(
   '(not v): boolean?', [
     'v: any',

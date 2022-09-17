@@ -1,0 +1,14 @@
+[[ Test "simple equality success" passed! ]]
+[[ Test "simple equality failure" failed!
+  Expected: 1
+  Actual: 2
+]]
+[[ Test "simple equality failure with computation" failed!
+  Expected: 5
+  Actual: 3
+]]
+[[ Test "epsilon equality success" passed! ]]
+[[ Test "epsilon equality failure" failed!
+  Expected: 3
+  Actual: 5
+]]

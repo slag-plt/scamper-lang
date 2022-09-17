@@ -233,6 +233,17 @@ const acosPrim: L.Prim = (_env, args, app) =>
 const atanPrim: L.Prim = (_env, args, app) =>
   numericUOp('atan', (x) => Math.atan(x), args, app)
 
+const equalsEpsPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('=-eps', ['number?'], undefined, args, app).andThen(_ => {
+    return ok(L.nlelam(['x', 'y'], L.nlecall(L.nlevar('<'), [
+      L.nlecall(L.nlevar('abs'), [
+        L.nlecall(L.nlevar('-'), [
+          L.nlevar('x'), L.nlevar('y')
+        ])
+      ]),
+      args[0]])))
+  })
+
 const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['number?', numberPrim, Docs.number],
   ['real?', realPrim, Docs.real],
@@ -274,7 +285,8 @@ const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['tan', tanPrim, Docs.tan],
   ['asin', asinPrim, Docs.asin],
   ['acos', acosPrim, Docs.acos],
-  ['atan', atanPrim, Docs.atan]
+  ['atan', atanPrim, Docs.atan],
+  ['=-eps', equalsEpsPrim, Docs.equalsEps]
 ]
 
 // Booleans (6.3)
