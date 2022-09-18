@@ -235,7 +235,7 @@ const atanPrim: L.Prim = (_env, args, app) =>
 
 const equalsEpsPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('=-eps', ['number?'], undefined, args, app).andThen(_ => {
-    return ok(L.nlelam(['x', 'y'], L.nlecall(L.nlevar('<'), [
+    return ok(L.nlelam(['x', 'y'], L.nlecall(L.nlevar('<='), [
       L.nlecall(L.nlevar('abs'), [
         L.nlecall(L.nlevar('-'), [
           L.nlevar('x'), L.nlevar('y')
