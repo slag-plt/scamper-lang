@@ -833,6 +833,35 @@ export const qq: Doc = new Doc(
   'A placeholder for an expression that is not yet implemented.'
 )
 
+export const compose: Doc = new Doc(
+  '(compose f1 f2 ...): procedure?', [
+    'f: procedure?',
+  ],
+  'Returns a new procedure that is the composition of the given functions, _i.e._, `f(x) = f1(f2(...(fk(x))))`.'
+)
+
+export const o: Doc = new Doc(
+  `(o f1 f2 ...): procedure?`, [
+    'f: procedure?',
+  ],
+  'A synonym for `compose`.'
+)
+
+export const pipe: Doc = new Doc(
+  `(|> v f1 f2 ...): any`, [
+    'v: any',
+    'f: procedure?',
+  ],
+  'Returns the result of applying the given function in sequence, starting with initial value `v`, _i.e._, `fk(fk-1(...(f1(v))))`.'
+)
+
+export const range: Doc = new Doc(
+  '(range end): list?', [
+    'end: integer?, n >= 0',
+  ],
+  'Returns a list containing the numbers from `0` to `n` (exclusive).'
+)
+
 export const elseV: Doc = new Doc(
   'else: ?boolean', [], 
   'A synonym for `#t` appropriate for use as the final guard of a `cond` expression.'

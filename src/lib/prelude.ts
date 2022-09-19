@@ -858,6 +858,36 @@ const qqPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('??', [], undefined, args, app).andThen(_ =>
     runtimeError(msg('error-hole', '??'), app))
 
+const composePrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('compose', ['procedure?'], 'procedure?', args, app).andThen(_ => {
+    // N.B., process args in reverse order because the last function is the first to go!
+    args = [...args].reverse()
+    return ok(L.nlelam(['x'], args.slice(1).reduceRight((e, f) => L.nlecall(f, [e]), L.nlecall(args[0], [L.nlevar('x')]))))
+  })
+
+const pipePrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('pipe', ['any', 'procedure?'], 'procedure?', args, app).andThen(_ => {
+    // N.B., process args in left-to-right order; the first function goes first!
+    const x = args[0]
+    const f1 = args[1]
+    const fs = args.slice(2)
+    return evaluateExp(env, fs.reduceRight((e, f) => L.nlecall(f, [e]), L.nlecall(f1, [x])))
+  })
+
+const rangePrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('range', ['integer?'], undefined, args, app).andThen(_ => {
+    const n = L.asNum_(args[0])
+    if (n < 0) {
+      return runtimeError(msg('error-precondition-not-met', 'range', 1, 'non-negative', Pretty.expToString(0, args[0])), app)
+    } else {
+      const arr = []
+      for (let i = 0; i < n; i++) {
+        arr.push(i)
+      }
+      return ok(L.arrayToList(arr.map(n => L.nlenumber(n))))
+    }
+  })
+
 const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['procedure?', procedurePrim, Docs.procedure],
   ['apply', applyPrim, Docs.apply],
@@ -867,7 +897,11 @@ const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['fold', foldPrim, Docs.fold],
   ['reduce', reducePrim, Docs.reduce],
   ['error', errorPrim, Docs.error],
-  ['??', qqPrim, Docs.qq]
+  ['??', qqPrim, Docs.qq],
+  ['compose', composePrim, Docs.compose],
+  ['o', composePrim, Docs.o],
+  ['|>', pipePrim, Docs.pipe],
+  ['range', rangePrim, Docs.range],
 ]
 
 // Exceptions (6.11)
