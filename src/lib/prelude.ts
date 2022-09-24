@@ -444,9 +444,35 @@ const reversePrim: L.Prim = function (_env, args, app) {
   return ok(ret)
 }
 
-// TODO: implement:
-//   (list-tail list k)
-//   (list-ref list k)
+const listTailPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('list-tail', ['list?', 'number?'], 'list?', args, app).andThen(_ => {
+    const list = L.unsafeListToArray(args[0])
+    const k = L.asNum_(args[1])
+    if (k < 0 || k > list.length) {
+      return runtimeError(msg('error-precondition-not-met', 'list-tail', 2, '<= length of list', k), app)
+    }
+    return ok(L.arrayToList(list.slice(k)))
+  })
+
+const listTakePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('list-take', ['list?', 'number?'], 'list?', args, app).andThen(_ => {
+    const list = L.unsafeListToArray(args[0])
+    const k = L.asNum_(args[1])
+    if (k < 0 || k > list.length) {
+      return runtimeError(msg('error-precondition-not-met', 'list-take', 2, '<= length of list', k), app)
+    }
+    return ok(L.arrayToList(list.slice(0, k)))
+  })
+
+const listRefPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('list-ref', ['list?', 'number?'], 'any', args, app).andThen(_ => {
+    const list = L.unsafeListToArray(args[0])
+    const i = L.asNum_(args[1])
+    if (i < 0 || i >= list.length) {
+      return runtimeError(msg('error-precondition-not-met', 'list-ref', 2, 'valid index into list', i), app)
+    }
+    return ok(list[i])
+  })
 
 // N.B., list-set! is unimplemented since it is effectful.
 
@@ -466,7 +492,11 @@ const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['make-list', makeListPrim, Docs.makeList],
   ['length', lengthPrim, Docs.length],
   ['append', appendPrim, Docs.append],
-  ['reverse', reversePrim, Docs.reverse]
+  ['reverse', reversePrim, Docs.reverse],
+  ['list-tail', listTailPrim, Docs.listTail],
+  ['list-drop', listTailPrim, Docs.listDrop],
+  ['list-take', listTakePrim, Docs.listTake],
+  ['list-ref', listRefPrim, Docs.listRef]
 ]
 
 // Symbols (6.5)
