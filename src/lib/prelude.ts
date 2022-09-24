@@ -487,6 +487,19 @@ const listRefPrim: L.Prim = (_env, args, app) =>
 //   (assoc obj alist compare)
 //   (list-copy obj)
 
+// Other list functions
+
+const indexOfPrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('index-of', ['list?', 'any'], 'number?', args, app).andThen(_ => {
+    const list = L.unsafeListToArray(args[0])
+    for (let i = 0; i < list.length; i++) {
+      if (L.expEquals(list[i], args[1])) {
+        return ok(L.nlenumber(i))
+      }
+    }
+    return ok(L.nlenumber(-1))
+  })
+
 const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['list', listPrim, Docs.list],
   ['make-list', makeListPrim, Docs.makeList],
@@ -496,7 +509,8 @@ const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['list-tail', listTailPrim, Docs.listTail],
   ['list-drop', listTailPrim, Docs.listDrop],
   ['list-take', listTakePrim, Docs.listTake],
-  ['list-ref', listRefPrim, Docs.listRef]
+  ['list-ref', listRefPrim, Docs.listRef],
+  ['index-of', indexOfPrim, Docs.indexOf]
 ]
 
 // Symbols (6.5)
@@ -794,8 +808,8 @@ const procedurePrim: L.Prim = (_env, args, app) =>
     ok(L.nlebool(L.isProcedure(args[0]))))
 
 const applyPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('apply', ['procedure?'], 'any', args, app).andThen(_ =>
-    evaluateExp(env, L.nlecall(args[0], [...args.slice(1)])))
+  Utils.checkArgsResult('apply', ['procedure?'], 'list?', args, app).andThen(_ =>
+    evaluateExp(env, L.nlecall(args[0], L.unsafeListToArray(args[1]))))
 
 const stringMapPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('string-map', ['procedure?', 'string?'], 'string?', args, app).andThen(_ =>

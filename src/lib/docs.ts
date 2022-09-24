@@ -477,6 +477,14 @@ export const listRef: Doc = new Doc(
   'Returns the `n`th element of `l`.'
 )
 
+export const indexOf: Doc = new Doc(
+  '(index-of l v): integer?', [
+    'l: list?',
+    'v: any',
+  ],
+  'Returns the index of the first occurrence of `v` in `l` or `-1` if `v` is not in `l`.'
+)
+
 export const charQ: Doc = new Doc(
   '(char? v): boolean?', [
     'v: any',
@@ -805,11 +813,11 @@ export const procedure: Doc = new Doc(
 )
 
 export const apply: Doc = new Doc(
-  '(apply f v1 v2 ...): any', [
+  '(apply f l): any', [
     'f: procedure?',
-    'v: any',
+    'l: list?',
   ],
-  'Calls `f` with arguments `v1`, `v2`, ... .'
+  'Calls `f` with the values contained in `l`.'
 )
 
 export const stringMap: Doc = new Doc(
