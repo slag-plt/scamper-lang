@@ -445,6 +445,38 @@ export const reverse: Doc = new Doc(
   'Returns a new list containing the elements of `l` in reverse order.'
 )
 
+export const listTail: Doc = new Doc(
+  '(list-tail l k): list?', [
+    'l: list?',
+    'k: integer?, 0 <= k <= (length l)',
+  ],
+  'Returns a new list containing the last `k` elements of `l.'
+)
+
+export const listDrop: Doc = new Doc(
+  '(list-drop l k): list?', [
+    'l: list?',
+    'k: integer?, 0 <= k <= (length l)',
+  ],
+  'An alias for `(list-tail l k)`.'
+)
+
+export const listTake: Doc = new Doc(
+  '(list-take l k): list?', [
+    'l: list?',
+    'k: integer?, 0 <= k <= (length l)',
+  ],
+  'Returns a new list containing the first `k` elements of `l`.'
+)
+
+export const listRef: Doc = new Doc(
+  '(list-ref l n): any', [
+    'l: list?',
+    'n: integer?, 0 <= n < (length l)',
+  ],
+  'Returns the `n`th element of `l`.'
+)
+
 export const charQ: Doc = new Doc(
   '(char? v): boolean?', [
     'v: any',
