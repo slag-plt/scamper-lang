@@ -34,7 +34,7 @@ type Token = { value: string, range: Range }
 const mkStartingToken = (value: string, start: Loc) => ({
   value,
   // N.B., Clone locs to allow us to safely mutate them during tokenization
-  range: mkRange(mkLoc(start.line, start.column), mkLoc(start.line, start.column))
+  range: mkRange(mkLoc(start.line, start.column, start.index), mkLoc(start.line, start.column, start.index))
 })
 
 function lexerError <T> (message: string, tok?: Token, hint?: string): Result<T> {
@@ -56,7 +56,7 @@ class LexerState {
 
   constructor () {
     this.i = 0
-    this.pos = mkLoc(0, 0)
+    this.pos = mkLoc(0, 0, 0)
     this.tok = undefined
   }
 
@@ -89,12 +89,14 @@ class LexerState {
   public advanceColumn (): void {
     this.i += 1
     this.pos.column += 1
+    this.pos.index += 1
   }
 
   public advanceLine (): void {
     this.i += 1
     this.pos.line += 1
     this.pos.column = 0
+    this.pos.index += 1
   }
 
   public append (s: string) {
@@ -104,6 +106,7 @@ class LexerState {
       this.tok.value += s
       this.tok.range.end.line = this.pos.line
       this.tok.range.end.column = this.pos.column
+      this.tok.range.end.index = this.pos.index
     }
   }
 }
@@ -450,8 +453,8 @@ function consumeCommentTokens (toks: Token[]): Token[] {
 function coalseCommentTokens (toks: Token[]): Token {
   const value = toks.map(t => t.value.slice(1)).join(' ')
   const range = mkRange(
-    mkLoc(toks[0].range.start.line, toks[0].range.start.column),
-    mkLoc(toks[toks.length - 1].range.start.line, toks[toks.length - 1].range.start.column),
+    mkLoc(toks[0].range.start.line, toks[0].range.start.column, toks[0].range.start.index),
+    mkLoc(toks[toks.length - 1].range.start.line, toks[toks.length - 1].range.start.column, toks[toks.length - 1].range.start.index),
   )
   return { value, range }
 }

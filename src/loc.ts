@@ -1,6 +1,6 @@
-export type Loc = { line: number, column: number }
-export const mkLoc = (line: number, column: number): Loc => ({ line, column })
-export const noLoc = () => mkLoc(-1, -1)
+export type Loc = { line: number, column: number, index: number }
+export const mkLoc = (line: number, column: number, index: number): Loc => ({ line, column, index })
+export const noLoc = () => mkLoc(-1, -1, -1)
 
 export const locEquals = (l1: Loc, l2: Loc): boolean => l1.line === l2.line && l1.column === l2.column
 
