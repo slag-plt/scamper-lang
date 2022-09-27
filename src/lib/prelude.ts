@@ -114,18 +114,20 @@ function numericBOp (symbol: string, op: (x: number, y: number) => number, args:
     asNumbers(args).andThen(vs => ok(L.nlenumber(op(vs[0], vs[1])))))
 }
 
-function numericNOp (symbol: string, op: (x: number, y: number) => number, args: L.Exp[], app: L.Exp): Result<L.Exp> {
+function numericNOp (symbol: string, op: (x: number, y: number) => number, def: (x: number) => number, args: L.Exp[], app: L.Exp): Result<L.Exp> {
   return Utils.checkArgsResult(symbol, ['number?'], 'number?', args, app).andThen(_ =>
-    asNumbers(args).andThen(vs => ok(L.nlenumber(vs.reduce(op)))))
-}
+    args.length === 1
+      ? ok(L.nlenumber(def(L.asNum_(args[0]))))
+      : asNumbers(args).andThen(vs => ok(L.nlenumber(vs.reduce(op))))
+)}
 
-const maxPrim: L.Prim = (_env, args, app) => numericNOp('max', (x, y) => Math.max(x, y), args, app)
-const minPrim: L.Prim = (_env, args, app) => numericNOp('min', (x, y) => Math.min(x, y), args, app)
+const maxPrim: L.Prim = (_env, args, app) => numericNOp('max', (x, y) => Math.max(x, y), x => x, args, app)
+const minPrim: L.Prim = (_env, args, app) => numericNOp('min', (x, y) => Math.min(x, y), x => x, args, app)
 
-const plusPrim: L.Prim = (_env, args, app) => numericNOp('+', (x, y) => x + y, args, app)
-const minusPrim: L.Prim = (_env, args, app) => numericNOp('-', (x, y) => x - y, args, app)
-const timesPrim: L.Prim = (_env, args, app) => numericNOp('*', (x, y) => x * y, args, app)
-const divPrim: L.Prim = (_env, args, app) => numericNOp('/', (x, y) => x / y, args, app)
+const plusPrim: L.Prim = (_env, args, app) => numericNOp('+', (x, y) => x + y, x => x, args, app)
+const minusPrim: L.Prim = (_env, args, app) => numericNOp('-', (x, y) => x - y, x => -x, args, app)
+const timesPrim: L.Prim = (_env, args, app) => numericNOp('*', (x, y) => x * y, x => x, args, app)
+const divPrim: L.Prim = (_env, args, app) => numericNOp('/', (x, y) => x / y, x => 1/x, args, app)
 
 const absPrim: L.Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
 
@@ -961,13 +963,19 @@ const pipePrim: L.Prim = (env, args, app) =>
 
 const rangePrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('range', [], 'integer?', args, app).andThen(_ => {
-    if (args.length == 0 || args.length > 2) {
-      return runtimeError(msg('error-arity', 'range', '1 or 2', args.length), app)
+    if (args.length == 0 || args.length > 3) {
+      return runtimeError(msg('error-arity', 'range', '1--3', args.length), app)
     } else {
-      let m = args.length == 2 ? L.asNum_(args[0]) : 0
-      let n = args.length == 2 ? L.asNum_(args[1]) : L.asNum_(args[0])
+      let m = args.length == 1 ? 0 : L.asNum_(args[0])
+      let n = args.length == 1 ? L.asNum_(args[0]) : L.asNum_(args[1])
+      let step = args.length < 3 ? 1 : L.asNum_(args[2])
       const arr = []
-      for (let i = m; i < n; i++) {
+      // N.B., to prevent the internal infinite loop that would result
+      // from having a zero step.
+      if (step == 0) {
+        return runtimeError(msg('error-precondition-not-met', 'range', '3', 'non-zero', step), app)
+      }
+      for (let i = m; step > 0 ? i < n : i > n; i += step) {
         arr.push(i)
       }
       return ok(L.arrayToList(arr.map(n => L.nlenumber(n))))

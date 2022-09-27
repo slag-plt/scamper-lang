@@ -6,3 +6,6 @@ null
 (list -3 -2 -1 0 1 2 3 4)
 null
 null
+(list 0 2 4 6 8)
+(list 10 9 8 7 6)
+(list 10 7 4 1)
