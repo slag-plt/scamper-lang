@@ -823,9 +823,50 @@ const stringMapPrim: L.Prim = (env, args, app) =>
         return ok(L.nlestr(vs.map(v => L.asChar_(v)).join('')))
       }))
 
+/*
+[ [ 1,  2, 3 ]
+, [ 4,  5, 6 ]
+, [ 7,  8, 9 ]
+, [10, 11, 12]
+]
+
+
+*/
+
+/**
+ * @param arr - a rectangular array of arrays, i.e., each array has the same
+ * length
+ * @returns the transposition of this array of arrays where rows become columns
+ * and columns become rows.
+ */
+function transpose <T>(arr: T[][]): T[][] {
+  if (arr.length === 0) { return [] }
+  const numArrays = arr.length
+  // N.B., assumed that all arrays have the same length
+  const numArgs = arr[0].length
+  const result: T[][] = []
+  for (let i = 0; i < numArgs; i++) {
+    result.push([])
+  }
+  for (let i = 0; i < numArgs; i++) {
+    for (let j = 0; j < numArrays; j++) {
+      result[i].push(arr[j][i])
+    }
+  }
+  return result
+}
+
 const mapPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('map', ['procedure?', 'list?'], 'any', args, app).andThen(_ =>
-    evaluateExp(env, L.arrayToList(L.unsafeListToArray(args[1]).map(e => L.nlecall(args[0], [e])))))
+  Utils.checkArgsResult('map', ['procedure?', 'list?'], 'list?', args, app).andThen(_ => {
+    const fn = args[0]
+    const lists = args.slice(1).map(L.unsafeListToArray)
+    if (!(lists.map(l => l.length).every(n => n === lists[0].length))) {
+      return runtimeError(msg('error-precondition-not-met', 'map', 2,
+        'all lists have the same length', Pretty.expToString(0, app)), app)
+    }
+    const xs = transpose(lists)
+    return evaluateExp(env, L.arrayToList(xs.map(vs => L.nlecall(fn, vs))))
+  })
 
 // Additional list pipeline functions from racket/base
 

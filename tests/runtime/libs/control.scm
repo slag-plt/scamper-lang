@@ -10,6 +10,14 @@
 
 (map inc null)
 
+(map - (list 3 5 7 1 9)
+       (list 1 2 3 0 13))
+
+(map (lambda (x y z) (if x y z))
+     (list #t #f #t)
+     (list "yes" "no" "maybe")
+     (list "y" "n" "m"))
+
 (filter
   (lambda (v)
     (= (remainder v 2) 0))
