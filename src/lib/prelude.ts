@@ -956,17 +956,18 @@ const pipePrim: L.Prim = (env, args, app) =>
     const x = args[0]
     const f1 = args[1]
     const fs = args.slice(2)
-    return evaluateExp(env, fs.reduceRight((e, f) => L.nlecall(f, [e]), L.nlecall(f1, [x])))
+    return evaluateExp(env, fs.reduce((e, f) => L.nlecall(f, [e]), L.nlecall(f1, [x])))
   })
 
 const rangePrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('range', ['integer?'], undefined, args, app).andThen(_ => {
-    const n = L.asNum_(args[0])
-    if (n < 0) {
-      return runtimeError(msg('error-precondition-not-met', 'range', 1, 'non-negative', Pretty.expToString(0, args[0])), app)
+  Utils.checkArgsResult('range', [], 'integer?', args, app).andThen(_ => {
+    if (args.length == 0 || args.length > 2) {
+      return runtimeError(msg('error-arity', 'range', '1 or 2', args.length), app)
     } else {
+      let m = args.length == 2 ? L.asNum_(args[0]) : 0
+      let n = args.length == 2 ? L.asNum_(args[1]) : L.asNum_(args[0])
       const arr = []
-      for (let i = 0; i < n; i++) {
+      for (let i = m; i < n; i++) {
         arr.push(i)
       }
       return ok(L.arrayToList(arr.map(n => L.nlenumber(n))))

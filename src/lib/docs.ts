@@ -896,10 +896,11 @@ export const pipe: Doc = new Doc(
 )
 
 export const range: Doc = new Doc(
-  '(range end): list?', [
+  '(range beg end): list?', [
+    'beg: integer?, this argument can be omitted',
     'end: integer?, n >= 0',
   ],
-  'Returns a list containing the numbers from `0` to `n` (exclusive).'
+  'Returns a list containing the numbers from `beg` to `end` (exclusive). If `beg` is not given, it defaults to 0.'
 )
 
 export const elseV: Doc = new Doc(

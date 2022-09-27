@@ -11,6 +11,11 @@
 
 (|> 1 inc inc inc inc inc)
 
+(|> "hello"
+    string->list
+    (lambda (l) (filter (lambda (c) (not (char=? c #\l))) l))
+    list->string)
+
 ((compose length
           (lambda (l) (filter (lambda (n) (even? n)) l)))
  (range 10))
