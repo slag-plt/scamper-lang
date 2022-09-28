@@ -19,3 +19,7 @@
 ((compose length
           (lambda (l) (filter (lambda (n) (even? n)) l)))
  (range 10))
+
+(define string-reverse (o list->string reverse string->list))
+
+(string-reverse "hello")

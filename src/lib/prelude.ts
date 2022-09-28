@@ -921,6 +921,37 @@ const reducePrim: L.Prim = (env, args, app) =>
     }
   })
 
+const foldRightPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('fold-right', ['procedure?', 'any', 'list?'], undefined, args, app).andThen(_ => {
+    const fn = args[0]
+    let result = args[1]
+    // N.B., reverse the list because we process it in right-to-left order
+    const list = L.asList_(args[2]).reverse()
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i]
+      const res = evaluateExp(env, L.nlecall(fn, [e, result]))
+      if (res.tag === 'error') {
+        return res
+      } else {
+        result = res.value
+      }
+    }
+    return ok(result)
+  })
+
+const reduceRightPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('reduce-right', ['procedure?', 'list?'], undefined, args, app).andThen(_ => {
+    const fn = args[0]
+    const list = L.asList_(args[1])
+
+    if (list.length === 0) {
+      return runtimeError(msg('error-precondition-not-met', 'reduce-right', '2', 'list is non-empty', L.expToString(args[1])), app)
+    } else {
+      return evaluateExp(env,
+        L.nlecall(L.nlevar('fold-right'), [args[0], list[list.length - 1], L.arrayToList(list.slice(0, list.length -1))]))
+    }
+  })
+
 // N.B., (vector-map fn v1 ... vk) not implemented since vectors are not implemented.
 
 // TODO: implement:
@@ -949,7 +980,7 @@ const composePrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('compose', ['procedure?'], 'procedure?', args, app).andThen(_ => {
     // N.B., process args in reverse order because the last function is the first to go!
     args = [...args].reverse()
-    return ok(L.nlelam(['x'], args.slice(1).reduceRight((e, f) => L.nlecall(f, [e]), L.nlecall(args[0], [L.nlevar('x')]))))
+    return ok(L.nlelam(['x'], args.slice(1).reduce((e, f) => L.nlecall(f, [e]), L.nlecall(args[0], [L.nlevar('x')]))))
   })
 
 const pipePrim: L.Prim = (env, args, app) =>
@@ -990,6 +1021,8 @@ const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['filter', filterPrim, Docs.filter],
   ['fold', foldPrim, Docs.fold],
   ['reduce', reducePrim, Docs.reduce],
+  ['fold-right', foldRightPrim, Docs.foldRight],
+  ['reduce-right', reduceRightPrim, Docs.reduceRight],
   ['error', errorPrim, Docs.error],
   ['??', qqPrim, Docs.qq],
   ['compose', composePrim, Docs.compose],

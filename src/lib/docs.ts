@@ -861,6 +861,23 @@ export const reduce: Doc = new Doc(
   'Like `fold` but uses the first element of `l` as the initial value.'
 )
 
+export const foldRight: Doc = new Doc(
+  '(fold-right f v l): any', [
+    'f: procedure?, a binary function',
+    'v: any',
+    'l: list?',
+  ],
+  'Returns the result of accumulating the result of applying `f` to each element of `l` in reverse order, starting with initial value `v`.'
+)
+
+export const reduceRight: Doc = new Doc(
+  '(reduce-right f l): any', [
+    'f: procedure?, a binary function',
+    'l: list?, non-empty',
+  ],
+  'Like `fold-right` but uses the last element of `l` as the initial value.'
+)
+
 export const error: Doc = new Doc(
   '(error msg): any', [
     'msg: string?',

@@ -6,3 +6,5 @@
 (fold - 5 (list 10 9 8 7 6))
 (reduce + (list 5 0 1 2 3 4))
 (reduce - (list 5 10 9 8 7 6))
+(fold-right - 5 (list 10 9 8 7 6))
+(reduce-right - (list 10 9 8 7 6 5))
