@@ -5,6 +5,7 @@ import * as Utils from './utils.js'
 import { msg } from '../messages.js'
 import * as Docs from './docs.js'
 import * as Pretty from '../pretty.js'
+import { fs } from '../vfs.js'
 
 function asNumbers (args: L.Exp[]): Result<number[]> {
   const result = new Array(args.length)
@@ -746,6 +747,17 @@ const stringSplitPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
     ok(L.arrayToList(L.asString_(args[0]).split(L.asString_(args[1])).map(L.nlestr))))
 
+const fileStringPrim: L.Prim =  (_env, args, app) =>
+  Utils.checkArgsResult('file->string', ['string?'], undefined, args, app).andThen(_ =>
+    fs.read(L.asString_(args[0])).andThen(s => ok(L.nlestr(s))))
+
+const fileLinesPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('file->lines', ['string?'], undefined, args, app).andThen(_ =>
+    evaluateExp(env, L.nlecall(L.nlevar('string-split'), [
+      L.nlecall(L.nlevar('file->string'), [args[0]]),
+      L.nlestr("\n")
+    ])))
+
 const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['char?', charQPrim, Docs.charQ],
   ['char=?', charEqPrim, Docs.charEq],
@@ -791,7 +803,9 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['string->list', stringListPrim, Docs.stringList],
   ['list->string', listStringPrim, Docs.listString],
   ['string-split', stringSplitPrim, Docs.stringSplit],
-  ['string-append', stringAppendPrim, Docs.stringAppend]
+  ['string-append', stringAppendPrim, Docs.stringAppend],
+  ['file->string', fileStringPrim, Docs.fileString],
+  ['file->lines', fileLinesPrim, Docs.fileLines],
 ]
 
 // Vectors (6.8)

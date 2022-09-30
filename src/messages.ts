@@ -12,6 +12,7 @@ const templates: Messages = new Map([
   ['error-eof', (_) => 'Unexpected end of source code encountered'],
   ['error-eof-string', (_) => 'Unexpected end of source code encountered while parsing a string literal'],
   ['error-eof-block-comment', (_) => 'Unexpected end of source code encountered while parsing a block comment'],
+  ['error-file-not-found', (vs) => `File ${vs[0]} not found`],
   ['error-hole', (_) => 'A hole was encountered!'],
   ['error-import-not-found', (vs) => `Import ${vs[0]} not found`],
   ['error-index-string', (vs) => `${vs[0]} is not a valid index into string "${vs[1]}"`],

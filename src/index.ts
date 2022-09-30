@@ -15,6 +15,7 @@ export * as sexp from './sexp.js'
 export * as scope from './scope.js'
 export * as Image from './lib/image.js'
 export * as Music from './lib/music.js'
+export * as Vfs from './vfs.js'
 
 export { ProgramState, ProgramTrace } from './program.js'
 

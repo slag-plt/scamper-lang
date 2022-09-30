@@ -783,6 +783,20 @@ export const stringAppend: Doc = new Doc(
   'Returns a string made by joining `s1`, `s2`, ... together.'
 )
 
+export const fileString: Doc = new Doc(
+  '(file->string path): string?', [
+    'path: string?',
+  ],
+  'Returns the contents of the file at `path` as a string.'
+)
+
+export const fileLines: Doc = new Doc(
+  '(file->lines path): list?', [
+    'path: string?',
+  ],
+  'Returns the contents of the file at `path` as a list of strings, one for each line.'
+)
+
 export const stringList: Doc = new Doc(
   '(string->list s): list?', [
     's: string?',
