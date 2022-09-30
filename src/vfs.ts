@@ -49,6 +49,7 @@ class VFS {
       request.open('GET', path, false);  // `false` makes the request synchronous
       request.send(null);
       if (request.status === 200) {
+        console.log(request.responseText)
         return ok(request.responseText);
       } else {
         throw new ICE('VFS.read', 'request didnt work!')
