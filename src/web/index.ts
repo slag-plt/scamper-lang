@@ -39,15 +39,15 @@ function sanitize(s: string): string {
   return s.replace('<?', '&lt;?')
 }
 
-function replaceOutputWidgets() {
+async function replaceOutputWidgets() {
   for (const element of document.getElementsByClassName('scamper-output')) {
     const classes = element.className.split(' ')
     const outputProg = classes.includes('output-prog')
     const src = element.textContent!
-    const result = Scamper.compileProgram(src).andThen(prog =>
+    const result = await Scamper.compileProgram(src).asyncAndThen(async prog =>
       Scamper.ok({
         statements: prog.statements,
-        outputs: new Scamper.ProgramState(prog).evaluate().prog.statements
+        outputs: (await new Scamper.ProgramState(prog).evaluate()).prog.statements
       }))
     if (result.tag === 'error') {
       element.innerHTML = sanitize(Scamper.errorToString(result))

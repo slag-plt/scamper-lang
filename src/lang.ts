@@ -96,7 +96,7 @@ export class Env {
  * @param args - the arguments passed to the primitive, assumed to be values.
  * @param app - the full application expression, for error-reporting purposes.
  */
-type Prim = (env:Env, args: Exp[], app: Exp) => Result<Exp>
+type Prim = (env:Env, args: Exp[], app: Exp) => Promise<Result<Exp>>
 
 /** Literal expressions */
 type Lit

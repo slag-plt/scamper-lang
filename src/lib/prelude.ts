@@ -34,7 +34,7 @@ const preludeEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'p
 // Since we don't have effects beside vectors. Therefore, value vs. reference
 // equality is not an issue!
 
-const equalPrim: L.Prim = (_env, args, app) =>
+const equalPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('equal?', ['any', 'any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.expEquals(args[0], args[1]))))
 
@@ -44,15 +44,15 @@ const equivalencePrimitives: [string, L.Prim, L.Doc | undefined][] = [
 
 // Numbers (6.2)
 
-const numberPrim: L.Prim = (_env, args, app) =>
+const numberPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('number?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.isNumber(args[0]))))
 
-const realPrim: L.Prim = (_env, args, app) =>
+const realPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('real?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.isReal(args[0]))))
 
-const integerPrim: L.Prim = (_env, args, app) =>
+const integerPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('integer?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.isInteger(args[0]))))
 
@@ -68,7 +68,7 @@ const integerPrim: L.Prim = (_env, args, app) =>
 // Because we only implement the subset of numbers corresponding to the
 // Javascript numeric stack: number -> real -> integer
 
-const nanPrim: L.Prim = (_env, args, app) =>
+const nanPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('nan?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(Number.isNaN(L.asNum_(args[0])))))
 
@@ -79,29 +79,29 @@ function compareOp (symbol: string, op: (x: number, y: number) => boolean, args:
   )
 }
 
-const ltPrim: L.Prim = (_env, args, app) => compareOp('<', (x, y) => x < y, args, app)
-const leqPrim : L.Prim = (_env, args, app) => compareOp('<=', (x, y) => x <= y, args, app)
-const gtPrim : L.Prim = (_env, args, app) => compareOp('>', (x, y) => x > y, args, app)
-const geqPrim : L.Prim = (_env, args, app) => compareOp('>=', (x, y) => x >= y, args, app)
-const numeqPrim : L.Prim = (_env, args, app) => compareOp('=', (x, y) => x === y, args, app)
+const ltPrim: L.Prim = async (_env, args, app) => compareOp('<', (x, y) => x < y, args, app)
+const leqPrim : L.Prim = async (_env, args, app) => compareOp('<=', (x, y) => x <= y, args, app)
+const gtPrim : L.Prim = async (_env, args, app) => compareOp('>', (x, y) => x > y, args, app)
+const geqPrim : L.Prim = async (_env, args, app) => compareOp('>=', (x, y) => x >= y, args, app)
+const numeqPrim : L.Prim = async (_env, args, app) => compareOp('=', (x, y) => x === y, args, app)
 
-const zeroPrim : L.Prim = (_env, args, app) =>
+const zeroPrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('zero?', ['number?'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.asNum_(args[0]) === 0)))
 
-const positivePrim : L.Prim = (_env, args, app) =>
+const positivePrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('positive?', ['number?'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.asNum_(args[0]) > 0)))
 
-const negativePrim : L.Prim = (_env, args, app) =>
+const negativePrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('negative?', ['number?'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.asNum_(args[0]) < 0)))
 
-const oddPrim : L.Prim = (_env, args, app) =>
+const oddPrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('odd?', ['number?'], undefined, args, app).andThen(_ =>
     ok(L.nlebool((L.asNum_(args[0]) & 1) === 1)))
 
-const evenPrim : L.Prim = (_env, args, app) =>
+const evenPrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('even?', ['number?'], undefined, args, app).andThen(_ =>
     ok(L.nlebool((L.asNum_(args[0]) & 1) !== 1)))
 
@@ -122,15 +122,15 @@ function numericNOp (symbol: string, op: (x: number, y: number) => number, def: 
       : asNumbers(args).andThen(vs => ok(L.nlenumber(vs.reduce(op))))
 )}
 
-const maxPrim: L.Prim = (_env, args, app) => numericNOp('max', (x, y) => Math.max(x, y), x => x, args, app)
-const minPrim: L.Prim = (_env, args, app) => numericNOp('min', (x, y) => Math.min(x, y), x => x, args, app)
+const maxPrim: L.Prim = async (_env, args, app) => numericNOp('max', (x, y) => Math.max(x, y), x => x, args, app)
+const minPrim: L.Prim = async (_env, args, app) => numericNOp('min', (x, y) => Math.min(x, y), x => x, args, app)
 
-const plusPrim: L.Prim = (_env, args, app) => numericNOp('+', (x, y) => x + y, x => x, args, app)
-const minusPrim: L.Prim = (_env, args, app) => numericNOp('-', (x, y) => x - y, x => -x, args, app)
-const timesPrim: L.Prim = (_env, args, app) => numericNOp('*', (x, y) => x * y, x => x, args, app)
-const divPrim: L.Prim = (_env, args, app) => numericNOp('/', (x, y) => x / y, x => 1/x, args, app)
+const plusPrim: L.Prim = async (_env, args, app) => numericNOp('+', (x, y) => x + y, x => x, args, app)
+const minusPrim: L.Prim = async (_env, args, app) => numericNOp('-', (x, y) => x - y, x => -x, args, app)
+const timesPrim: L.Prim = async (_env, args, app) => numericNOp('*', (x, y) => x * y, x => x, args, app)
+const divPrim: L.Prim = async (_env, args, app) => numericNOp('/', (x, y) => x / y, x => 1/x, args, app)
 
-const absPrim: L.Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
+const absPrim: L.Prim = async (_env, args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
 
 // N.B., not implementing the composite division functions:
 //   (floor / n1 n2)
@@ -141,13 +141,13 @@ const absPrim: L.Prim = (_env, args, app) => numericUOp('abs', (x) => Math.abs(x
 //   (truncate-remainder n1 n2)
 // To avoid clutter in the documentation.
 
-const quotientPrim: L.Prim = (_env, args, app) =>
+const quotientPrim: L.Prim = async (_env, args, app) =>
   numericBOp('quotient', (x, y) => Math.trunc(x / y), args, app)
 
-const remainderPrim: L.Prim = (_env, args, app) =>
+const remainderPrim: L.Prim = async (_env, args, app) =>
   numericBOp('remainder', (x, y) => x % y, args, app)
 
-const moduloPrim: L.Prim = (_env, args, app) =>
+const moduloPrim: L.Prim = async (_env, args, app) =>
   numericBOp('modulo', (x, y) => ((x % y) + y) % y, args, app)
 
 // TODO: implement:
@@ -159,23 +159,23 @@ const moduloPrim: L.Prim = (_env, args, app) =>
 //   (denominator q)
 // Since we don't implement rationals.
 
-const floorPrim: L.Prim = (_env, args, app) => numericUOp('floor', (x) => Math.floor(x), args, app)
-const ceilingPrim: L.Prim = (_env, args, app) => numericUOp('ceiling', (x) => Math.ceil(x), args, app)
-const truncatePrim: L.Prim = (_env, args, app) => numericUOp('truncate', (x) => Math.trunc(x), args, app)
-const roundPrim: L.Prim = (_env, args, app) => numericUOp('round', (x) => Math.round(x), args, app)
+const floorPrim: L.Prim = async (_env, args, app) => numericUOp('floor', (x) => Math.floor(x), args, app)
+const ceilingPrim: L.Prim = async (_env, args, app) => numericUOp('ceiling', (x) => Math.ceil(x), args, app)
+const truncatePrim: L.Prim = async (_env, args, app) => numericUOp('truncate', (x) => Math.trunc(x), args, app)
+const roundPrim: L.Prim = async (_env, args, app) => numericUOp('round', (x) => Math.round(x), args, app)
 
 // N.B., we don't implement:
 //   (rationalize x y)
 // Because we don't implement rationals.
 
-const squarePrim: L.Prim = (_env, args, app) => numericUOp('square', (x) => Math.pow(x, 2), args, app)
-const sqrtPrim: L.Prim = (_env, args, app) => numericUOp('sqrt', (x) => Math.sqrt(x), args, app)
+const squarePrim: L.Prim = async (_env, args, app) => numericUOp('square', (x) => Math.pow(x, 2), args, app)
+const sqrtPrim: L.Prim = async (_env, args, app) => numericUOp('sqrt', (x) => Math.sqrt(x), args, app)
 
 // N.B., we don't implement:
 //   (exact-integer-sqrt k)
 // To avoid polluting the documentation.
 
-const exptPrim: L.Prim = (_env, args, app) => numericBOp('expt', (x, y) => Math.pow(x, y), args, app)
+const exptPrim: L.Prim = async (_env, args, app) => numericBOp('expt', (x, y) => Math.pow(x, y), args, app)
 
 // N.B., we don't implement:
 //   (make-rectangular x1 x2)   ...probably not!
@@ -186,7 +186,7 @@ const exptPrim: L.Prim = (_env, args, app) => numericBOp('expt', (x, y) => Math.
 //   (angle z)                  ...probably not!
 // Because we don't implement complex numbers.
 
-const numberStringPrim: L.Prim = (_env, args, app) => {
+const numberStringPrim: L.Prim = async (_env, args, app) => {
   // N.B., we don't support (number->string z radix)---no need at this opint.
   const argErr = Utils.checkArgsResult('number->string', ['number?'], undefined, args, app)
   const e = args[0]
@@ -197,7 +197,7 @@ const numberStringPrim: L.Prim = (_env, args, app) => {
 //   (string->number s)
 //   (string->number s radix)
 
-const stringNumberPrim: L.Prim = (_env, args, app) => {
+const stringNumberPrim: L.Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('string->number', ['string?'], undefined, args, app)
   if (argErr) { return argErr }
   const s = L.asString_(args[0])
@@ -212,31 +212,31 @@ const stringNumberPrim: L.Prim = (_env, args, app) => {
 
 // Additional functions from racket/base
 
-const expPrim: L.Prim = (_env, args, app) =>
+const expPrim: L.Prim = async (_env, args, app) =>
   numericUOp('exp', (x) => Math.exp(x), args, app)
 
-const logPrim: L.Prim = (_env, args, app) =>
+const logPrim: L.Prim = async (_env, args, app) =>
   numericUOp('log', (x) => Math.log(x), args, app)
 
-const sinPrim: L.Prim = (_env, args, app) =>
+const sinPrim: L.Prim = async (_env, args, app) =>
   numericUOp('sin', (x) => Math.sin(x), args, app)
 
-const cosPrim: L.Prim = (_env, args, app) =>
+const cosPrim: L.Prim = async (_env, args, app) =>
   numericUOp('cos', (x) => Math.cos(x), args, app)
 
-const tanPrim: L.Prim = (_env, args, app) =>
+const tanPrim: L.Prim = async (_env, args, app) =>
   numericUOp('tan', (x) => Math.tan(x), args, app)
 
-const asinPrim: L.Prim = (_env, args, app) =>
+const asinPrim: L.Prim = async (_env, args, app) =>
   numericUOp('asin', (x) => Math.asin(x), args, app)
 
-const acosPrim: L.Prim = (_env, args, app) =>
+const acosPrim: L.Prim = async (_env, args, app) =>
   numericUOp('acos', (x) => Math.acos(x), args, app)
 
-const atanPrim: L.Prim = (_env, args, app) =>
+const atanPrim: L.Prim = async (_env, args, app) =>
   numericUOp('atan', (x) => Math.atan(x), args, app)
 
-const equalsEpsPrim: L.Prim = (_env, args, app) =>
+const equalsEpsPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('=-eps', ['number?'], undefined, args, app).andThen(_ => {
     return ok(L.nlelam(['x', 'y'], L.nlecall(L.nlevar('<='), [
       L.nlecall(L.nlevar('abs'), [
@@ -294,30 +294,30 @@ const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 
 // Booleans (6.3)
 
-const notPrim: L.Prim = (_env, args, app) =>
+const notPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('not', ['boolean?'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(!L.asBool_(args[0]))))
 
-const booleanPrim: L.Prim = (_env, args, app) =>
+const booleanPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('boolean?', ['any'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(L.isBoolean(args[0]))))
 
 // From racket/base
 
-const nandPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('nand', [], 'boolean?', args, app).andThen(_ =>
+const nandPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('nand', [], 'boolean?', args, app).asyncAndThen(_ =>
     evaluateExp(env, L.nlecall(L.nlevar('not'), [L.nleand(args)])))
 
-const norPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('nand', [], 'boolean?', args, app).andThen(_ =>
+const norPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('nand', [], 'boolean?', args, app).asyncAndThen(_ =>
     evaluateExp(env, L.nlecall(L.nlevar('not'), [L.nleor(args)])))
 
-const impliesPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('implies', ['boolean?', 'boolean?'], undefined, args, app).andThen(_ =>
+const impliesPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('implies', ['boolean?', 'boolean?'], undefined, args, app).asyncAndThen(_ =>
     evaluateExp(env, L.nleif(args[0], args[1], L.nlebool(true))))
    
-const xorPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('xor', ['boolean?', 'boolean?'], undefined, args, app).andThen(_ =>    
+const xorPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('xor', ['boolean?', 'boolean?'], undefined, args, app).asyncAndThen(_ =>    
     evaluateExp(env, L.nleor([
       L.nleand([args[0], L.nlecall(L.nlevar('not'), [args[1]])]),
       L.nleand([L.nlecall(L.nlevar('not'), [args[0]]), args[1]]),
@@ -334,23 +334,23 @@ const booleanPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 
 // Pairs and Lists (6.4)
 
-const pairQPrim: L.Prim = (_env, args, app) =>
+const pairQPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('pair?', ['any'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(L.isPair(args[0]))))
 
-const consPrim: L.Prim = (_env, args, app) =>
+const consPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('cons', ['any', 'any'], 'pair?', args, app).andThen(_ =>
     ok(L.epair(app.range, args[0], args[1])))
 
-const pairPrim: L.Prim = (_env, args, app) =>
+const pairPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('pair', ['any', 'any'], 'pair?', args, app).andThen(_ =>
     ok(L.epair(app.range, args[0], args[1])))
 
-const carPrim : L.Prim = (_env, args, app) =>
+const carPrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('car', ['pair?'], 'any', args, app).andThen(_ =>
     ok((args[0] as L.EPair).e1))
 
-const cdrPrim : L.Prim = (_env, args, app) =>
+const cdrPrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('cdr', ['pair?'], 'any', args, app).andThen(_ =>
     ok((args[0] as L.EPair).e2))
 
@@ -359,11 +359,11 @@ const cdrPrim : L.Prim = (_env, args, app) =>
 
 // TODO: implement caar, cadr, cdar, cddr, caaar, ..., cdddr in some elegant way
 
-const nullPrim : L.Prim = (_env, args, app) =>
+const nullPrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('null?', ['any'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(args[0].tag === 'nil')))
 
-const listQPrim : L.Prim = (_env, args, app) =>
+const listQPrim : L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('list?', ['any'], 'boolean?', args, app).andThen(_ => 
     ok(L.nlebool(L.isList(args[0]))))
 
@@ -377,11 +377,11 @@ const pairListPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['list?', listQPrim, Docs.listQ]
 ]
 
-const listPrim: L.Prim = function (_env, args, app) {
+const listPrim: L.Prim = async function (_env, args, app) {
   return ok(L.arrayToList(args))
 }
 
-const makeListPrim: L.Prim = function (_env, args, app) {
+const makeListPrim: L.Prim = async function (_env, args, app) {
   // N.B., (make-list k) returns the empty list, but this behavior is weird, so we don't replicate it!
   const argErr = Utils.checkArgs('make-list', ['number?', 'any'], undefined, args, app)
   if (argErr) { return argErr }
@@ -394,7 +394,7 @@ const makeListPrim: L.Prim = function (_env, args, app) {
   return ok(ret)
 }
 
-const lengthPrim: L.Prim = function (_env, args, app) {
+const lengthPrim: L.Prim = async function (_env, args, app) {
   const argErr = Utils.checkArgs('length', ['list?'], undefined, args, app)
   if (argErr) { return argErr }
   let length = 0
@@ -420,7 +420,7 @@ function appendOne_ (l1: L.Exp, l2: L.Exp): L.Exp {
   }
 }
 
-const appendPrim: L.Prim = function (_env, args, app) {
+const appendPrim: L.Prim = async function (_env, args, app) {
   const argErr = Utils.checkArgs('append', ['list?'], 'list?', args, app)
   let ret = args[0]
   for (let i = 1; i < args.length; i++) {
@@ -429,7 +429,7 @@ const appendPrim: L.Prim = function (_env, args, app) {
   return ok(ret)
 }
 
-const reversePrim: L.Prim = function (_env, args, app) {
+const reversePrim: L.Prim = async function (_env, args, app) {
   const argErr = Utils.checkArgs('reverse', ['list?'], 'list?', args, app)
   if (argErr) { return argErr }
   const queue = []
@@ -447,7 +447,7 @@ const reversePrim: L.Prim = function (_env, args, app) {
   return ok(ret)
 }
 
-const listTailPrim: L.Prim = (_env, args, app) =>
+const listTailPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('list-tail', ['list?', 'number?'], 'list?', args, app).andThen(_ => {
     const list = L.unsafeListToArray(args[0])
     const k = L.asNum_(args[1])
@@ -457,7 +457,7 @@ const listTailPrim: L.Prim = (_env, args, app) =>
     return ok(L.arrayToList(list.slice(k)))
   })
 
-const listTakePrim: L.Prim = (_env, args, app) =>
+const listTakePrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('list-take', ['list?', 'number?'], 'list?', args, app).andThen(_ => {
     const list = L.unsafeListToArray(args[0])
     const k = L.asNum_(args[1])
@@ -467,7 +467,7 @@ const listTakePrim: L.Prim = (_env, args, app) =>
     return ok(L.arrayToList(list.slice(0, k)))
   })
 
-const listRefPrim: L.Prim = (_env, args, app) =>
+const listRefPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('list-ref', ['list?', 'number?'], 'any', args, app).andThen(_ => {
     const list = L.unsafeListToArray(args[0])
     const i = L.asNum_(args[1])
@@ -492,7 +492,7 @@ const listRefPrim: L.Prim = (_env, args, app) =>
 
 // Other list functions
 
-const indexOfPrim: L.Prim = (_env, args, app) =>
+const indexOfPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('index-of', ['list?', 'any'], 'number?', args, app).andThen(_ => {
     const list = L.unsafeListToArray(args[0])
     for (let i = 0; i < list.length; i++) {
@@ -530,7 +530,7 @@ const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 
 // TODO: implement:
 
-const charQPrim: L.Prim = (_env, args, app) =>
+const charQPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('char?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(L.isChar(args[0]))))
 
@@ -548,7 +548,7 @@ function pairwiseSatisfies<T> (f: (a: T, b: T) => boolean, xs: T[]): boolean {
 }
 
 function mkCharComparePrim (name: string, f: (a: string, b: string) => boolean): L.Prim {
-  return (_env, args, app) => {
+  return async (_env, args, app) => {
     const err = Utils.checkArgs(name, [], 'char?', args, app)
     if (err) { return err }
     return ok(L.nlebool(pairwiseSatisfies((a, b) => f(L.asChar_(a), L.asChar_(b)), args)))
@@ -567,7 +567,7 @@ const charLeqCiPrim: L.Prim = mkCharComparePrim('char-ci<=?', (a, b) => a.toLowe
 const charGeqCiPrim: L.Prim = mkCharComparePrim('char-ci>=?', (a, b) => a.toLowerCase().codePointAt(0)! >= b.toLowerCase().codePointAt(0)!)
 
 function mkCharPredicatePrim (name: string, f: (a: string) => boolean): L.Prim {
-  return (_env, args, app) => {
+  return async (_env, args, app) => {
     const err = Utils.checkArgs(name, ['char?'], undefined, args, app)
     if (err) { return err }
     return ok(L.nlebool(f(L.asChar_(args[0]))))
@@ -585,7 +585,7 @@ const charUpperCasePrim: L.Prim =
 const charLowerCasePrim: L.Prim =
   mkCharPredicatePrim('char-lower-case?', (a) => /\p{Ll}/gu.test(a))
 
-const digitValuePrim: L.Prim = (_env, args, app) => {
+const digitValuePrim: L.Prim = async (_env, args, app) => {
   const err = Utils.checkArgs('digit-value', ['char?'], undefined, args, app)
   if (err) { return err }
   const char = L.asChar_(args[0])
@@ -597,19 +597,19 @@ const digitValuePrim: L.Prim = (_env, args, app) => {
   }
 }
 
-const charIntegerPrim: L.Prim = (_env, args, app) =>
+const charIntegerPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('char->integer', ['char?'], undefined, args, app).andThen(_ =>
     ok(L.nlenumber(L.asChar_(args[0]).codePointAt(0)!)))
 
-const integerCharPrim: L.Prim = (_env, args, app) =>
+const integerCharPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('integer->char', ['integer?'], undefined, args, app).andThen(_ =>
     ok(L.nlechar(String.fromCodePoint(L.asNum_(args[0])))))
 
-const charUpcasePrim: L.Prim = (_env, args, app) =>
+const charUpcasePrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('char-upcase', ['char?'], undefined, args, app).andThen(_ =>
     ok(L.nlechar(L.asChar_(args[0]).toUpperCase())))
 
-const charDowncasePrim: L.Prim = (_env, args, app) =>
+const charDowncasePrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('char-downcase', ['char?'], undefined, args, app).andThen(_ =>
     ok(L.nlechar(L.asChar_(args[0]).toLowerCase())))
 
@@ -618,31 +618,31 @@ const charDowncasePrim: L.Prim = (_env, args, app) =>
 // this implementation works. But... yea, maybe not!
 //
 // See: https://unicode.org/reports/tr18/#General_Category_Property
-const charFoldcasePrim: L.Prim = (_env, args, app) =>
+const charFoldcasePrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('char-foldcase', ['char?'], 'char?', args, app).andThen(_ =>
     ok(L.nlechar(L.asChar_(args[0]).toLowerCase())))
 
 // Strings (6.7)
 
-const stringQPrim: L.Prim = (_env, args, app) =>
+const stringQPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('string?', ['any'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(L.isString(args[0]))))
 
 // N.B., we don't implement the (make-string k) variant because our strings are
 // immutable, so having an "empty" string of size k does not make sense.
-const makeStringPrim: L.Prim = (_env, args, app) =>
+const makeStringPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('make-string', ['integer?', 'char?'], 'string?', args, app).andThen(_ =>
     ok(L.nlestr(L.asChar_(args[1]).repeat(L.asNum_(args[0])))))
 
-const stringPrim: L.Prim = (_env, args, app) =>
+const stringPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('string', ['char?'], 'char?', args, app).andThen(_ =>
     ok(L.nlestr(args.map((e) => L.asChar_(e)).join(''))))
 
-const stringLengthPrim: L.Prim = (_env, args, app) =>
+const stringLengthPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('string-length', ['string?'], undefined, args, app).andThen(_ =>
     ok(L.nlenumber(L.asString_(args[0]).length)))
 
-const stringRefPrim: L.Prim = function (_env, args, app) {
+const stringRefPrim: L.Prim = async function (_env, args, app) {
   const argErr = Utils.checkArgs('string-ref', ['string?', 'integer?'], undefined, args, app)
   if (argErr) { return argErr }
   const str = L.asString_(args[0])
@@ -657,7 +657,7 @@ const stringRefPrim: L.Prim = function (_env, args, app) {
 // N.B., string-set! is unimplemented since it is effectful.
 
 function mkStringComparePrim (name: string, f: (a: string, b: string) => boolean): L.Prim {
-  return (_env, args, app) =>
+  return async (_env, args, app) =>
     Utils.checkArgsResult(name, [], 'string?', args, app).andThen(_ =>
       ok(L.nlebool(pairwiseSatisfies((a, b) =>
         f(L.asString_(a), L.asString_(b)), args))))
@@ -674,27 +674,27 @@ const stringGtCiPrim: L.Prim = mkStringComparePrim('string-ci>?', (a, b) => a.to
 const stringLeqCiPrim: L.Prim = mkStringComparePrim('string-ci<=?', (a, b) => a.toLowerCase() <= b.toLowerCase())
 const stringGeqCiPrim: L.Prim = mkStringComparePrim('string-ci>=?', (a, b) => a.toLowerCase() >= b.toLowerCase())
 
-const stringUpcasePrim: L.Prim = (_env, args, app) =>
+const stringUpcasePrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('string-upcase', ['string?'], undefined, args, app).andThen(_ =>
     ok(L.nlestr(L.asString_(args[0]).toUpperCase())))
 
-const stringDowncasePrim: L.Prim = (_env, args, app) =>
+const stringDowncasePrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('string-downcase', ['string?'], undefined, args, app).andThen(_ =>
     ok(L.nlestr(L.asString_(args[0]).toLowerCase())))
 
-const stringFoldcasePrim: L.Prim = (_env, args, app) =>
+const stringFoldcasePrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('string-foldcase', ['string?'], undefined, args, app).andThen(_ =>
     ok(L.nlestr(L.asString_(args[0]).toLowerCase())))
 
-const substringPrim: L.Prim = (_env, args, app) =>
+const substringPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('substring', ['string?', 'integer?', 'integer?'], undefined, args, app).andThen(_ =>
     ok(L.nlestr(L.asString_(args[0]).substring(L.asNum_(args[1]), L.asNum_(args[2])))))
 
-const stringAppendPrim: L.Prim = (_env, args, app) =>
+const stringAppendPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('string-append', ['string?'], 'string?', args, app).andThen(_ =>
     ok(L.nlestr(args.map(L.asString_).join(''))))
 
-const stringListPrim: L.Prim = (_env, args, app) => {
+const stringListPrim: L.Prim = async (_env, args, app) => {
   if (args.length !== 1 && args.length !== 3) {
     return runtimeError(msg('error-arity', 'string->list', '1 or 3', args.length), app)
   }
@@ -720,7 +720,7 @@ const stringListPrim: L.Prim = (_env, args, app) => {
     str.substring(start, end).split('').map(L.nlechar)))
 }
 
-const listStringPrim: L.Prim = (_env, args, app) =>
+const listStringPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('list->string', ['list?'], undefined, args, app).andThen(_ => {
     const lst = L.asList_(args[0])
     for (const e of lst) {
@@ -743,16 +743,17 @@ const listStringPrim: L.Prim = (_env, args, app) =>
 
 // Additional functions from racket/string.
 
-const stringSplitPrim: L.Prim = (_env, args, app) =>
+const stringSplitPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
     ok(L.arrayToList(L.asString_(args[0]).split(L.asString_(args[1])).map(L.nlestr))))
 
-const fileStringPrim: L.Prim =  (_env, args, app) =>
-  Utils.checkArgsResult('file->string', ['string?'], undefined, args, app).andThen(_ =>
-    fs.read(L.asString_(args[0])).andThen(s => ok(L.nlestr(s))))
+const fileStringPrim: L.Prim = async (_env, args, app) =>
+  Utils.checkArgsResult('file->string', ['string?'], undefined, args, app).asyncAndThen(async _ =>
+    (await fs.read(L.asString_(args[0]))).asyncAndThen(async s =>
+      ok(L.nlestr(s))))
 
-const fileLinesPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('file->lines', ['string?'], undefined, args, app).andThen(_ =>
+const fileLinesPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('file->lines', ['string?'], undefined, args, app).asyncAndThen(_ =>
     evaluateExp(env, L.nlecall(L.nlevar('string-split'), [
       L.nlecall(L.nlevar('file->string'), [args[0]]),
       L.nlestr("\n")
@@ -818,36 +819,28 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 
 // Control features (6.10)
 
-const procedurePrim: L.Prim = (_env, args, app) =>
+const procedurePrim: L.Prim = async (_env, args, app) =>
   // N.B., once we add non-function primitives, this will need to change.
   Utils.checkArgsResult('procedure?', ['any'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(L.isProcedure(args[0]))))
 
-const applyPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('apply', ['procedure?'], 'list?', args, app).andThen(_ =>
+const applyPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('apply', ['procedure?'], 'list?', args, app).asyncAndThen(_ =>
     evaluateExp(env, L.nlecall(args[0], L.unsafeListToArray(args[1]))))
 
-const stringMapPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('string-map', ['procedure?', 'string?'], 'string?', args, app).andThen(_ =>
-    join(L.asString_(args[1]).split('').map(c =>
-      evaluateExp(env, L.nlecall(args[0], [L.nlechar(c)])))).andThen(vs => {
+const stringMapPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('string-map', ['procedure?', 'string?'], 'string?', args, app).asyncAndThen(async _ => {
+    const ss = await Promise.all(L.asString_(args[1]).split('').map(async c =>
+      await evaluateExp(env, L.nlecall(args[0], [L.nlechar(c)]))))
+    return join(ss).andThen(vs => {
         for (const v of vs) {
           if (!L.isChar(v)) {
             return runtimeError(msg('error-precondition-not-met', 'string-map', 1, 'produces a character', Pretty.expToString(0, v)), app)
           }
         }
         return ok(L.nlestr(vs.map(v => L.asChar_(v)).join('')))
-      }))
-
-/*
-[ [ 1,  2, 3 ]
-, [ 4,  5, 6 ]
-, [ 7,  8, 9 ]
-, [10, 11, 12]
-]
-
-
-*/
+    })
+  })
 
 /**
  * @param arr - a rectangular array of arrays, i.e., each array has the same
@@ -872,8 +865,8 @@ function transpose <T>(arr: T[][]): T[][] {
   return result
 }
 
-const mapPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('map', ['procedure?', 'list?'], 'list?', args, app).andThen(_ => {
+const mapPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('map', ['procedure?', 'list?'], 'list?', args, app).asyncAndThen(async _ => {
     const fn = args[0]
     const lists = args.slice(1).map(L.unsafeListToArray)
     if (!(lists.map(l => l.length).every(n => n === lists[0].length))) {
@@ -886,14 +879,14 @@ const mapPrim: L.Prim = (env, args, app) =>
 
 // Additional list pipeline functions from racket/base
 
-const filterPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('filter', ['procedure?', 'list?'], undefined, args, app).andThen(_ => {
+const filterPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('filter', ['procedure?', 'list?'], undefined, args, app).asyncAndThen(async _ => {
     const fn = args[0]
     const list = L.asList_(args[1])
     const result = []
     for (let i = 0; i < list.length; i++) {
       const e = list[i]
-      const res = evaluateExp(env, L.nlecall(fn, [e]))
+      const res = await evaluateExp(env, L.nlecall(fn, [e]))
       if (res.tag === 'error') {
         return res
       } else if (!L.isBoolean(res.value)) {
@@ -905,14 +898,14 @@ const filterPrim: L.Prim = (env, args, app) =>
     return ok(L.arrayToList(result))
   })
 
-const foldPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('fold', ['procedure?', 'any', 'list?'], undefined, args, app).andThen(_ => {
+const foldPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('fold', ['procedure?', 'any', 'list?'], undefined, args, app).asyncAndThen(async _ => {
     const fn = args[0]
     let result = args[1]
     const list = L.asList_(args[2])
     for (let i = 0; i < list.length; i++) {
       const e = list[i]
-      const res = evaluateExp(env, L.nlecall(fn, [result, e]))
+      const res = await evaluateExp(env, L.nlecall(fn, [result, e]))
       if (res.tag === 'error') {
         return res
       } else {
@@ -922,8 +915,8 @@ const foldPrim: L.Prim = (env, args, app) =>
     return ok(result)
   })
 
-const reducePrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('reduce', ['procedure?', 'list?'], undefined, args, app).andThen(_ => {
+const reducePrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('reduce', ['procedure?', 'list?'], undefined, args, app).asyncAndThen(async _ => {
     const fn = args[0]
     const list = L.asList_(args[1])
 
@@ -935,15 +928,15 @@ const reducePrim: L.Prim = (env, args, app) =>
     }
   })
 
-const foldRightPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('fold-right', ['procedure?', 'any', 'list?'], undefined, args, app).andThen(_ => {
+const foldRightPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('fold-right', ['procedure?', 'any', 'list?'], undefined, args, app).asyncAndThen(async _ => {
     const fn = args[0]
     let result = args[1]
     // N.B., reverse the list because we process it in right-to-left order
     const list = L.asList_(args[2]).reverse()
     for (let i = 0; i < list.length; i++) {
       const e = list[i]
-      const res = evaluateExp(env, L.nlecall(fn, [e, result]))
+      const res = await evaluateExp(env, L.nlecall(fn, [e, result]))
       if (res.tag === 'error') {
         return res
       } else {
@@ -953,8 +946,8 @@ const foldRightPrim: L.Prim = (env, args, app) =>
     return ok(result)
   })
 
-const reduceRightPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('reduce-right', ['procedure?', 'list?'], undefined, args, app).andThen(_ => {
+const reduceRightPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('reduce-right', ['procedure?', 'list?'], undefined, args, app).asyncAndThen(async _ => {
     const fn = args[0]
     const list = L.asList_(args[1])
 
@@ -982,23 +975,23 @@ const reduceRightPrim: L.Prim = (env, args, app) =>
 //   (dynamic-wind before thunk after)
 
 // Additional control features
-const errorPrim: L.Prim = (_env, args, app) =>
+const errorPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('error', ['string?'], undefined, args, app).andThen(_ =>
     runtimeError(msg('error-runtime', L.asString_(args[0])), app))
 
-const qqPrim: L.Prim = (_env, args, app) =>
+const qqPrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('??', [], undefined, args, app).andThen(_ =>
     runtimeError(msg('error-hole', '??'), app))
 
-const composePrim: L.Prim = (env, args, app) =>
+const composePrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('compose', ['procedure?'], 'procedure?', args, app).andThen(_ => {
     // N.B., process args in reverse order because the last function is the first to go!
     args = [...args].reverse()
     return ok(L.nlelam(['x'], args.slice(1).reduce((e, f) => L.nlecall(f, [e]), L.nlecall(args[0], [L.nlevar('x')]))))
   })
 
-const pipePrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('pipe', ['any', 'procedure?'], 'procedure?', args, app).andThen(_ => {
+const pipePrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('pipe', ['any', 'procedure?'], 'procedure?', args, app).asyncAndThen(async _ => {
     // N.B., process args in left-to-right order; the first function goes first!
     const x = args[0]
     const f1 = args[1]
@@ -1006,7 +999,7 @@ const pipePrim: L.Prim = (env, args, app) =>
     return evaluateExp(env, fs.reduce((e, f) => L.nlecall(f, [e]), L.nlecall(f1, [x])))
   })
 
-const rangePrim: L.Prim = (env, args, app) =>
+const rangePrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('range', [], 'integer?', args, app).andThen(_ => {
     if (args.length == 0 || args.length > 3) {
       return runtimeError(msg('error-arity', 'range', '1--3', args.length), app)

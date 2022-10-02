@@ -167,9 +167,6 @@ export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean 
         return `[[ Test "${stmt.desc}" failed!\n${msg}\n]]`
       }
     }
-    case 'testresult': return stmt.passed
-      ? `[[${stmt.desc} passed!]]`
-      : `[[${stmt.desc} failed!\n${stmt.reason!}]]`
     case 'value': return expToString(col, stmt.value, htmlOutput)
     case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
   }
