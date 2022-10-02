@@ -18,13 +18,13 @@ export class ProgramState {
     return this.prog.statements.every(L.isStmtDone)
   }
 
-  step (): ProgramState {
+  async step (): Promise<ProgramState> {
     for (let i = 0; i < this.prog.statements.length; i++) {
       const s = this.prog.statements[i]
       if (!L.isStmtDone(s)) {
         // N.B., make sure to not mutate things, but instead, create a new
         // ProgramState with the updates.
-        const result = Runtime.stepStmt(this.env, s)
+        const result = await Runtime.stepStmt(this.env, s)
         const prog = {
           statements: [...this.prog.statements]
         }
@@ -35,19 +35,19 @@ export class ProgramState {
     return this
   }
 
-  evaluate (): ProgramState {
+  async evaluate (): Promise<ProgramState> {
     let st: ProgramState = this
     while (!st.isFullyEvaluated()) {
-      st = st.step()
+      st = await st.step()
     }
     return st
   }
 
-  stepExp (e: L.Exp): R.Result<L.Exp> {
+  stepExp (e: L.Exp): Promise<R.Result<L.Exp>> {
     return Runtime.stepExp(this.env, e)
   }
 
-  evaluateExp (e: L.Exp): R.Result<L.Exp> {
+  evaluateExp (e: L.Exp): Promise<R.Result<L.Exp>> {
     return Runtime.evaluateExp(this.env, e)
   }
 
@@ -69,10 +69,10 @@ export class ProgramTrace {
     return this.states[this.pos]
   }
 
-  stepForward (): void {
+  async stepForward (): Promise<void> {
     const lastI = this.states.length - 1
     if (this.pos === lastI && !this.states[lastI].isFullyEvaluated()) {
-      this.states.push(this.states[lastI].step())
+      this.states.push(await this.states[lastI].step())
       this.pos += 1
     } else if (this.pos < lastI) {
       this.pos += 1

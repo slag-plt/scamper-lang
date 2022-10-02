@@ -4,14 +4,14 @@ import * as fs from 'fs'
 import * as scamper from '../index.js'
 
 class NodeVFS implements scamper.Vfs.VFSProvider {
-  read(path: string): scamper.Result<string> {
+  async read(path: string): Promise<scamper.Result<string>> {
     try {
       return scamper.ok(fs.readFileSync(path).toString())
     } catch (e) {
       return scamper.Vfs.fileNotFoundError(path)
     }
   }
-  write(path: string, content: string): scamper.Result<void> {
+  async write(path: string, content: string): Promise<scamper.Result<void>> {
     throw new Error('Method not implemented.')
   }
 }
@@ -99,7 +99,7 @@ async function main() {
 
   scamper.Vfs.fs.mount('', new NodeVFS())
 
-  fs.readFile(opts.filename, 'utf8', (error, src) => {
+  fs.readFile(opts.filename, 'utf8', async (error, src) => {
     if (error) { throw error }
 
     // Phase 1: Lexing
@@ -149,12 +149,12 @@ async function main() {
       console.log('===== Initial Program =====')
       console.log(state.toString())
       while (!state.isFullyEvaluated()) {
-        state = state.step()
+        state = await state.step()
         console.log(`===== Step ${step++} =====`)
         console.log(state.toString())
       }
     } else {
-      console.log(new scamper.ProgramState(prog).evaluate().toString())
+      console.log((await new scamper.ProgramState(prog).evaluate()).toString())
     }
     process.exit(0)
   })

@@ -2,8 +2,8 @@ import { Result, error, ok, ICE } from './result.js'
 import { msg } from './messages.js'
 
 export interface VFSProvider {
-  read(path: string): Result<string>;  
-  write(path: string, content: string): Result<void>;
+  read(path: string): Promise<Result<string>>;  
+  write(path: string, content: string): Promise<Result<void>>;
 }
 
 export function fileNotFoundError(path: string): Result<any> {
@@ -17,14 +17,14 @@ export class InMemoryProvider implements VFSProvider {
     this.files = new Map(files)
   }
 
-  read(path: string): Result<string> {
+  async read(path: string): Promise<Result<string>> {
     if (this.files.has(path)) {
       return ok(this.files.get(path)!)
     } else {
       return fileNotFoundError(path)
     }
   }
-  write(path: string, content: string): Result<void> {
+  async write(path: string, content: string): Promise<Result<void>> {
     throw new ICE('VFS.write', 'not implemented')
   }
 }
@@ -41,21 +41,17 @@ class VFS {
     this.mountPoints.set(path, provider);
   }
 
-  read(path: string): Result<string> {
+  async read(path: string): Promise<Result<string>> {
     // TODO: hack to quickly get in https pull-down support for files!
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      console.log('...')
-      const request = new XMLHttpRequest();
-      request.open('GET', path, false);  // `false` makes the request synchronous
-      request.send(null);
-      if (request.status === 200) {
-        console.log(request.responseText)
-        return ok(request.responseText);
+      const request = new Request(path)
+      const response = await fetch(request)
+      if (!response.ok) {
+        return fileNotFoundError(path)
       } else {
-        throw new ICE('VFS.read', 'request didnt work!')
+        return ok(await response.text())
       }
     }
-
     for (const [prefix, provider] of this.mountPoints.entries()) {
       if (path.startsWith(prefix)) {
         return provider.read(path.substring(prefix.length));
