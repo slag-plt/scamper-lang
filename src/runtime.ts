@@ -128,7 +128,7 @@ function substituteIfFreeVar (env: Env, e: Exp): Result<Exp> {
   }
 }
 
-function stepExp (env: Env, e: Exp): Result<Exp> {
+async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
   switch (e.tag) {
     // N.B., at this point, variables should be free variables bound in the
     // environment. We rely on sprinkled calls to substituteWithEnv once an
@@ -143,13 +143,13 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       // where f is a top-level binding. If we change the infrastructure
       // of variables and substitution, we'll need to revisit this choice.
       if (!isValue(e.head)) {
-        return stepExp(env, e.head).andThen(headp => stepExp(env, ecall(e.range, headp, e.args)))
+        return (await stepExp(env, e.head)).asyncAndThen(async headp => await stepExp(env, ecall(e.range, headp, e.args)))
       } else {
         // Try to stepExp one of the call's arguments
         for (let i = 0; i < e.args.length; i++) {
           if (!isValue(e.args[i])) {
             const argsp = [...e.args]
-            return stepExp(env, argsp[i]).andThen(eip => {
+            return (await stepExp(env, argsp[i])).andThen(eip => {
               argsp[i] = eip
               return ok(ecall(e.range, e.head, argsp))
             })
@@ -157,8 +157,8 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
         }
         // If we did not stepExp any arguments, then evaluate the full call.
         // First, substitute away free variables before resolving the call.
-        return substituteIfFreeVar(env, e.head).andThen(head =>
-          join(e.args.map(x => substituteIfFreeVar(env, x))).andThen(args => {
+        return substituteIfFreeVar(env, e.head).asyncAndThen(head =>
+          join(e.args.map(x => substituteIfFreeVar(env, x))).asyncAndThen(async (args: Exp[]): Promise<Result<Exp>> => {
             switch (head.tag) {
               case 'lam':
                 if (args.length === head.args.length) {
@@ -167,7 +167,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
                   return runtimeError(msg('error-arity', 'lambda', head.args.length, args.length), e)
                 }
               case 'prim':
-                return head.prim(env, args, e)
+                return await head.prim(env, args, e)
               default:
                 return runtimeError(msg('error-type-expected-call', e.head.tag), e)
             }
@@ -177,7 +177,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       return ok(e)
     case 'if':
       if (!isValue(e.e1)) {
-        return stepExp(env, e.e1).andThen(e1p => ok(eif(e.range, e1p, e.e2, e.e3)))
+        return (await stepExp(env, e.e1)).andThen(e1p => ok(eif(e.range, e1p, e.e2, e.e3)))
       } else {
         return substituteIfFreeVar(env, e.e1).andThen(e1 => {
           switch (e1.tag) {
@@ -196,9 +196,9 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       return ok(e)
     case 'pair':
       if (!isValue(e.e1)) {
-        return stepExp(env, e.e1).andThen(e1p => ok(epair(e.range, e1p, e.e2)))
+        return (await stepExp(env, e.e1)).andThen(e1p => ok(epair(e.range, e1p, e.e2)))
       } else if (!isValue(e.e2)) {
-        return stepExp(env, e.e2).andThen(e2p => ok(epair(e.range, e.e1, e2p)))
+        return (await stepExp(env, e.e2)).andThen(e2p => ok(epair(e.range, e.e1, e2p)))
       } else {
         return ok(e)
       }
@@ -207,7 +207,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
         const x = e.bindings[0][0]
         const e1 = e.bindings[0][1]
         if (!isValue(e1)) {
-          return stepExp(env, e1).andThen(e1p => {
+          return (await stepExp(env, e1)).andThen(e1p => {
             const bindings = [...e.bindings]
             bindings[0] = [x, e1p]
             return ok(elet(e.range, e.kind, bindings, e.body))
@@ -257,7 +257,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
       } else {
         const guard = e.branches[0][0]
         const body = e.branches[0][1]
-        return substituteIfFreeVar(env, guard).andThen(guard => {
+        return substituteIfFreeVar(env, guard).asyncAndThen(async guard => {
           if (isValue(guard)) {
             if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === true) {
               return ok(body)
@@ -267,7 +267,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
               return runtimeError(msg('error-type-expected-cond', guard.tag), e)
             }
           } else {
-            return stepExp(env, guard).andThen(guardp =>
+            return (await stepExp(env, guard)).andThen(guardp =>
               ok(nlecond([[guardp, body], ...e.branches.slice(1)])))
           }
         })
@@ -286,7 +286,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
             return runtimeError(msg('error-type-expected', 'bool', head.tag), e)
           }
         } else {
-          return stepExp(env, head).andThen(headp =>
+          return (await stepExp(env, head)).andThen(headp =>
             ok(nleand([headp, ...e.args.slice(1)])))
         }
       }
@@ -305,7 +305,7 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
             return runtimeError(msg('error-type-expected', 'bool', head.tag), e)
           }
         } else {
-          return stepExp(env, head).andThen(headp =>
+          return (await stepExp(env, head)).andThen(headp =>
             ok(nleor([headp, ...e.args.slice(1)])))
         }
       }
@@ -318,10 +318,10 @@ function stepExp (env: Env, e: Exp): Result<Exp> {
   }
 }
 
-function evaluateExp (env: Env, e:Exp) : Result<Exp> {
+async function evaluateExp (env: Env, e:Exp) : Promise<Result<Exp>> {
   while (!isValue(e)) {
     // TODO: need to check whether e == stepExp(e), i.e., we're in a loop
-    const result = stepExp(env, e)
+    const result = await stepExp(env, e)
     switch (result.tag) {
       case 'error':
         return rethrow(result)
@@ -341,7 +341,7 @@ function resultToStmt (result: Result<Stmt>): Stmt {
   }
 }
 
-function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
+async function stepStmt (env: Env, s: Stmt): Promise<[Env, Stmt]> {
   switch (s.tag) {
     case 'error':
       return [env, s]
@@ -362,14 +362,14 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       } else {
         return [
           env,
-          resultToStmt(stepExp(env, s.value).andThen(e => ok(sdefine(s.name, e))))
+          resultToStmt((await stepExp(env, s.value)).andThen(e => ok(sdefine(s.name, e))))
         ]
       }
     case 'struct': {
       const name = s.id.value
       const predName = `${name}?`
       // primitive for type-testing predicate: id?
-      const predPrim: Prim = (env, args, app) =>
+      const predPrim: Prim = async (env, args, app) =>
         args.length !== 1
           ? runtimeError(msg('error-arity', predName, 1, args.length), app)
           : ok(nlebool(isStructKind(args[0], name)))
@@ -377,7 +377,7 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       const fieldPrims: [string, EnvEntry][] = s.fields.map(f => {
         const fieldName = `${name}-${f.value}`
         return [fieldName, entry(
-          nleprim((env, args, app) =>
+          nleprim(async (env, args, app) =>
             args.length !== 1
               ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
               : !isStructKind(args[0], name)
@@ -388,7 +388,7 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
         )]
       })
       // constructor primitive: id
-      const ctorPrim: Prim = (env, args, app) => {
+      const ctorPrim: Prim = async (env, args, app) => {
         if (args.length !== s.fields.length) {
           return runtimeError(msg('error-arity', name, s.fields.length, args.length), app)
         } else {
@@ -407,10 +407,10 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
       ]
     }
     case 'testcase': {
-      const result: Result<Stmt> = evaluateExp(env, s.desc).andThen(e1 =>
-        evaluateExp(env, s.expected).andThen(expected =>
-          evaluateExp(env, s.actual).andThen(actual =>
-            evaluateExp(env, nlecall(s.comp, [expected, actual])).andThen(e2 => {
+      const result: Result<Stmt> = await (await evaluateExp(env, s.desc)).asyncAndThen(async e1 =>
+        (await evaluateExp(env, s.expected)).asyncAndThen(async expected =>
+          (await evaluateExp(env, s.actual)).asyncAndThen(async actual =>
+            (await evaluateExp(env, nlecall(s.comp, [expected, actual]))).andThen(e2 => {
               if (!isString(e1)) {
                 return runtimeError(msg('error-type-expected', 'string', e1.tag), s.desc)
               } else if (!isBoolean(e2)) {
@@ -432,7 +432,7 @@ function stepStmt (env: Env, s: Stmt): [Env, Stmt] {
     case 'exp': {
       const result = isValue(s.value)
         ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(svalue(vp))))
-        : resultToStmt(stepExp(env, s.value).andThen(v =>
+        : resultToStmt((await stepExp(env, s.value)).andThen(v =>
             isValue(v)
               ? substituteIfFreeVar(env, v).andThen(vp => ok(svalue(vp)))
               : ok(sexp(v)) as Result<Stmt>))

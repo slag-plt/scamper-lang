@@ -9,7 +9,7 @@ import { dirname } from 'path'
 type Color = { tag: 'color', r: number, g: number, b: number, a: number }
 const color = (r: number, g: number, b: number, a: number): Color => ({ tag: 'color', r, g, b, a })
 
-const colorPrim: Prim = (_env, args, app) =>
+const colorPrim: Prim = async (_env, args, app) =>
   Utils.checkArgsResult('color', ['number?', 'number?', 'number?', 'number?'], undefined, args, app).andThen(_ => {
     const r = asNum_(args[0])
     const g = asNum_(args[1])
@@ -54,7 +54,7 @@ type Mode = 'solid' | 'outline'
 /* eslint-disable no-use-before-define */
 export type Drawing = Ellipse | Rectangle | Triangle | Path | Beside | Above | Overlay | OverlayOffset | Rotate | WithDash
 
-const imagePrim: Prim = (_env, args, app) =>
+const imagePrim: Prim = async (_env, args, app) =>
   Utils.checkArgsResult('image?', ['any'], undefined, args, app).andThen(_ =>
     ok(nlebool(isObjKind_(args[0], 'Drawing'))))
 
@@ -71,7 +71,7 @@ function isDrawing (e: Exp): boolean {
   return e.tag === 'obj' && e.kind === 'Drawing'
 }
 
-const ellipsePrim: Prim = (_env, args, app) => {
+const ellipsePrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('ellipse', ['number?', 'number?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return argErr }
   const width = asNum_(args[0])
@@ -85,7 +85,7 @@ const ellipsePrim: Prim = (_env, args, app) => {
   }
 }
 
-const circlePrim: Prim = (_env, args, app) => {
+const circlePrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('circle', ['number?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return argErr }
   const radius = asNum_(args[0])
@@ -102,7 +102,7 @@ type Rectangle = { tag: 'rectangle', width: number, height: number, mode: Mode, 
 const rectangle = (width: number, height: number, mode: Mode, color: string): Rectangle =>
   ({ tag: 'rectangle', width, height, mode, color })
 
-const rectanglePrim: Prim = (_env, args, app) => {
+const rectanglePrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('rectangle', ['number?', 'number?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return argErr }
   const width = asNum_(args[0])
@@ -116,7 +116,7 @@ const rectanglePrim: Prim = (_env, args, app) => {
   }
 }
 
-const squarePrim: Prim = (_env, args, app) => {
+const squarePrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('square', ['number?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return argErr }
   const width = asNum_(args[0])
@@ -139,7 +139,7 @@ const triangle = (length: number, mode: Mode, color: string): Triangle => ({
   color
 })
 
-const trianglePrim: Prim = (_env, args, app) => {
+const trianglePrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('triangle', ['number?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return argErr }
   const length = asNum_(args[0])
@@ -156,7 +156,7 @@ type Path = { tag: 'path', width: number, height: number, points: [number, numbe
 const path = (width: number, height: number, points: [number, number][], mode: Mode, color: string) =>
   ({ tag: 'path', width, height, points, mode, color })
 
-const pathPrim: Prim = (_env, args, app) => {
+const pathPrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('path', ['number?', 'number?', 'list?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return argErr }
   const width = asNum_(args[0])
@@ -191,13 +191,13 @@ const beside = (align: string, drawings: Drawing[]): Beside => ({
   drawings
 })
 
-const besidePrim: Prim = (_env, args, app) => {
+const besidePrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('beside', [], 'Drawing', args, app)
   if (argErr) { return argErr }
   return ok(nleobj('Drawing', beside('center', args.map(e => (e as EObj).obj as Drawing))))
 }
 
-const besideAlignPrim: Prim = (_env, args, app) => {
+const besideAlignPrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('beside-align', ['string?'], 'Drawing', args, app)
   if (argErr) { return argErr }
   const align = asString_(args[0])
@@ -217,13 +217,13 @@ const above = (align: string, drawings: Drawing[]): Above => ({
   drawings
 })
 
-const abovePrim: Prim = (_env, args, app) => {
+const abovePrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('above', [], 'Drawing', args, app)
   if (argErr) { return argErr }
   return ok(nleobj('Drawing', above('middle', args.map(e => (e as EObj).obj as Drawing))))
 }
 
-const aboveAlignPrim: Prim = (_env, args, app) => {
+const aboveAlignPrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('above-align', ['string?'], 'Drawing', args, app)
   if (argErr) { return argErr }
   const align = asString_(args[0])
@@ -244,13 +244,13 @@ const overlay = (xAlign: string, yAlign: string, drawings: Drawing[]): Overlay =
   drawings
 })
 
-const overlayPrim: Prim = (_env, args, app) => {
+const overlayPrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('overlay', [], 'Drawing', args, app)
   if (argErr) { return argErr }
   return ok(nleobj('Drawing', overlay('middle', 'center', args.map(e => (e as EObj).obj as Drawing))))
 }
 
-const overlayAlignPrim: Prim = (_env, args, app) => {
+const overlayAlignPrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('overlay-align', ['string?', 'string?'], 'Drawing', args, app)
   if (argErr) { return argErr }
   const xAlign = asString_(args[0])
@@ -301,7 +301,7 @@ const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => {
   }
 }
 
-const overlayOffsetPrim: Prim = (_env, args, app) => {
+const overlayOffsetPrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('overlay-offset', ['Drawing', 'number?', 'number?', 'Drawing'], undefined, args, app)
   if (argErr) { return argErr }
   const dx = asNum_(args[1])
@@ -358,7 +358,7 @@ const rotate = (angle: number, drawing: Drawing): Rotate => {
   }
 }
 
-const rotatePrim: Prim = (_env, args, app) => {
+const rotatePrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('rotate', ['number?', 'Drawing'], undefined, args, app)
   if (argErr) { return argErr }
   const angle = asNum_(args[0])
@@ -374,7 +374,7 @@ const withDash = (dashSpec: number[], drawing: Drawing): WithDash => ({
   height: drawing.height
 })
 
-const withDashPrim: Prim = (_env, args, app) => {
+const withDashPrim: Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('with-dash', ['list?', 'Drawing'], undefined, args, app)
   if (argErr) { return argErr }
   const es = asList_(args[0])

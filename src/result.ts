@@ -20,6 +20,7 @@ type Error<T> = {
   details: ErrorDetails[]
   // eslint-disable-next-line no-use-before-define
   andThen: <U>(f: (_:T) => Result<U>) => Result<U>
+  asyncAndThen: <U>(f: (_:T) => Promise<Result<U>>) => Promise<Result<U>>
 }
 
 function detailsToCompleteString (details: ErrorDetails): string {
@@ -58,12 +59,13 @@ type Ok<T> = {
   value: T
   // eslint-disable-next-line no-use-before-define
   andThen: <U>(f: (_:T) => Result<U>) => Result<U>
+  asyncAndThen: <U>(f: (_:T) => Promise<Result<U>>) => Promise<Result<U>>
 }
 
 type Result<T> = Error<T> | Ok<T>
 
 function errors <T> (errs: ErrorDetails[]): Error<T> {
-  return { tag: 'error', details: errs, andThen: f => errors(errs) }
+  return { tag: 'error', details: errs, andThen: f => errors(errs), asyncAndThen: async f => errors(errs) }
 }
 
 function error <T> (phase: string, message: string, range?: Range, src?: string, hint?: string): Error<T> {
@@ -77,7 +79,7 @@ function error <T> (phase: string, message: string, range?: Range, src?: string,
 }
 
 function ok <T> (x: T): Ok<T> {
-  return { tag: 'ok', value: x, andThen: f => f(x) }
+  return { tag: 'ok', value: x, andThen: f => f(x), asyncAndThen: async f => f(x) }
 }
 
 function rethrow <T, U> (err: Error<T>) : Error<U> {
