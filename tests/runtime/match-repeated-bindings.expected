@@ -1,6 +1,5 @@
 :4:2: Scope error:
     Variable x is repeated in the pattern
-    In program: (match 
-(list 1 2 3)
+    In program: (match (list 1 2 3)
   [null "fail"]
   [(cons x x) "fail"])
