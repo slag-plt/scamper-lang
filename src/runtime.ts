@@ -6,12 +6,16 @@ isBoolean,
 asBool_,
 asString_,
 stestcase,
-stestresult} from './lang.js'
+stestresult,
+ematch,
+Pat,
+litEquals} from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails, ICE } from './result.js'
 import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
 import { imageLib } from './lib/image.js'
 import { musicLib } from './lib/music.js'
+import path from 'path'
 
 function runtimeError <T> (message: string, s?: Exp, hint?: string): Result<T> {
   return s
@@ -62,6 +66,11 @@ function substitute (e1: Exp, x: string, e2: Exp): Exp {
       return e2
     case 'prim':
       return e2
+    case 'match':
+      return ematch(e2.range,
+        substitute(e1, x, e2.scrutinee),
+        e2.branches.map(b => [b[0], substitute(e1, x, b[1])]),
+        e2.bracket)
   }
 }
 
@@ -108,6 +117,14 @@ function substituteAll (es: Exp[], xs: Name[], e: Exp) {
   return e
 }
 
+function substituteEnv (env: Env, e: Exp) {
+  const bindings = [...env.entries.entries()]
+  for (let i = 0; i < bindings.length; i++) {
+    e = substitute(bindings[i][1].value, bindings[i][0], e)
+  }
+  return e
+}
+
 function substituteIfFreeVar (env: Env, e: Exp): Result<Exp> {
   switch (e.tag) {
     case 'var':
@@ -126,6 +143,52 @@ function substituteIfFreeVar (env: Env, e: Exp): Result<Exp> {
     default:
       return ok(e)
   }
+}
+
+function tryMatch (e: Exp, p: Pat): Env | undefined {
+  if (p.tag === 'wild') {
+    return new Env([])
+  } else if (p.tag === 'null' && e.tag === 'nil') {
+    return new Env([])
+  } else if (p.tag === 'var') {
+    return new Env([ [p.id, entry(e, 'match')] ])
+  } else if (p.tag === 'lit' && e.tag === 'lit' && litEquals(e.value, p.lit)) {
+    return new Env([])
+  } else if (p.tag === 'ctor' && (e.tag === 'pair' || e.tag === 'struct')) {
+    const head = p.head
+    const args = p.args
+    // Special cases: pairs are matched with either pair or cons
+    if ((head === 'pair' || head === 'cons') && args.length == 2 && e.tag == 'pair') {
+      const env1 = tryMatch(e.e1, args[0])
+      const env2 = tryMatch(e.e2, args[1])
+      return env1 && env2 ? env1.concat(env2) : undefined
+    } else if (e.tag === 'struct' && head === e.kind) {
+      // N.B., because we only use strings for object fields in structs, we are
+      // guaranteed that the order we traverse the fields is their insertion
+      // order. This luckily coincides with left-to-right order of declaration
+      // of the fields!
+      // https://stackoverflow.com/questions/5525795/does-javascript-guarantee-object-property-order
+      const fields = Object.getOwnPropertyNames(e.obj)
+      if (fields.length === args.length) {
+        let env = new Env([])
+        for (let i = 0; i < fields.length; i++) {
+          const env2 = tryMatch((e.obj as any)[fields[i]] as Exp, args[i])
+          if (!env2) {
+            return undefined
+          }
+          env = env.concat(env2)
+        }
+        return env
+      } else {
+        // TODO: should we throw an error here?
+        return undefined
+      }
+    } else {
+      // N.B., at this point, we have run out of options, so the pattern match
+      // has failed.
+      return undefined
+    }
+  }  
 }
 
 async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
@@ -315,6 +378,23 @@ async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
       return ok(e)
     case 'prim':
       return ok(e)
+    case 'match':
+      if (!isValue(e.scrutinee)) {
+        return (await stepExp(env, e.scrutinee)).asyncAndThen(async scrutinee => ok(ematch(e.range, scrutinee, e.branches, e.bracket)))
+      } else {
+        const branches = e.branches
+        if (branches.length === 0) {
+          return runtimeError(msg('error-match-no-branch-applies'), e)
+        } else {
+          for (let i = 0; i < branches.length; i++) {
+            const bindings = tryMatch(e.scrutinee, branches[i][0])
+            if (bindings) {
+              return ok(substituteEnv(bindings, branches[i][1]))
+            }
+          }
+          return runtimeError(msg('error-match-no-branch-applies'), e)
+        }
+      }
   }
 }
 

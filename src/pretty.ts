@@ -33,6 +33,7 @@ function isSimpleExp (e: L.Exp): boolean {
     case 'struct': return true
     case 'obj': return true
     case 'prim': return true
+    case 'match': return false
   }
 }
 
@@ -52,6 +53,7 @@ function nestingDepth (e: L.Exp): number {
     case 'struct': return 0
     case 'obj': return 0
     case 'prim': return 0
+    case 'match': return 0 // TODO
   }
 }
 
@@ -68,6 +70,16 @@ function parens(bracketKind: L.BracketKind, ss: string[], sep: string = ' '): st
 
 function indent(col: number, s: string): string {
   return `${' '.repeat(col)}${s}`
+}
+
+function patToString (p: L.Pat): string {
+  switch (p.tag) {
+    case 'var': return p.id
+    case 'wild': return '_'
+    case 'null': return 'null'
+    case 'lit': return litToString(p.lit)
+    case 'ctor': return parens('(', [p.head, ...p.args.map(patToString)])
+  }
 }
 
 export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false): string {
@@ -139,6 +151,11 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
       }
     case 'prim':
       return `[prim ${e.prim.name}]`
+    case 'match': {
+      const preamble = 'match '
+      const bindings = e.branches.map(b => indent(col + 2, `[${patToString(b[0])} ${expToString(col + 2, b[1], htmlOutput)}]`))
+      return parens(e.bracket, [preamble, expToString(col, e.scrutinee, htmlOutput), ...bindings], '\n')
+    }
   }
 }
 

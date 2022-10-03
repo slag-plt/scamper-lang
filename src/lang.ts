@@ -142,6 +142,7 @@ type Exp
   // | EBegin   // TODO: implement me
 
   // Non-standard forms
+  | EMatch // A pattern match expression
   | EStruct // An object created from a struct constructor
   | EObj // A wrapped, tagged Javascript object
   | EPrim // A primitive function value
@@ -221,6 +222,10 @@ const nleobj = (kind: string, obj: object): EObj => ({ tag: 'obj', range: noRang
 type EPrim = { tag: 'prim', range: Range, prim: Prim }
 const nleprim = (prim: Prim): EPrim => ({ tag: 'prim', range: noRange(), prim })
 
+type EMatch = { tag: 'match', range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind }
+const ematch = (range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind): EMatch =>
+  ({ tag: 'match', range, scrutinee, branches, bracket })
+
 // #endregion
 
 // #region Expression pretty-printing
@@ -274,6 +279,18 @@ function expToString (e:Exp): string {
     case 'struct': return `[struct ${(e.obj as any).kind}]`
     case 'obj': return `[object ${e.kind}]`
     case 'prim': return `[prim ${e.prim.name}]`
+    case 'match':
+      return parens(['match', expToString(e.scrutinee)].concat(e.branches.map(b => parens([patToString(b[0]), expToString(b[1])]))))
+  }
+}
+
+function patToString (p: Pat): string {
+  switch (p.tag) {
+    case 'var': return p.id
+    case 'wild': return '_'
+    case 'null': return 'null'
+    case 'lit': return litToString(p.lit)
+    case 'ctor': return parens([p.head, ...p.args.map(patToString)])
   }
 }
 
@@ -297,6 +314,7 @@ function isValue (e:Exp): boolean {
     case 'struct': return true
     case 'obj': return true
     case 'prim': return true
+    case 'match': return false
   }
 }
 
@@ -443,8 +461,47 @@ function expEquals (e1: Exp, e2: Exp): boolean {
       e1.bindings.every(([x, e], i) => nameEquals(x, e2.bindings[i][0]) && expEquals(e, e2.bindings[i][1])) &&
       expEquals(e1.body, e2.body)
     // TODO: need cases for all the other value-style expression forms!
+    // TODO: also need cases for match!
   } else {
     return false
+  }
+}
+
+// #endregion
+
+// #region Patterns
+
+/* eslint-disable no-use-before-define */
+type Pat = PVar | PWild | PNull | PLit | PCtor
+/* eslint-enable */
+
+type PVar = { tag: 'var', id: string, range: Range }
+const pvar = (range: Range, id: string): PVar => ({ tag: 'var', id, range })
+
+type PWild = { tag: 'wild', range: Range }
+const pwild = (range: Range): PWild => ({ tag: 'wild', range })
+
+type PNull = { tag: 'null', range: Range }
+const pnull = (range: Range): PNull => ({ tag: 'null', range })
+
+type PLit = { tag: 'lit', lit: Lit, range: Range }
+const plit = (range: Range, lit: Lit): PLit => ({ tag: 'lit', lit, range })
+
+type PCtor = { tag: 'ctor', head: string, args: Pat[], range: Range }
+const pctor = (range: Range, head: string, args: Pat[]): PCtor => ({ tag: 'ctor', head, args, range })
+
+function fvarsOfPat(p: Pat): string[] {
+  switch (p.tag) {
+    case 'var':
+      return [p.id]
+    case 'wild':
+      return []
+    case 'null':
+      return []
+    case 'lit':
+      return []
+    case 'ctor':
+      return p.args.flatMap(fvarsOfPat)
   }
 }
 
@@ -560,12 +617,13 @@ export {
   Lit, LBool, LNum, LChar, LStr,
   Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, LetKind, ELet, ECond, EAnd, EOr, EStruct, EObj,
   lbool, lnum, lchar, lstr, ebool, enumber, echar, estr,
-  evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor,
+  evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor, ematch,
   nlebool, nlenumber, nlechar, nlestr,
   nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nlestruct, nleobj, nleprim,
-  litToString, arrayToList, unsafeListToArray, expToString, expEquals,
+  litToString, arrayToList, unsafeListToArray, expToString, litEquals, expEquals,
   isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isStruct, isStructKind, isObjKind, isProcedure,
   asNum_, asBool_, asChar_, asString_, asList_, asPair_, asStruct_, asObj_, fromObj_,
+  Pat, PVar, PWild, PNull, PLit, PCtor, pvar, pwild, pnull, plit, pctor, fvarsOfPat,
   Stmt, serror, sbinding, svalue, simported, sdefine, stestresult, sstruct, stestcase, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }
