@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, echar, econd, eif, elam, elet, enil, enumber, eor, estr, evar, Exp, LetKind, Name, name, Program, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
+import { eand, ebool, ecall, echar, econd, eif, elam, elet, ematch, enil, enumber, eor, estr, evar, Exp, lbool, lchar, LetKind, lnum, lstr, Name, name, Pat, pctor, plit, pnull, Program, pvar, pwild, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps, Token } from './sexp.js'
 import { msg } from './messages.js'
@@ -13,6 +13,7 @@ const reservedWords = [
   'let',
   'let*',
   'letrec',
+  'match',
   'or',
   'struct',
   'test-case'
@@ -94,6 +95,20 @@ function sexpToBranch (s: Sexp): Result<[Exp, Exp]> {
   }
 }
 
+function sexpToMatchBranch (s: Sexp): Result<[Pat, Exp]> {
+  switch (s.tag) {
+    case 'atom':
+      return parserError(msg('error-type-expected', 'branch', 'identifier'), s)
+    case 'slist':
+      if (s.list.length !== 2) {
+        return parserError(msg('error-type-expected', 'branch', 'non-branch'), s)
+      } else {
+        return sexpToPat(s.list[0]).andThen(pat =>
+          sexpToExp(s.list[1]).andThen(body => ok([pat, body])))
+      }
+  }
+}
+
 function tryParseString (s: string): string | undefined {
   if (s.length < 2 || !s.startsWith('"') || !s.endsWith('"')) {
     return undefined
@@ -117,6 +132,61 @@ export const namedCharValues = new Map([
   ['space', ' '],
   ['tab', String.fromCharCode(8)]
 ])
+
+function sexpToPat (s: Sexp): Result<Pat> {
+  switch (s.tag) {
+    case 'atom': {
+      // TODO: oh no! This is repeated code from sexpToExp!
+      // Need to refactor the literal parsing code so that
+      // pat and exp can share it!
+      if (intRegex.test(s.single)) {
+        return ok(plit(s.range, lnum(parseInt(s.single, 10))))
+      } else if (floatRegex.test(s.single)) {
+        return ok(plit(s.range, lnum(parseFloat(s.single))))
+      } else if (s.single.startsWith('"')) {
+        const result = tryParseString(s.single)
+        // N.B., '' is false in Javascript, so need an explicit undefined check.
+        return result !== undefined
+          ? ok(plit(s.range, lstr(result)))
+          : parserError(msg('error-invalid-string-literal'), s)
+      } else if (s.single === 'null') {
+        return ok(pnull(s.range))
+      } else if (s.single === '_') {
+        return ok(pwild(s.range))
+      } else if (s.single === '#t' || s.single === '#true') {
+        return ok(plit(s.range, lbool(true)))
+      } else if (s.single === '#f' || s.single === '#false') {
+        return ok(plit(s.range, lbool(false)))
+      } else if (s.single.startsWith('#\\')) {
+        const result = s.single.slice(2)
+        if (result.length === 1) {
+          return ok(plit(s.range, lchar(result)))
+        } else {
+          // N.B., the char is a named character. We already checked that
+          // the named character was valid in the lexer, so we can simply
+          // translate the name into the appropriate character value.
+          return ok(plit(s.range, lchar(namedCharValues.get(result)!)))
+        }
+      } else if (reservedWords.includes(s.single)) {
+        return parserError(msg('error-reserved-word'), s)
+      } else {
+        return ok(pvar(s.range, s.single))
+      }
+    }
+
+    case 'slist': {
+      if (s.list.length === 0) {
+        return parserError(msg('error-empty-pat'), s)
+      }
+      const head = s.list[0]
+      if (head.tag != 'atom') {
+        return parserError(msg('error-type-expected', 'constructor name', s.tag), s)
+      }
+      return join(s.list.slice(1).map(sexpToPat)).andThen(args =>
+        ok(pctor(s.range, head.single, args)))
+    }
+  }
+}
 
 function sexpToExp (s: Sexp): Result<Exp> {
   switch (s.tag) {
@@ -193,6 +263,12 @@ function sexpToExp (s: Sexp): Result<Exp> {
                 return join(args.map(sexpToExp)).andThen(es => ok(eand(s.range, es, s.bracket)))
               case 'or':
                 return join(args.map(sexpToExp)).andThen(es => ok(eor(s.range, es, s.bracket)))
+              case 'match':
+                return args.length < 2
+                  ? parserError(msg('error-arity-atleast', 'match', '2', args.length), s)
+                  : sexpToExp(args[0]).andThen(scrutinee =>
+                      join(args.slice(1).map(sexpToMatchBranch)).andThen(branches =>
+                        ok(ematch(s.range, scrutinee, branches, s.bracket))))
               default:
                 // NOTE: applications whose head are not keywords are assumed to be applications.
                 return join(args.map(sexpToExp)).andThen(es => ok(ecall(s.range, evar(head.range, head.single), es, s.bracket)))
