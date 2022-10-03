@@ -2,11 +2,11 @@ import { Result, error, ok, ICE } from './result.js'
 import { msg } from './messages.js'
 
 export interface VFSProvider {
-  read(path: string): Promise<Result<string>>;  
+  read(path: string): Promise<Result<string>>;
   write(path: string, content: string): Promise<Result<void>>;
 }
 
-export function fileNotFoundError(path: string): Result<any> {
+export function fileNotFoundError (path: string): Result<any> {
   return error(msg('phase-runtime'), msg('error-file-not-found', path))
 }
 
@@ -17,37 +17,38 @@ export class InMemoryProvider implements VFSProvider {
     this.files = new Map(files)
   }
 
-  async read(path: string): Promise<Result<string>> {
+  async read (path: string): Promise<Result<string>> {
     if (this.files.has(path)) {
       return ok(this.files.get(path)!)
     } else {
       return fileNotFoundError(path)
     }
   }
-  async write(path: string, content: string): Promise<Result<void>> {
+
+  async write (path: string, content: string): Promise<Result<void>> {
     throw new ICE('VFS.write', 'not implemented')
   }
 }
 
 class VFS {
   // A mapping from path prefixes to providers that service files under that path.
-  mountPoints: Map<string, VFSProvider>;
+  mountPoints: Map<string, VFSProvider>
 
-  constructor() {
-    this.mountPoints = new Map();
+  constructor () {
+    this.mountPoints = new Map()
   }
 
-  mount(path: string, provider: VFSProvider): void {
-    this.mountPoints.set(path, provider);
+  mount (path: string, provider: VFSProvider): void {
+    this.mountPoints.set(path, provider)
   }
 
-  async read(path: string): Promise<Result<string>> {
+  async read (path: string): Promise<Result<string>> {
     for (const [prefix, provider] of this.mountPoints.entries()) {
       if (path.startsWith(prefix)) {
         try {
           // N.B., await here to force synchronization so we can catch a
           // rejected promise at this point.
-          return await provider.read(path.substring(prefix.length));
+          return await provider.read(path.substring(prefix.length))
         } catch (_) {
           // TODO: we'll interpret a rejected promise as a file not being found.
           // We'll want to perform more fine-grained error handling here.
@@ -58,7 +59,7 @@ class VFS {
     return fileNotFoundError(path)
   }
 
-  write(path: string, content: string): Result<void> {
+  write (path: string, content: string): Result<void> {
     throw new ICE('VFS.write', 'not implemented')
   }
 }

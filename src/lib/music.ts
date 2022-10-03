@@ -11,7 +11,7 @@ export type Octave = number
 export type Duration = { num: number, den: number }
 
 const isPitchClass = (s: string): boolean =>
-    /^[A-Ga-g][#b]{0,2}$/.test(s)
+  /^[A-Ga-g][#b]{0,2}$/.test(s)
 
 const isOctave = (n: number): boolean =>
   n >= 0 && n <= 10
@@ -26,7 +26,7 @@ const note = (note: number, duration: Duration): Note => ({
 
 const repeatPrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('repeat', ['integer?', 'Composition'], undefined, args, app).asyncAndThen(async _ => {
-    const n = L.asNum_(args[0]) 
+    const n = L.asNum_(args[0])
     if (n < 0) {
       return runtimeError(msg('error-precondition-not-met', 'repeat', 1, 'non-negative integer', Pretty.expToString(0, args[0])))
     } else {
@@ -100,7 +100,6 @@ const dynamicsPrim: L.Prim = async (_env, args, app) =>
     }
   })
 
-
 export type Mod = { tag: 'mod', note: Composition, mod: ModKind }
 export const mod = (mod: ModKind, note: Composition): Mod => ({ tag: 'mod', note, mod })
 export const modPrim: L.Prim = async (_env, args, app) =>
@@ -132,7 +131,7 @@ const durPrim: L.Prim = async (_env, args, app) =>
       den: L.asNum_(args[1])
     })))
 
-const notePrim: L.Prim = async (_env, args, app) => 
+const notePrim: L.Prim = async (_env, args, app) =>
   Utils.checkArgsResult('note', ['integer?', 'Duration'], undefined, args, app).andThen(_ => {
     const midiNote = L.asNum_(args[0])
     const dur = L.fromObj_<Duration>(args[1])
@@ -197,5 +196,5 @@ export const musicLib: L.Env = new L.Env([
   ['qn', L.entry(L.nleobj('Duration', { num: 1, den: 4 }), 'music', undefined, Docs.qn)],
   ['en', L.entry(L.nleobj('Duration', { num: 1, den: 8 }), 'music', undefined, Docs.en)],
   ['sn', L.entry(L.nleobj('Duration', { num: 1, den: 16 }), 'music', undefined, Docs.sn)],
-  ['tn', L.entry(L.nleobj('Duration', { num: 1, den: 32 }), 'music', undefined, Docs.tn)],
+  ['tn', L.entry(L.nleobj('Duration', { num: 1, den: 32 }), 'music', undefined, Docs.tn)]
 ])

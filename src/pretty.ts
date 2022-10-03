@@ -57,7 +57,7 @@ function nestingDepth (e: L.Exp): number {
   }
 }
 
-function parens(bracketKind: L.BracketKind, ss: string[], sep: string = ' '): string {
+function parens (bracketKind: L.BracketKind, ss: string[], sep: string = ' '): string {
   switch (bracketKind) {
     case '(':
       return `(${ss.join(sep)})`
@@ -68,7 +68,7 @@ function parens(bracketKind: L.BracketKind, ss: string[], sep: string = ' '): st
   }
 }
 
-function indent(col: number, s: string): string {
+function indent (col: number, s: string): string {
   return `${' '.repeat(col)}${s}`
 }
 
@@ -109,9 +109,9 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
     }
     case 'if': {
       return parens(e.bracket, [
-        `if ${expToString(col, e.e1, htmlOutput)}`, 
+        `if ${expToString(col, e.e1, htmlOutput)}`,
         `${indent(col + 2, expToString(col + 2, e.e2, htmlOutput))}`,
-        `${indent(col + 2, expToString(col + 2, e.e3, htmlOutput))}`,
+        `${indent(col + 2, expToString(col + 2, e.e3, htmlOutput))}`
       ], '\n')
     }
     case 'nil':
@@ -158,7 +158,7 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
   }
 }
 
-export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean = false, htmlOutput: boolean = false): string {
+export function stmtToString (col: number, stmt: L.Stmt, outputBindings: boolean = false, htmlOutput: boolean = false): string {
   switch (stmt.tag) {
     case 'define': {
       const preamble = `(define ${stmt.name.value}`
@@ -188,7 +188,7 @@ export function stmtToString(col: number, stmt: L.Stmt, outputBindings: boolean 
   }
 }
 
-export function progToString(
+export function progToString (
   col: number, prog: L.Program, outputBindings: boolean = false,
   htmlOutput: boolean = false, lineSep: string = '\n'): string {
   return prog.statements

@@ -1,15 +1,17 @@
-import { asObj_, entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, isObjKind, EnvEntry, nlestruct, asStruct_, isStructKind
-, LetKind, 
-nlecall,
-isString,
-isBoolean,
-asBool_,
-asString_,
-stestcase,
-stestresult,
-ematch,
-Pat,
-litEquals} from './lang.js'
+import {
+  asObj_, entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, isObjKind, EnvEntry, nlestruct, asStruct_, isStructKind
+  , LetKind,
+  nlecall,
+  isString,
+  isBoolean,
+  asBool_,
+  asString_,
+  stestcase,
+  stestresult,
+  ematch,
+  Pat,
+  litEquals
+} from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails, ICE } from './result.js'
 import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
@@ -151,7 +153,7 @@ function tryMatch (e: Exp, p: Pat): Env | undefined {
   } else if (p.tag === 'null' && e.tag === 'nil') {
     return new Env([])
   } else if (p.tag === 'var') {
-    return new Env([ [p.id, entry(e, 'match')] ])
+    return new Env([[p.id, entry(e, 'match')]])
   } else if (p.tag === 'lit' && e.tag === 'lit' && litEquals(e.value, p.lit)) {
     return new Env([])
   } else if (p.tag === 'ctor' && (e.tag === 'pair' || e.tag === 'struct')) {
@@ -188,7 +190,7 @@ function tryMatch (e: Exp, p: Pat): Env | undefined {
       // has failed.
       return undefined
     }
-  }  
+  }
 }
 
 async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
@@ -293,7 +295,7 @@ async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
           ))
         } else {
           // TODO: the semantics we want... I think... is:
-          // 
+          //
           // let recbind = { {letrec ([f (lambda (n) e)] f) / f} (lambda (n) e) / f }
           //
           //     (letrec ([f (lambda (n) e)] ... bindings) body)
@@ -461,8 +463,8 @@ async function stepStmt (env: Env, s: Stmt): Promise<[Env, Stmt]> {
             args.length !== 1
               ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
               : !isStructKind(args[0], name)
-                ? runtimeError(msg('error-type-expected-fun', 1, fieldName, `struct ${name}`, args[0].tag))
-                : ok((asStruct_(args[0]) as any)[f.value] as Exp)),
+                  ? runtimeError(msg('error-type-expected-fun', 1, fieldName, `struct ${name}`, args[0].tag))
+                  : ok((asStruct_(args[0]) as any)[f.value] as Exp)),
           `struct ${name}`,
           f.range
         )]
@@ -513,9 +515,9 @@ async function stepStmt (env: Env, s: Stmt): Promise<[Env, Stmt]> {
       const result = isValue(s.value)
         ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(svalue(vp))))
         : resultToStmt((await stepExp(env, s.value)).andThen(v =>
-            isValue(v)
-              ? substituteIfFreeVar(env, v).andThen(vp => ok(svalue(vp)))
-              : ok(sexp(v)) as Result<Stmt>))
+          isValue(v)
+            ? substituteIfFreeVar(env, v).andThen(vp => ok(svalue(vp)))
+            : ok(sexp(v)) as Result<Stmt>))
       return [env, result]
     }
     case 'import':

@@ -165,7 +165,7 @@ function renderDrawing (x: number, y: number, drawing: Drawing, canvas: HTMLCanv
   render(x, y, drawing, canvas)
 }
 
-export function emitDrawingWidget(node: Element) {
+export function emitDrawingWidget (node: Element) {
   const canvas = document.createElement('canvas')
   const drawing = JSON.parse(node.textContent!)
   canvas.width = drawing.width

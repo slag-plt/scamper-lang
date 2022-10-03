@@ -4,14 +4,15 @@ import * as fs from 'fs'
 import * as scamper from '../index.js'
 
 class NodeVFS implements scamper.Vfs.VFSProvider {
-  async read(path: string): Promise<scamper.Result<string>> {
+  async read (path: string): Promise<scamper.Result<string>> {
     try {
       return scamper.ok(fs.readFileSync(path).toString())
     } catch (e) {
       return scamper.Vfs.fileNotFoundError(path)
     }
   }
-  async write(path: string, content: string): Promise<scamper.Result<void>> {
+
+  async write (path: string, content: string): Promise<scamper.Result<void>> {
     throw new Error('Method not implemented.')
   }
 }
@@ -24,17 +25,17 @@ type CompilerOptions = {
   emitTrace: boolean,
 }
 
-function makeDefaultOptions(): CompilerOptions {
+function makeDefaultOptions (): CompilerOptions {
   return {
     filename: undefined,
     checkOnly: false,
     formatOnly: false,
     emitTokens: false,
-    emitTrace: false,
+    emitTrace: false
   }
 }
 
-function printHelp(): void {
+function printHelp (): void {
   console.log(`
 The Scamper command-line driver.
 
@@ -49,7 +50,7 @@ Options:
   `.trim())
 }
 
-function processArgs(args: string[]): CompilerOptions {
+function processArgs (args: string[]): CompilerOptions {
   const opts = makeDefaultOptions()
   while (args.length > 0) {
     const arg = args.shift()!
@@ -74,11 +75,11 @@ function processArgs(args: string[]): CompilerOptions {
     } else {
       opts.filename = arg
     }
-  }   
+  }
   return opts
 }
 
-function emitTokens(tokens: scamper.sexp.Token[]) {
+function emitTokens (tokens: scamper.sexp.Token[]) {
   tokens.forEach(tok => {
     // N.B., we 0-index line/col numbers to align with vscode, but for testing
     // purposes, it is much easier to work with 1-indexed numbers that align
@@ -89,7 +90,7 @@ ${tok.value}: (${tok.range.start.line + 1}, ${tok.range.start.column + 1}) => ($
   })
 }
 
-async function main() {
+async function main () {
   const opts = processArgs(process.argv.slice(2))
   if (opts.filename === undefined) {
     console.log('No filename specified.')
@@ -131,7 +132,7 @@ async function main() {
       console.log(scamper.Formatter.format(src))
       process.exit(0)
     }
-    
+
     // Phase 2: Static checking
     const checkResult = scamper.detailsToResult(
       scamper.scope.scopeCheckProgram(prog))

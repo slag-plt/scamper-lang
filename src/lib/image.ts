@@ -131,7 +131,7 @@ const squarePrim: Prim = async (_env, args, app) => {
 
 type Triangle = { tag: 'triangle', width: number, height: number, length: number, mode: Mode, color: string }
 const triangle = (length: number, mode: Mode, color: string): Triangle => ({
-  tag: 'triangle', 
+  tag: 'triangle',
   width: length,
   height: length * Math.sqrt(3) / 2,
   length,
@@ -166,12 +166,12 @@ const pathPrim: Prim = async (_env, args, app) => {
   if (mode !== 'solid' && mode !== 'outline') {
     return runtimeError(msg('error-precondition-not-met', 'path', '2', '"solid" or "outline"', mode), app)
   } else {
-    const result: Result<[number,number][]> = join(asList_(args[2]).map(e => {
+    const result: Result<[number, number][]> = join(asList_(args[2]).map(e => {
       if (isPair(e)) {
         const p = asPair_(e)
         if (!isNumber(p[0]) || !isNumber(p[1])) {
           return runtimeError(msg('error-type-expected-fun', 3, 'path', 'list of pairs of numbers', e.tag), e)
-        } 
+        }
         return ok([asNum_(p[0]), asNum_(p[1])])
       } else {
         return runtimeError(msg('error-type-expected-fun', 3, 'path', 'list of pairs of numbers', e.tag), e)
@@ -269,7 +269,7 @@ const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => {
   // N.B., tricky! Need to account for whether (a) we are shifting the smaller
   // or larger image and (b) whether we are shifting it positively or
   // negatively.
-  let width;
+  let width
   if (d1.width >= d2.width) {
     width = dx >= 0
       ? Math.max(d1.width, d2.width + Math.abs(dx))
@@ -279,7 +279,7 @@ const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => {
       ? Math.max(d2.width, d1.width + Math.abs(dx))
       : Math.abs(dx) + d2.width
   }
-  let height;
+  let height
   if (d1.height >= d2.height) {
     height = dy >= 0
       ? Math.max(d1.height, d2.height + Math.abs(dy))
@@ -318,7 +318,7 @@ type Rotate = { tag: 'rotate', width: number, height: number, angle: number, dra
 //   drawing
 // })
 
-function calculateRotatedBox(width: number, height: number, degrees: number): { width: number, height: number } {
+function calculateRotatedBox (width: number, height: number, degrees: number): { width: number, height: number } {
   // Calculate the rotated corners of the box
   const angle = degrees * Math.PI / 180
   const origPoints = [
@@ -406,9 +406,8 @@ export const imageLib: Env = new Env([
   ['overlay/align', imageEntry(overlayAlignPrim, Docs.overlayAlign)],
   ['overlay/offset', imageEntry(overlayOffsetPrim, Docs.overlayOffset)],
   ['rotate', imageEntry(rotatePrim, Docs.rotate)],
-  ['with-dashes', imageEntry(withDashPrim, Docs.withDashes)],
+  ['with-dashes', imageEntry(withDashPrim, Docs.withDashes)]
 ])
-function isObjKind_(arg0: Exp, arg1: string): boolean {
+function isObjKind_ (arg0: Exp, arg1: string): boolean {
   throw new Error('Function not implemented.')
 }
-

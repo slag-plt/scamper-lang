@@ -21,7 +21,7 @@ const nlname = (value: string): Name => name(value, noRange())
  */
 export class Doc {
   /**
-   * 
+   *
    * @param sig A docstring corresponding to the signature of the function.
    * @param args An array of docstrings for each of the function's arguments.
    * @param desc A prose description of the behavior of the function.
@@ -31,8 +31,8 @@ export class Doc {
   /**
    * @returns A string containing the docstring formatted in Markdown.
    */
-  public docToMarkdown(): string {
-  return `
+  public docToMarkdown (): string {
+    return `
 ~~~
 ${this.sig.trim()}
 
@@ -46,7 +46,7 @@ ${this.desc.trim()}
 
 export type EnvEntry = { value: Exp, source: string, range?: Range, doc?: Doc }
 export const entry = (value: Exp, source: string, range?: Range, doc?: Doc): EnvEntry =>
-  ({ value, source, range, doc})
+  ({ value, source, range, doc })
 
 export class Env {
   entries: Map<string, EnvEntry>
@@ -490,7 +490,7 @@ const plit = (range: Range, lit: Lit): PLit => ({ tag: 'lit', lit, range })
 type PCtor = { tag: 'ctor', head: string, args: Pat[], range: Range }
 const pctor = (range: Range, head: string, args: Pat[]): PCtor => ({ tag: 'ctor', head, args, range })
 
-function fvarsOfPat(p: Pat): string[] {
+function fvarsOfPat (p: Pat): string[] {
   switch (p.tag) {
     case 'var':
       return [p.id]

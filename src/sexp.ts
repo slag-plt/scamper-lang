@@ -125,7 +125,7 @@ function tokenizeLineComment (src: string, st: LexerState): Token {
     throw new ICE('tokenizeLineComment', `Beginning character is not a semicolon: ${src[st.i]}`)
   } else {
     st.startTracking('"')
-    st.advanceColumn() 
+    st.advanceColumn()
     while (st.i < src.length) {
       // A newline character ends this comment
       if (src[st.i] === '\n') {
@@ -212,7 +212,7 @@ function tokenizeCharLiteral (src: string, st: LexerState): Result<Token> {
     st.startTracking('#\\')
     st.advanceColumn()
     st.advanceColumn()
-    let namedChar = startsWithNamedChar(src, st)
+    const namedChar = startsWithNamedChar(src, st)
     if (namedChar !== undefined) {
       tokenizeWord(namedChar, src, st)
       if (st.i >= src.length || (isWhitespace(src[st.i]) || isBracket(src[st.i]))) {
@@ -245,7 +245,7 @@ function tokenizeCharLiteral (src: string, st: LexerState): Result<Token> {
       // Really need to refactor the code so that line/col updates are
       // handled by LexerState.
       st.append(src[st.i])
-      st.append(src[st.i+1])
+      st.append(src[st.i + 1])
       const tok = st.emitToken()
       return lexerError(msg('error-invalid-char-constant'), tok)
     }
@@ -451,7 +451,7 @@ function coalseCommentTokens (toks: Token[]): Token {
   const value = toks.map(t => t.value.slice(1)).join(' ')
   const range = mkRange(
     mkLoc(toks[0].range.start.line, toks[0].range.start.column),
-    mkLoc(toks[toks.length - 1].range.start.line, toks[toks.length - 1].range.start.column),
+    mkLoc(toks[toks.length - 1].range.start.line, toks[toks.length - 1].range.start.column)
   )
   return { value, range }
 }
@@ -505,7 +505,7 @@ function tokensToSexp (toks: Token[]): Result<Sexp> {
       case '}':
         return lexerError(msg('error-unmatched-parens'), head)
       default:
-          return ok(atom(head.range, head.value))
+        return ok(atom(head.range, head.value))
     }
   }
 }

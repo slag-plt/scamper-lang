@@ -120,7 +120,8 @@ function numericNOp (symbol: string, op: (x: number, y: number) => number, def: 
     args.length === 1
       ? ok(L.nlenumber(def(L.asNum_(args[0]))))
       : asNumbers(args).andThen(vs => ok(L.nlenumber(vs.reduce(op))))
-)}
+  )
+}
 
 const maxPrim: L.Prim = async (_env, args, app) => numericNOp('max', (x, y) => Math.max(x, y), x => x, args, app)
 const minPrim: L.Prim = async (_env, args, app) => numericNOp('min', (x, y) => Math.min(x, y), x => x, args, app)
@@ -128,7 +129,7 @@ const minPrim: L.Prim = async (_env, args, app) => numericNOp('min', (x, y) => M
 const plusPrim: L.Prim = async (_env, args, app) => numericNOp('+', (x, y) => x + y, x => x, args, app)
 const minusPrim: L.Prim = async (_env, args, app) => numericNOp('-', (x, y) => x - y, x => -x, args, app)
 const timesPrim: L.Prim = async (_env, args, app) => numericNOp('*', (x, y) => x * y, x => x, args, app)
-const divPrim: L.Prim = async (_env, args, app) => numericNOp('/', (x, y) => x / y, x => 1/x, args, app)
+const divPrim: L.Prim = async (_env, args, app) => numericNOp('/', (x, y) => x / y, x => 1 / x, args, app)
 
 const absPrim: L.Prim = async (_env, args, app) => numericUOp('abs', (x) => Math.abs(x), args, app)
 
@@ -201,7 +202,7 @@ const stringNumberPrim: L.Prim = async (_env, args, app) => {
   const argErr = Utils.checkArgs('string->number', ['string?'], undefined, args, app)
   if (argErr) { return argErr }
   const s = L.asString_(args[0])
-  if (/^[+-]?\d+$/.test(s) ) {
+  if (/^[+-]?\d+$/.test(s)) {
     return ok(L.nlenumber(parseInt(s)))
   } else if (/^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/.test(s)) {
     return ok(L.nlenumber(parseFloat(s)))
@@ -315,12 +316,12 @@ const norPrim: L.Prim = async (env, args, app) =>
 const impliesPrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('implies', ['boolean?', 'boolean?'], undefined, args, app).asyncAndThen(_ =>
     evaluateExp(env, L.nleif(args[0], args[1], L.nlebool(true))))
-   
+
 const xorPrim: L.Prim = async (env, args, app) =>
-  Utils.checkArgsResult('xor', ['boolean?', 'boolean?'], undefined, args, app).asyncAndThen(_ =>    
+  Utils.checkArgsResult('xor', ['boolean?', 'boolean?'], undefined, args, app).asyncAndThen(_ =>
     evaluateExp(env, L.nleor([
       L.nleand([args[0], L.nlecall(L.nlevar('not'), [args[1]])]),
-      L.nleand([L.nlecall(L.nlevar('not'), [args[0]]), args[1]]),
+      L.nleand([L.nlecall(L.nlevar('not'), [args[0]]), args[1]])
     ])))
 
 const booleanPrimitives: [string, L.Prim, L.Doc | undefined][] = [
@@ -329,7 +330,7 @@ const booleanPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['nand', nandPrim, Docs.nand],
   ['nor', norPrim, Docs.nor],
   ['implies', impliesPrim, Docs.implies],
-  ['xor', xorPrim, Docs.xor],
+  ['xor', xorPrim, Docs.xor]
 ]
 
 // Pairs and Lists (6.4)
@@ -364,7 +365,7 @@ const nullPrim : L.Prim = async (_env, args, app) =>
     ok(L.nlebool(args[0].tag === 'nil')))
 
 const listQPrim : L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('list?', ['any'], 'boolean?', args, app).andThen(_ => 
+  Utils.checkArgsResult('list?', ['any'], 'boolean?', args, app).andThen(_ =>
     ok(L.nlebool(L.isList(args[0]))))
 
 const pairListPrimitives: [string, L.Prim, L.Doc | undefined][] = [
@@ -756,7 +757,7 @@ const fileLinesPrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('file->lines', ['string?'], undefined, args, app).asyncAndThen(_ =>
     evaluateExp(env, L.nlecall(L.nlevar('string-split'), [
       L.nlecall(L.nlevar('file->string'), [args[0]]),
-      L.nlestr("\n")
+      L.nlestr('\n')
     ])))
 
 const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
@@ -806,7 +807,7 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['string-split', stringSplitPrim, Docs.stringSplit],
   ['string-append', stringAppendPrim, Docs.stringAppend],
   ['file->string', fileStringPrim, Docs.fileString],
-  ['file->lines', fileLinesPrim, Docs.fileLines],
+  ['file->lines', fileLinesPrim, Docs.fileLines]
 ]
 
 // Vectors (6.8)
@@ -833,12 +834,12 @@ const stringMapPrim: L.Prim = async (env, args, app) =>
     const ss = await Promise.all(L.asString_(args[1]).split('').map(async c =>
       await evaluateExp(env, L.nlecall(args[0], [L.nlechar(c)]))))
     return join(ss).andThen(vs => {
-        for (const v of vs) {
-          if (!L.isChar(v)) {
-            return runtimeError(msg('error-precondition-not-met', 'string-map', 1, 'produces a character', Pretty.expToString(0, v)), app)
-          }
+      for (const v of vs) {
+        if (!L.isChar(v)) {
+          return runtimeError(msg('error-precondition-not-met', 'string-map', 1, 'produces a character', Pretty.expToString(0, v)), app)
         }
-        return ok(L.nlestr(vs.map(v => L.asChar_(v)).join('')))
+      }
+      return ok(L.nlestr(vs.map(v => L.asChar_(v)).join('')))
     })
   })
 
@@ -848,7 +849,7 @@ const stringMapPrim: L.Prim = async (env, args, app) =>
  * @returns the transposition of this array of arrays where rows become columns
  * and columns become rows.
  */
-function transpose <T>(arr: T[][]): T[][] {
+function transpose <T> (arr: T[][]): T[][] {
   if (arr.length === 0) { return [] }
   const numArrays = arr.length
   // N.B., assumed that all arrays have the same length
@@ -955,7 +956,7 @@ const reduceRightPrim: L.Prim = async (env, args, app) =>
       return runtimeError(msg('error-precondition-not-met', 'reduce-right', '2', 'list is non-empty', L.expToString(args[1])), app)
     } else {
       return evaluateExp(env,
-        L.nlecall(L.nlevar('fold-right'), [args[0], list[list.length - 1], L.arrayToList(list.slice(0, list.length -1))]))
+        L.nlecall(L.nlevar('fold-right'), [args[0], list[list.length - 1], L.arrayToList(list.slice(0, list.length - 1))]))
     }
   })
 
@@ -1004,9 +1005,9 @@ const rangePrim: L.Prim = async (env, args, app) =>
     if (args.length == 0 || args.length > 3) {
       return runtimeError(msg('error-arity', 'range', '1--3', args.length), app)
     } else {
-      let m = args.length == 1 ? 0 : L.asNum_(args[0])
-      let n = args.length == 1 ? L.asNum_(args[0]) : L.asNum_(args[1])
-      let step = args.length < 3 ? 1 : L.asNum_(args[2])
+      const m = args.length == 1 ? 0 : L.asNum_(args[0])
+      const n = args.length == 1 ? L.asNum_(args[0]) : L.asNum_(args[1])
+      const step = args.length < 3 ? 1 : L.asNum_(args[2])
       const arr = []
       // N.B., to prevent the internal infinite loop that would result
       // from having a zero step.
@@ -1035,7 +1036,7 @@ const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['compose', composePrim, Docs.compose],
   ['o', composePrim, Docs.o],
   ['|>', pipePrim, Docs.pipe],
-  ['range', rangePrim, Docs.range],
+  ['range', rangePrim, Docs.range]
 ]
 
 // Exceptions (6.11)

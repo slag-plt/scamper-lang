@@ -25,7 +25,7 @@ type Error<T> = {
 
 function detailsToCompleteString (details: ErrorDetails): string {
   const msg = [
-    `:${details.range ? details.range.start.column : ''}:${details.range ? details.range.start.line : ''}: ${details.phase} error:`, 
+    `:${details.range ? details.range.start.column : ''}:${details.range ? details.range.start.line : ''}: ${details.phase} error:`,
     `    ${details.message}`
   ]
   if (details.src) {

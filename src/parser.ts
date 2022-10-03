@@ -33,7 +33,7 @@ function checkDuplicateNames (names: Name[], s: Sexp): Result<Name[]> {
     }
   }
   return ok(names)
-} 
+}
 
 function sexpToUniqueStringList (s: Sexp): Result<Name[]> {
   switch (s.tag) {
@@ -43,7 +43,7 @@ function sexpToUniqueStringList (s: Sexp): Result<Name[]> {
       return join<Name>(s.list.map((x) => x.tag === 'atom'
         ? ok(name(x.single, x.range))
         : parserError(msg('error-type-expected', 'identifier', 'list'), x)))
-            .andThen(names => checkDuplicateNames(names, s))
+        .andThen(names => checkDuplicateNames(names, s))
   }
 }
 
@@ -57,7 +57,7 @@ function sexpToBinding (s: Sexp): Result<[Name, Exp]> {
         : s.list[0].tag !== 'atom'
           ? parserError(msg('error-var-binding'), s)
           : sexpToExp(s.list[1]).andThen((e:Exp) =>
-              ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Exp]))
+            ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Exp]))
   }
 }
 
@@ -122,7 +122,7 @@ const intRegex = /^[+-]?\d+$/
 const floatRegex = /^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/
 
 export const namedCharValues = new Map([
-  ['alarm', String.fromCharCode(9)], 
+  ['alarm', String.fromCharCode(9)],
   ['backspace', String.fromCharCode(7)],
   ['delete', String.fromCharCode(126)],
   ['escape', String.fromCharCode(26)],
@@ -267,8 +267,8 @@ function sexpToExp (s: Sexp): Result<Exp> {
                 return args.length < 2
                   ? parserError(msg('error-arity-atleast', 'match', '2', args.length), s)
                   : sexpToExp(args[0]).andThen(scrutinee =>
-                      join(args.slice(1).map(sexpToMatchBranch)).andThen(branches =>
-                        ok(ematch(s.range, scrutinee, branches, s.bracket))))
+                    join(args.slice(1).map(sexpToMatchBranch)).andThen(branches =>
+                      ok(ematch(s.range, scrutinee, branches, s.bracket))))
               default:
                 // NOTE: applications whose head are not keywords are assumed to be applications.
                 return join(args.map(sexpToExp)).andThen(es => ok(ecall(s.range, evar(head.range, head.single), es, s.bracket)))
@@ -308,7 +308,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
             ? parserError(msg('error-type-expected', 'module name', source.tag), s)
             : ok(simport(s.range, source.single))
         }
-      } else if(s.list[0].tag === 'atom' && s.list[0].single === 'struct') {
+      } else if (s.list[0].tag === 'atom' && s.list[0].single === 'struct') {
         const args = s.list.slice(1)
         if (args.length !== 2) {
           return parserError(msg('error-arity', 'struct', 2, args.length), s)
@@ -329,7 +329,6 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
                 sexpToExp(args[3]).andThen(actual =>
                   ok(stestcase(desc, comp, expected, actual))))))
         }
-
       } else {
         return sexpToExp(s).andThen(e => ok(sexp(e)))
       }

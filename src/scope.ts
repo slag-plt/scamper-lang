@@ -124,9 +124,9 @@ function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
         errors = errors.concat(checkExp(bvars, s.value))
         return
       case 'struct': {
-        let structBvars: Name[] = [
+        const structBvars: Name[] = [
           name(s.id.value, s.id.range),
-          name(`${s.id.value}?`, s.id.range), 
+          name(`${s.id.value}?`, s.id.range),
           ...s.fields.map(f => name(`${s.id.value}-${f.value}`, f.range))
         ]
         // structBvars.forEach(x => {
