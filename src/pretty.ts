@@ -104,7 +104,7 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
       if (isSimpleExp(e.body)) {
         return [preamble, `${expToString(col, e.body, htmlOutput)})`].join(' ')
       } else {
-        return [preamble, `${indent(col + 2, expToString(col + 2, e.body, htmlOutput))}`].join('\n')
+        return [preamble, `${indent(col + 2, expToString(col + 2, e.body, htmlOutput))})`].join('\n')
       }
     }
     case 'if': {
