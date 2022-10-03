@@ -152,9 +152,8 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
     case 'prim':
       return `[prim ${e.prim.name}]`
     case 'match': {
-      const preamble = 'match '
       const bindings = e.branches.map(b => indent(col + 2, `[${patToString(b[0])} ${expToString(col + 2, b[1], htmlOutput)}]`))
-      return parens(e.bracket, [preamble, expToString(col, e.scrutinee, htmlOutput), ...bindings], '\n')
+      return parens(e.bracket, [`match ${expToString(col, e.scrutinee, htmlOutput)}`, ...bindings], '\n')
     }
   }
 }

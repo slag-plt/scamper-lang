@@ -87,11 +87,11 @@ export class ProgramTrace {
     }
   }
 
-  evalNextStmt (): void {
+  async evalNextStmt (): Promise<void> {
     if (this.getCurrentState().isFullyEvaluated()) { return }
     const i = L.indexOfCurrentStmt(this.getCurrentState().prog)
     while (L.indexOfCurrentStmt(this.getCurrentState().prog) === i) {
-      this.stepForward()
+      await this.stepForward()
     }
   }
 
@@ -102,9 +102,9 @@ export class ProgramTrace {
     }
   }
 
-  evaluateProg (): void {
+  async evaluateProg (): Promise<void> {
     while (!this.states[this.pos].isFullyEvaluated()) {
-      this.stepForward()
+      await this.stepForward()
     }
   }
 
@@ -120,16 +120,16 @@ export class ProgramTrace {
     return this.states[this.pos]
   }
 
-  addStmt (src: string): void {
+  async addStmt (src: string): Promise<void> {
     // N.B., evaluate the program completely so we compute the final set of bindings
-    this.evaluateProg()
+    await this.evaluateProg()
     const result = Parser.parseProgram(src).andThen(prog =>
       R.detailsToResult(Scope.scopeCheckProgram(
         prog,
         this.states[this.states.length - 1].env)).andThen(_ => {
-          this.states.forEach(st => {
-            st.prog.statements = st.prog.statements.concat(prog.statements)
-          })
+        this.states.forEach(st => {
+          st.prog.statements = st.prog.statements.concat(prog.statements)
+        })
         return R.ok(null)
       }))
     switch (result.tag) {

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as Image from './image.js'
 import * as Music from './music.js'
 import * as Scamper from '../index.js'
@@ -11,12 +14,12 @@ import 'prismjs'
 const global = window as any
 
 // The Prism instance
-declare var Prism: any
+declare let Prism: any
 
 // The singleton instance of the JZZ.Tiny synth
 const SYNTH = JZZ.synth.Tiny()
 
-function forEachByClass(elt: Element | Document, cls: string, fn: (e: Element) => void) {
+function forEachByClass (elt: Element | Document, cls: string, fn: (e: Element) => void) {
   // N.B., we need to freeze the list of elements to an array because fn
   // may manipulate the DOM and getElementsByClassName returns a live
   // collection. The result is that DOM manipulation messes up indexing
@@ -24,13 +27,13 @@ function forEachByClass(elt: Element | Document, cls: string, fn: (e: Element) =
   Array.from(elt.getElementsByClassName(cls)).forEach(e => fn(e))
 }
 
-function renderRichWidgets(root: Element | Document): void {
+function renderRichWidgets (root: Element | Document): void {
   forEachByClass(root, 'drawing', Image.emitDrawingWidget)
   forEachByClass(root, 'composition', e => Music.emitCompositionWidget(SYNTH, e))
   Prism.highlightAll()
 }
 
-function sanitize(s: string): string {
+function sanitize (s: string): string {
   // N.B., pre does not guard against <?---replace for now, but it seems like
   // we need to escape all entities in pre blocks even though they seem to
   // work in other cases. This requires more investigation because if we need
@@ -39,7 +42,7 @@ function sanitize(s: string): string {
   return s.replace('<?', '&lt;?')
 }
 
-async function replaceOutputWidgets() {
+async function replaceOutputWidgets () {
   for (const element of document.getElementsByClassName('scamper-output')) {
     const classes = element.className.split(' ')
     const outputProg = classes.includes('output-prog')
@@ -52,14 +55,14 @@ async function replaceOutputWidgets() {
     if (result.tag === 'error') {
       element.innerHTML = sanitize(Scamper.errorToString(result))
     } else {
-      element.innerHTML = ""
-      for (var i = 0; i < result.value.statements.length; i++) {
+      element.innerHTML = ''
+      for (let i = 0; i < result.value.statements.length; i++) {
         if (outputProg) {
           element.innerHTML += [
             `&gt; <code>${sanitize(Scamper.stmtToString(0, result.value.statements[i], false, true))}</code>`,
             `<code>${sanitize(Scamper.stmtToString(0, result.value.outputs[i], true, true))}</code>`,
             // N.B., extra spacing to make output pretty
-            '',   
+            '',
             ''
           ].join('\n')
         } else {
@@ -74,7 +77,7 @@ async function replaceOutputWidgets() {
   }
 }
 
-function replaceExplorationWidgets(): void {
+function replaceExplorationWidgets (): void {
   for (const element of document.getElementsByClassName('scamper-exploration')) {
     // Look for the program element in the exploration window and signal a hard
     // error if we can't find it. We need the program element as it should
@@ -98,25 +101,25 @@ function replaceExplorationWidgets(): void {
         programElement.innerHTML = sanitize(Scamper.progToString(0, trace.currentState().prog, true, true, '\n\n'))
         renderRichWidgets(programElement)
       }
-    
+
       // Rig the buttons that are present in the widget
       forEachByClass(element, 'step-forward', e => {
-        (e as HTMLButtonElement).onclick = () => { trace.stepForward(); update(); }
+        (e as HTMLButtonElement).onclick = async () => { await trace.stepForward(); update() }
       })
       forEachByClass(element, 'step-backward', e => {
-        (e as HTMLButtonElement).onclick = () => { trace.stepBackward(); update(); }
+        (e as HTMLButtonElement).onclick = () => { trace.stepBackward(); update() }
       })
       forEachByClass(element, 'stmt-forward', e => {
-        (e as HTMLButtonElement).onclick = () => { trace.evalNextStmt(); update(); }
+        (e as HTMLButtonElement).onclick = () => { trace.evalNextStmt(); update() }
       })
       forEachByClass(element, 'stmt-backward', e => {
-        (e as HTMLButtonElement).onclick = () => { trace.revertPrevStmt(); update(); }
+        (e as HTMLButtonElement).onclick = () => { trace.revertPrevStmt(); update() }
       })
       forEachByClass(element, 'eval', e => {
-        (e as HTMLButtonElement).onclick = () => { trace.evaluateProg(); update(); }
+        (e as HTMLButtonElement).onclick = () => { trace.evaluateProg(); update() }
       })
       forEachByClass(element, 'reset', e => {
-        (e as HTMLButtonElement).onclick = () => { trace.resetProg(); update(); }
+        (e as HTMLButtonElement).onclick = () => { trace.resetProg(); update() }
       })
       forEachByClass(element, 'add-statement', e => {
         (e as HTMLButtonElement).onclick = () => {
@@ -137,7 +140,7 @@ function replaceExplorationWidgets(): void {
       // N.B., after setting up the panel, update the program panel to reflect
       // the initial state of the program.
       update()
-    } 
+    }
   }
 }
 
@@ -145,8 +148,8 @@ global.registerFs = function (path: string, vfs: Scamper.Vfs.VFSProvider): void 
   Scamper.Vfs.fs.mount(path, vfs)
 }
 
-global.replaceCodeWidgets = function (): void {
-  replaceOutputWidgets()
+global.replaceCodeWidgets = async function () {
+  await replaceOutputWidgets()
   replaceExplorationWidgets()
 }
 
