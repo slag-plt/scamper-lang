@@ -1,8 +1,9 @@
 import { ErrorDetails, errorDetails, ICE } from './result.js'
-import { Env, Exp, Program, name, Name } from './lang.js'
+import { Env, Exp, Program, name, Name, fvarsOfPat } from './lang.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
 import { internalLibs, preludeEnv } from './runtime.js'
+import { expToString } from './pretty.js'
 
 function undefinedVariableError (x: string, range: Range): ErrorDetails {
   return errorDetails(
@@ -20,6 +21,26 @@ function shadowedVariableError (x: string, range: Range): ErrorDetails {
     range,
     x
   )
+}
+
+function repeatedVariableError (e: Exp, x: string, range: Range): ErrorDetails {
+  return errorDetails(
+    msg('phase-scope'),
+    msg('error-var-repeated', x),
+    range,
+    expToString(0, e)
+  )
+}
+
+function containsDups (xs: string[]): string | undefined {
+  for (let i = 0; i < xs.length; i++) {
+    for (let j = i + 1; j < xs.length; j++) {
+      if (xs[i] === xs[j]) {
+        return xs[i]
+      }
+    }
+  }
+  return undefined
 }
 
 function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
@@ -77,6 +98,17 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
       return []
     case 'prim':
       return []
+    case 'match': {
+      let errors = checkExp(bvars, e.scrutinee)
+      e.branches.forEach(branch => {
+        errors = errors.concat(checkExp(bvars.concat(fvarsOfPat(branch[0])), branch[1]))
+        const dup = containsDups(fvarsOfPat(branch[0]))
+        if (dup) {
+          errors = errors.concat(repeatedVariableError(e, dup, branch[0].range))
+        }
+      })
+      return errors
+    }
   }
 }
 
