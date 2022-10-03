@@ -141,7 +141,14 @@ function replaceExplorationWidgets(): void {
   }
 }
 
+global.registerFs = function (path: string, vfs: Scamper.Vfs.VFSProvider): void {
+  Scamper.Vfs.fs.mount(path, vfs)
+}
+
 global.replaceCodeWidgets = function (): void {
   replaceOutputWidgets()
   replaceExplorationWidgets()
 }
+
+global.ok = Scamper.ok
+global.error = Scamper.error

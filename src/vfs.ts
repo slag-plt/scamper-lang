@@ -42,19 +42,17 @@ class VFS {
   }
 
   async read(path: string): Promise<Result<string>> {
-    // TODO: hack to quickly get in https pull-down support for files!
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      const request = new Request(path)
-      const response = await fetch(request)
-      if (!response.ok) {
-        return fileNotFoundError(path)
-      } else {
-        return ok(await response.text())
-      }
-    }
     for (const [prefix, provider] of this.mountPoints.entries()) {
       if (path.startsWith(prefix)) {
-        return provider.read(path.substring(prefix.length));
+        try {
+          // N.B., await here to force synchronization so we can catch a
+          // rejected promise at this point.
+          return await provider.read(path.substring(prefix.length));
+        } catch (_) {
+          // TODO: we'll interpret a rejected promise as a file not being found.
+          // We'll want to perform more fine-grained error handling here.
+          return fileNotFoundError(path)
+        }
       }
     }
     return fileNotFoundError(path)
