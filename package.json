@@ -15,7 +15,7 @@
   "scripts": {
     "build": "mkdir -p dist/web/jzz && cp src/web/jzz/jzz-combined.cjs dist/web/jzz/jzz-combined.cjs && tsc && chmod u+x dist/driver/index.js",
     "clean": "rm -rf dist",
-    "lint": "eslint --fix",
+    "lint": "eslint src --fix",
     "prepare": "npm run build && npm run bundle",
     "driver": "dist/driver/index.js",
     "test": "./run-tests.sh",
