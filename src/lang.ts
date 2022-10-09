@@ -149,12 +149,12 @@ type Exp
 
 /* eslint-enable */
 
-type EVar = { tag: 'var', range: Range, value: string }
-const evar = (range: Range, value: string): EVar => ({ tag: 'var', range, value })
+type EVar = { tag: 'var', range: Range, value: string, isValue: boolean, isList: boolean }
+const evar = (range: Range, value: string): EVar => ({ tag: 'var', range, value, isValue: true, isList: false })
 const nlevar = (value: string): EVar => evar(noRange(), value)
 
-type ELit = { tag: 'lit', range: Range, value: Lit }
-const elit = (range: Range, value: Lit): ELit => ({ tag: 'lit', range, value })
+type ELit = { tag: 'lit', range: Range, value: Lit, isValue: boolean, isList: boolean }
+const elit = (range: Range, value: Lit): ELit => ({ tag: 'lit', range, value, isValue: true, isList: false })
 
 const ebool = (range: Range, value: boolean): ELit => elit(range, lbool(value))
 const enumber = (range: Range, value: number): ELit => elit(range, lnum(value))
@@ -166,65 +166,65 @@ const nlenumber = (value: number): ELit => elit(noRange(), lnum(value))
 const nlechar = (c: string): ELit => elit(noRange(), lchar(c))
 const nlestr = (s: string): ELit => elit(noRange(), lstr(s))
 
-type ECall = { tag: 'call', range: Range, head: Exp, args: Exp[], bracket: BracketKind }
+type ECall = { tag: 'call', range: Range, head: Exp, args: Exp[], bracket: BracketKind, isValue: boolean, isList: boolean }
 const ecall = (range: Range, head: Exp, args: Exp[], bracket: BracketKind = '('): ECall =>
-  ({ tag: 'call', range, head, args, bracket })
+  ({ tag: 'call', range, head, args, bracket, isValue: false, isList: false })
 const nlecall = (head: Exp, args: Exp[]): ECall => ecall(noRange(), head, args)
 
-type ELam = { tag: 'lam', range: Range, args: Name[], body: Exp, bracket: BracketKind }
+type ELam = { tag: 'lam', range: Range, args: Name[], body: Exp, bracket: BracketKind, isValue: boolean, isList: boolean }
 const elam = (range: Range, args: Name[], body: Exp, bracket: BracketKind = '('): ELam =>
-  ({ tag: 'lam', range, args, body, bracket })
+  ({ tag: 'lam', range, args, body, bracket, isValue: true, isList: false })
 const nlelam = (args: string[], body: Exp): ELam => elam(noRange(), args.map(nlname), body)
 
-type EIf = { tag: 'if', range: Range, e1: Exp, e2: Exp, e3: Exp, bracket: BracketKind }
+type EIf = { tag: 'if', range: Range, e1: Exp, e2: Exp, e3: Exp, bracket: BracketKind, isValue: boolean, isList: boolean }
 const eif = (range: Range, e1: Exp, e2: Exp, e3: Exp, bracket: BracketKind = '('): EIf =>
-  ({ tag: 'if', range, e1, e2, e3, bracket })
+  ({ tag: 'if', range, e1, e2, e3, bracket, isValue: false, isList: false })
 const nleif = (e1: Exp, e2: Exp, e3: Exp): EIf => eif(noRange(), e1, e2, e3)
 
-type ENil = { tag: 'nil', range: Range }
-const enil = (range: Range): ENil => ({ tag: 'nil', range })
+type ENil = { tag: 'nil', range: Range, isValue: boolean, isList: boolean }
+const enil = (range: Range): ENil => ({ tag: 'nil', range, isValue: true, isList: true })
 const nlenil = (): ENil => enil(noRange())
 
-type EPair = { tag: 'pair', range: Range, e1: Exp, e2: Exp, bracket: BracketKind }
+type EPair = { tag: 'pair', range: Range, e1: Exp, e2: Exp, bracket: BracketKind, isValue: boolean, isList: boolean }
 const epair = (range: Range, e1: Exp, e2: Exp, bracket: BracketKind = '('): EPair =>
-  ({ tag: 'pair', range, e1, e2, bracket })
+  ({ tag: 'pair', range, e1, e2, bracket, isValue: e1.isValue && e2.isValue, isList: e2.isList })
 const nlepair = (e1: Exp, e2: Exp): EPair => epair(noRange(), e1, e2)
 
 type LetKind = 'let' | 'let*' | 'letrec'
 
-type ELet = { tag: 'let', range: Range, kind: LetKind, bindings: [Name, Exp][], body: Exp, bracket: BracketKind }
+type ELet = { tag: 'let', range: Range, kind: LetKind, bindings: [Name, Exp][], body: Exp, bracket: BracketKind, isValue: boolean, isList: boolean }
 // TODO: need to record individual BracketKinds for bindings
 const elet = (range: Range, kind: LetKind, bindings: [Name, Exp][], body: Exp, bracket: BracketKind = '('): ELet =>
-  ({ tag: 'let', kind, range, bindings, body, bracket })
+  ({ tag: 'let', kind, range, bindings, body, bracket, isValue: false, isList: false })
 const nlelet = (kind: LetKind, bindings: [string, Exp][], body: Exp): ELet =>
   elet(noRange(), kind, bindings.map(b => [nlname(b[0]), b[1]]), body)
 
-type ECond = { tag: 'cond', range: Range, branches: [Exp, Exp][], bracket: BracketKind }
+type ECond = { tag: 'cond', range: Range, branches: [Exp, Exp][], bracket: BracketKind, isValue: boolean, isList: boolean }
 // TODO: need to record individual BracketKinds for branches
 const econd = (range: Range, branches: [Exp, Exp][], bracket: BracketKind = '('): ECond =>
-  ({ tag: 'cond', range, branches, bracket })
+  ({ tag: 'cond', range, branches, bracket, isValue: false, isList: false })
 const nlecond = (branches: [Exp, Exp][]): ECond => econd(noRange(), branches)
 
-type EAnd = { tag: 'and', range: Range, args: Exp[], bracket: BracketKind }
-const eand = (range: Range, args: Exp[], bracket: BracketKind = '('): EAnd => ({ tag: 'and', range, args, bracket })
+type EAnd = { tag: 'and', range: Range, args: Exp[], bracket: BracketKind, isValue: boolean, isList: boolean }
+const eand = (range: Range, args: Exp[], bracket: BracketKind = '('): EAnd => ({ tag: 'and', range, args, bracket, isValue: false, isList: false })
 const nleand = (args: Exp[]): EAnd => eand(noRange(), args)
 
-type EOr = { tag: 'or', range: Range, args: Exp[], bracket: BracketKind }
-const eor = (range: Range, args: Exp[], bracket: BracketKind = '('): EOr => ({ tag: 'or', range, args, bracket })
+type EOr = { tag: 'or', range: Range, args: Exp[], bracket: BracketKind, isValue: boolean, isList: boolean }
+const eor = (range: Range, args: Exp[], bracket: BracketKind = '('): EOr => ({ tag: 'or', range, args, bracket, isValue: false, isList: false })
 const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 
-type EStruct = { tag: 'struct', range: Range, kind: string, obj: object }
-const nlestruct = (kind: string, obj: object): EStruct => ({ tag: 'struct', range: noRange(), kind, obj })
+type EStruct = { tag: 'struct', range: Range, kind: string, obj: object, isValue: boolean, isList: boolean }
+const nlestruct = (kind: string, obj: object): EStruct => ({ tag: 'struct', range: noRange(), kind, obj, isValue: true, isList: false })
 
-type EObj = { tag: 'obj', range: Range, kind: string, obj: object }
-const nleobj = (kind: string, obj: object): EObj => ({ tag: 'obj', range: noRange(), kind, obj })
+type EObj = { tag: 'obj', range: Range, kind: string, obj: object, isValue: boolean, isList: boolean }
+const nleobj = (kind: string, obj: object): EObj => ({ tag: 'obj', range: noRange(), kind, obj, isValue: true, isList: false })
 
-type EPrim = { tag: 'prim', range: Range, prim: Prim }
-const nleprim = (prim: Prim): EPrim => ({ tag: 'prim', range: noRange(), prim })
+type EPrim = { tag: 'prim', range: Range, prim: Prim, isValue: boolean, isList: boolean }
+const nleprim = (prim: Prim): EPrim => ({ tag: 'prim', range: noRange(), prim, isValue: true, isList: false })
 
-type EMatch = { tag: 'match', range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind }
+type EMatch = { tag: 'match', range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind, isValue: boolean, isList: boolean }
 const ematch = (range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind): EMatch =>
-  ({ tag: 'match', range, scrutinee, branches, bracket })
+  ({ tag: 'match', range, scrutinee, branches, bracket, isValue: false, isList: false })
 
 // #endregion
 
@@ -299,23 +299,7 @@ function patToString (p: Pat): string {
 // #region Expression querying functions
 
 function isValue (e:Exp): boolean {
-  switch (e.tag) {
-    case 'var': return true
-    case 'lit': return true
-    case 'call': return false
-    case 'lam': return true
-    case 'if': return false
-    case 'nil': return true
-    case 'pair': return isValue(e.e1) && isValue(e.e2)
-    case 'let': return false
-    case 'cond': return false
-    case 'and': return false
-    case 'or': return false
-    case 'struct': return true
-    case 'obj': return true
-    case 'prim': return true
-    case 'match': return false
-  }
+  return e.isValue
 }
 
 function isNumber (e:Exp): boolean {
@@ -351,10 +335,7 @@ function isPair (e:Exp): boolean {
 }
 
 function isList (e:Exp): boolean {
-  while (e.tag === 'pair') {
-    e = e.e2
-  }
-  return e.tag === 'nil'
+  return e.isList
 }
 
 function isPrim (e:Exp): boolean {
