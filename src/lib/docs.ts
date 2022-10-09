@@ -933,6 +933,13 @@ export const range: Doc = new Doc(
   'Returns a list containing the numbers from `beg` to `end` (exclusive). If `beg` is not given, it defaults to 0.'
 )
 
+export const random: Doc = new Doc(
+  '(random n): list?', [
+    'n: integer?, n >= 0'
+  ],
+  'Returns a random number in the range 0 to n (exclusive).'
+)
+
 export const elseV: Doc = new Doc(
   'else: ?boolean', [],
   'A synonym for `#t` appropriate for use as the final guard of a `cond` expression.'

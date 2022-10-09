@@ -1021,6 +1021,14 @@ const rangePrim: L.Prim = async (env, args, app) =>
     }
   })
 
+const randomPrim: L.Prim = async (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('random', ['integer?'], undefined, args, app).andThen(_ => {
+    const n = L.asNum_(args[0])
+    return n <= 0
+      ? runtimeError(msg('error-precondition-not-met', 'random', '1', 'positive integer', n), app)
+      : ok(L.nlenumber(Math.floor(Math.random() * L.asNum_(args[0]))))
+  }))
+
 const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['procedure?', procedurePrim, Docs.procedure],
   ['apply', applyPrim, Docs.apply],
@@ -1036,7 +1044,8 @@ const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['compose', composePrim, Docs.compose],
   ['o', composePrim, Docs.o],
   ['|>', pipePrim, Docs.pipe],
-  ['range', rangePrim, Docs.range]
+  ['range', rangePrim, Docs.range],
+  ['random', randomPrim, Docs.random]
 ]
 
 // Exceptions (6.11)
