@@ -489,13 +489,19 @@ function tokensToSexp (toks: Token[]): Result<Sexp> {
     switch (head.value) {
       case '(':
         return tokensToSListArgs(')', toks).andThen((args) =>
-          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '(', args)))
+          args.length === 0
+            ? ok(slist(head.range, '(', args))
+            : ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '(', args)))
       case '[':
         return tokensToSListArgs(']', toks).andThen((args) =>
-          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '[', args)))
+          args.length === 0
+            ? ok(slist(head.range, '[', args))
+            : ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '[', args)))
       case '{':
         return tokensToSListArgs('}', toks).andThen((args) =>
-          ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '{', args)))
+          args.length === 0
+            ? ok(slist(head.range, '{', args))
+            : ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '{', args)))
       case ',':
         return tokensToSexp(toks)
       case ')':
