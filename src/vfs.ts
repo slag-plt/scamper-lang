@@ -17,15 +17,15 @@ export class InMemoryProvider implements VFSProvider {
     this.files = new Map(files)
   }
 
-  async read (path: string): Promise<Result<string>> {
+  read (path: string): Promise<Result<string>> {
     if (this.files.has(path)) {
-      return ok(this.files.get(path)!)
+      return Promise.resolve(ok(this.files.get(path)!))
     } else {
-      return fileNotFoundError(path)
+      return Promise.resolve(fileNotFoundError(path))
     }
   }
 
-  async write (path: string, content: string): Promise<Result<void>> {
+  write (path: string, content: string): Promise<Result<void>> {
     throw new ICE('VFS.write', 'not implemented')
   }
 }

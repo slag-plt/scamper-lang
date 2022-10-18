@@ -14,15 +14,6 @@ function undefinedVariableError (x: string, range: Range): ErrorDetails {
   )
 }
 
-function shadowedVariableError (x: string, range: Range): ErrorDetails {
-  return errorDetails(
-    msg('phase-scope'),
-    msg('error-var-shadowed', x),
-    range,
-    x
-  )
-}
-
 function repeatedVariableError (e: Exp, x: string, range: Range): ErrorDetails {
   return errorDetails(
     msg('phase-scope'),
@@ -93,8 +84,6 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
     // N.B., structs are internal, runtime only values, so we'll never
     // encounter these cases with our scope-checker.
     case 'struct':
-      return []
-    case 'obj':
       return []
     case 'prim':
       return []

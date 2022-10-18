@@ -1,6 +1,6 @@
 import { eand, ebool, ecall, echar, econd, eif, elam, elet, ematch, enil, enumber, eor, estr, evar, Exp, lbool, lchar, LetKind, lnum, lstr, Name, name, Pat, pctor, plit, pnull, Program, pvar, pwild, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
-import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps, Token } from './sexp.js'
+import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps } from './sexp.js'
 import { msg } from './messages.js'
 
 const reservedWords = [
@@ -66,7 +66,7 @@ function sexpToBindings (s: Sexp): Result<[Name, Exp][]> {
     case 'atom':
       return parserError(msg('error-type-expected', 'binding list', 'identifier'), s)
     case 'slist': {
-      const result: [Name, Exp][] = new Array(s.list.length)
+      const result: [Name, Exp][] = new Array<[Name, Exp]>(s.list.length)
       for (let i = 0; i < s.list.length; i++) {
         const r = sexpToBinding(s.list[i])
         switch (r.tag) {
@@ -179,7 +179,7 @@ function sexpToPat (s: Sexp): Result<Pat> {
         return parserError(msg('error-empty-pat'), s)
       }
       const head = s.list[0]
-      if (head.tag != 'atom') {
+      if (head.tag !== 'atom') {
         return parserError(msg('error-type-expected', 'constructor name', s.tag), s)
       }
       return join(s.list.slice(1).map(sexpToPat)).andThen(args =>
