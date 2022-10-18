@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call */
 import { join, ok, Result } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { Env, entry, asNum_, asString_, EObj, nleobj, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber, nlebool, isObjKind } from '../lang.js'
+import { Env, entry, asNum_, asString_, EStruct, nlestruct, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber, nlebool, isStructKind } from '../lang.js'
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
@@ -53,7 +53,7 @@ export type Drawing = Ellipse | Rectangle | Triangle | Path | Beside | Above | O
 
 const imagePrim: Prim = (_env, args, app) =>
   Utils.checkArgsResult('image?', ['any'], undefined, args, app).asyncAndThen(_ =>
-    Promise.resolve(ok(nlebool(isObjKind(args[0], 'Drawing')))))
+    Promise.resolve(ok(nlebool(isStructKind(args[0], 'Drawing')))))
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({
@@ -74,7 +74,7 @@ const ellipsePrim: Prim = (_env, args, app) => {
   if (mode !== 'solid' && mode !== 'outline') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'circle', '3', '"solid" or "outline"', mode), app))
   } else {
-    return Promise.resolve(ok(nleobj('Drawing', ellipse(width, height, mode, color))))
+    return Promise.resolve(ok(nlestruct('Drawing', ellipse(width, height, mode, color))))
   }
 }
 
@@ -87,7 +87,7 @@ const circlePrim: Prim = (_env, args, app) => {
   if (mode !== 'solid' && mode !== 'outline') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'circle', '2', '"solid" or "outline"', mode), app))
   } else {
-    return Promise.resolve(ok(nleobj('Drawing', ellipse(radius * 2, radius * 2, mode, color))))
+    return Promise.resolve(ok(nlestruct('Drawing', ellipse(radius * 2, radius * 2, mode, color))))
   }
 }
 
@@ -105,7 +105,7 @@ const rectanglePrim: Prim = (_env, args, app) => {
   if (mode !== 'solid' && mode !== 'outline') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'rectangle', '3', '"solid" or "outline"', mode), app))
   } else {
-    return Promise.resolve(ok(nleobj('Drawing', rectangle(width, height, mode, color))))
+    return Promise.resolve(ok(nlestruct('Drawing', rectangle(width, height, mode, color))))
   }
 }
 
@@ -118,7 +118,7 @@ const squarePrim: Prim = (_env, args, app) => {
   if (mode !== 'solid' && mode !== 'outline') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'square', '2', '"solid" or "outline"', mode), app))
   } else {
-    return Promise.resolve(ok(nleobj('Drawing', rectangle(width, width, mode, color))))
+    return Promise.resolve(ok(nlestruct('Drawing', rectangle(width, width, mode, color))))
   }
 }
 
@@ -141,7 +141,7 @@ const trianglePrim: Prim = (_env, args, app) => {
   if (mode !== 'solid' && mode !== 'outline') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'triangle', '2', '"solid" or "outline"', mode), app))
   } else {
-    return Promise.resolve(ok(nleobj('Drawing', triangle(length, mode, color))))
+    return Promise.resolve(ok(nlestruct('Drawing', triangle(length, mode, color))))
   }
 }
 
@@ -171,7 +171,7 @@ const pathPrim: Prim = (_env, args, app) => {
       }
     }))
     return Promise.resolve(result.andThen((points: [number, number][]) =>
-      ok(nleobj('Drawing', path(width, height, points, mode, color)))))
+      ok(nlestruct('Drawing', path(width, height, points, mode, color)))))
   }
 }
 
@@ -187,7 +187,7 @@ const beside = (align: string, drawings: Drawing[]): Beside => ({
 const besidePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('beside', [], 'Drawing', args, app)
   if (argErr) { return Promise.resolve(argErr) }
-  return Promise.resolve(ok(nleobj('Drawing', beside('center', args.map(e => (e as EObj).obj as Drawing)))))
+  return Promise.resolve(ok(nlestruct('Drawing', beside('center', args.map(e => (e as EStruct).obj as Drawing)))))
 }
 
 const besideAlignPrim: Prim = (_env, args, app) => {
@@ -197,7 +197,7 @@ const besideAlignPrim: Prim = (_env, args, app) => {
   if (align !== 'top' && align !== 'center' && align !== 'bottom') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'beside-align', '1', '"top", "center", or "bottom"', align), app))
   } else {
-    return Promise.resolve(ok(nleobj('Drawing', beside(align, args.slice(1).map(e => (e as EObj).obj as Drawing)))))
+    return Promise.resolve(ok(nlestruct('Drawing', beside(align, args.slice(1).map(e => (e as EStruct).obj as Drawing)))))
   }
 }
 
@@ -213,7 +213,7 @@ const above = (align: string, drawings: Drawing[]): Above => ({
 const abovePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('above', [], 'Drawing', args, app)
   if (argErr) { return Promise.resolve(argErr) }
-  return Promise.resolve(ok(nleobj('Drawing', above('middle', args.map(e => (e as EObj).obj as Drawing)))))
+  return Promise.resolve(ok(nlestruct('Drawing', above('middle', args.map(e => (e as EStruct).obj as Drawing)))))
 }
 
 const aboveAlignPrim: Prim = (_env, args, app) => {
@@ -223,7 +223,7 @@ const aboveAlignPrim: Prim = (_env, args, app) => {
   if (align !== 'left' && align !== 'middle' && align !== 'right') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'above-align', '1', '"left", "middle", or "right"', align), app))
   } else {
-    return Promise.resolve(ok(nleobj('Drawing', above(align, args.slice(1).map(e => (e as EObj).obj as Drawing)))))
+    return Promise.resolve(ok(nlestruct('Drawing', above(align, args.slice(1).map(e => (e as EStruct).obj as Drawing)))))
   }
 }
 
@@ -240,7 +240,7 @@ const overlay = (xAlign: string, yAlign: string, drawings: Drawing[]): Overlay =
 const overlayPrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('overlay', [], 'Drawing', args, app)
   if (argErr) { return Promise.resolve(argErr) }
-  return Promise.resolve(ok(nleobj('Drawing', overlay('middle', 'center', args.map(e => (e as EObj).obj as Drawing)))))
+  return Promise.resolve(ok(nlestruct('Drawing', overlay('middle', 'center', args.map(e => (e as EStruct).obj as Drawing)))))
 }
 
 const overlayAlignPrim: Prim = async (_env, args, app) => {
@@ -253,7 +253,7 @@ const overlayAlignPrim: Prim = async (_env, args, app) => {
   } else if (yAlign !== 'top' && yAlign !== 'center' && yAlign !== 'bottom') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'overlay-align', '2', '"top", "center", or "bottom"', yAlign), app))
   } else {
-    return Promise.resolve(ok(nleobj('Drawing', overlay(xAlign, yAlign, args.slice(2).map(e => (e as EObj).obj as Drawing)))))
+    return Promise.resolve(ok(nlestruct('Drawing', overlay(xAlign, yAlign, args.slice(2).map(e => (e as EStruct).obj as Drawing)))))
   }
 }
 
@@ -299,7 +299,7 @@ const overlayOffsetPrim: Prim = (_env, args, app) => {
   if (argErr) { return Promise.resolve(argErr) }
   const dx = asNum_(args[1])
   const dy = asNum_(args[2])
-  return Promise.resolve(ok(nleobj('Drawing', overlayOffset(dx, dy, (args[0] as EObj).obj as Drawing, (args[3] as EObj).obj as Drawing))))
+  return Promise.resolve(ok(nlestruct('Drawing', overlayOffset(dx, dy, (args[0] as EStruct).obj as Drawing, (args[3] as EStruct).obj as Drawing))))
 }
 
 type Rotate = { tag: 'rotate', width: number, height: number, angle: number, drawing: Drawing }
@@ -355,7 +355,7 @@ const rotatePrim: Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('rotate', ['number?', 'Drawing'], undefined, args, app)
   if (argErr) { return Promise.resolve(argErr) }
   const angle = asNum_(args[0])
-  return Promise.resolve(ok(nleobj('Drawing', rotate(angle, (args[1] as EObj).obj as Drawing))))
+  return Promise.resolve(ok(nlestruct('Drawing', rotate(angle, (args[1] as EStruct).obj as Drawing))))
 }
 
 type WithDash = { tag: 'withDash', dashSpec: number[], drawing: Drawing, width: number, height: number }
@@ -377,7 +377,7 @@ const withDashPrim: Prim = (_env, args, app) => {
     }
   }
   const dashes = es.map(e => asNum_(e))
-  return Promise.resolve(ok(nleobj('Drawing', withDash(dashes, (args[1] as EObj).obj as Drawing))))
+  return Promise.resolve(ok(nlestruct('Drawing', withDash(dashes, (args[1] as EStruct).obj as Drawing))))
 }
 
 const imageEntry = (prim: Prim, docs?: Doc) => entry(nleprim(prim), 'image', undefined, docs)

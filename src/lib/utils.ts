@@ -29,11 +29,11 @@ function specToPred (spec: ArgSpec): (arg: L.Exp) => boolean {
       return L.isList
     case 'prim?':
       return L.isPrim
-    case 'obj?':
-      return L.isObj
+    case 'struct?':
+      return L.isStruct
     default:
       if (spec.length > 0 && /[A-Z]/.test(spec[0])) {
-        return (e) => L.isObjKind(e, spec)
+        return (e) => L.isStructKind(e, spec)
       } else {
         throw new ICE(
           'argSpecToPred',

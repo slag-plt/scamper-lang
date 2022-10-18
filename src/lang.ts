@@ -144,8 +144,7 @@ type Exp
 
   // Non-standard forms
   | EMatch // A pattern match expression
-  | EStruct // An object created from a struct constructor
-  | EObj // A wrapped, tagged Javascript object
+  | EStruct // A tagged Jvascript value
   | EPrim // A primitive function value
 
 type EVar = { tag: 'var', range: Range, value: string, isValue: boolean, isList: boolean }
@@ -215,9 +214,6 @@ const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 type EStruct = { tag: 'struct', range: Range, kind: string, obj: object, isValue: boolean, isList: boolean }
 const nlestruct = (kind: string, obj: object): EStruct => ({ tag: 'struct', range: noRange(), kind, obj, isValue: true, isList: false })
 
-type EObj = { tag: 'obj', range: Range, kind: string, obj: object, isValue: boolean, isList: boolean }
-const nleobj = (kind: string, obj: object): EObj => ({ tag: 'obj', range: noRange(), kind, obj, isValue: true, isList: false })
-
 type EPrim = { tag: 'prim', range: Range, prim: Prim, isValue: boolean, isList: boolean }
 const nleprim = (prim: Prim): EPrim => ({ tag: 'prim', range: noRange(), prim, isValue: true, isList: false })
 
@@ -276,8 +272,7 @@ function expToString (e:Exp): string {
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
-    case 'struct': return `[struct ${(e.obj as any).kind}]`
-    case 'obj': return `[object ${e.kind}]`
+    case 'struct': return `[object ${(e.obj as any).kind}]`
     case 'prim': return `[prim ${e.prim.name}]`
     case 'match':
       return parens(['match', expToString(e.scrutinee)].concat(e.branches.map(b => parens([patToString(b[0]), expToString(b[1])]))))
@@ -350,14 +345,6 @@ function isStructKind (e: Exp, kind: string): boolean {
   return e.tag === 'struct' && e.kind === `${kind}`
 }
 
-function isObj (e: Exp): boolean {
-  return e.tag === 'obj'
-}
-
-function isObjKind (e: Exp, kind: string): boolean {
-  return e.tag === 'obj' && e.kind === kind
-}
-
 function isProcedure (e: Exp): boolean {
   return isLambda(e) || isPrim(e)
 }
@@ -386,16 +373,12 @@ function asPair_ (e: Exp): [Exp, Exp] {
   return [(e as EPair).e1, (e as EPair).e2]
 }
 
-function asObj_ (e: Exp): object {
-  return (e as EObj).obj
-}
-
-function fromObj_ <T> (e: Exp): T {
-  return ((e as EObj).obj as unknown) as T
-}
-
 function asStruct_ (e: Exp): object {
   return (e as EStruct).obj
+}
+
+function fromStruct_ <T> (e: Exp): T {
+  return ((e as EStruct).obj as unknown) as T
 }
 
 function nameEquals (n1: Name, n2: Name): boolean {
@@ -590,14 +573,14 @@ function indexOfCurrentStmt (prog: Program): number {
 export {
   Prim, Name, name, nlname,
   Lit, LBool, LNum, LChar, LStr,
-  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, LetKind, ELet, ECond, EAnd, EOr, EStruct, EObj,
+  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, LetKind, ELet, ECond, EAnd, EOr, EStruct,
   lbool, lnum, lchar, lstr, ebool, enumber, echar, estr,
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor, ematch,
   nlebool, nlenumber, nlechar, nlestr,
-  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nlestruct, nleobj, nleprim,
+  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nlestruct, nleprim,
   litToString, arrayToList, unsafeListToArray, expToString, litEquals, expEquals,
-  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isObj, isStruct, isStructKind, isObjKind, isProcedure,
-  asNum_, asBool_, asChar_, asString_, asList_, asPair_, asStruct_, asObj_, fromObj_,
+  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isStruct, isStructKind, isProcedure,
+  asNum_, asBool_, asChar_, asString_, asList_, asPair_, asStruct_, fromStruct_,
   Pat, PVar, PWild, PNull, PLit, PCtor, pvar, pwild, pnull, plit, pctor, fvarsOfPat,
   Stmt, serror, sbinding, svalue, simported, sdefine, stestresult, sstruct, stestcase, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString

@@ -62,8 +62,6 @@ function substitute (e1: Exp, x: string, e2: Exp): Exp {
       return eor(e2.range, e2.args.map(e => substitute(e1, x, e)))
     case 'struct':
       return e2
-    case 'obj':
-      return e2
     case 'prim':
       return e2
     case 'match':
@@ -374,8 +372,6 @@ async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
         }
       }
     case 'struct':
-      return ok(e)
-    case 'obj':
       return ok(e)
     case 'prim':
       return ok(e)

@@ -85,8 +85,6 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
     // encounter these cases with our scope-checker.
     case 'struct':
       return []
-    case 'obj':
-      return []
     case 'prim':
       return []
     case 'match': {
