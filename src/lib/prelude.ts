@@ -24,8 +24,6 @@ function asNumbers (args: L.Exp[]): Result<number[]> {
   return ok(result)
 }
 
-const preludeEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'prelude', undefined, docs)
-
 // Equivalence predicates (6.1)
 
 // N.B., don't need these functions:
@@ -187,11 +185,12 @@ const exptPrim: L.Prim = async (_env, args, app) => numericBOp('expt', (x, y) =>
 //   (angle z)                  ...probably not!
 // Because we don't implement complex numbers.
 
-const numberStringPrim: L.Prim = async (_env, args, app) => {
+const numberStringPrim: L.Prim = (_env, args, app) => {
   // N.B., we don't support (number->string z radix)---no need at this opint.
-  const argErr = Utils.checkArgsResult('number->string', ['number?'], undefined, args, app)
+  const argErr: Result<L.Exp> = Utils.checkArgsResult('number->string', ['number?'], undefined, args, app)
+  if (argErr) { return Promise.resolve(argErr) }
   const e = args[0]
-  return ok(L.nlestr(L.asNum_(e).toString()))
+  return Promise.resolve(ok(L.nlestr(L.asNum_(e).toString())))
 }
 
 // TODO: implement:
@@ -421,13 +420,14 @@ function appendOne_ (l1: L.Exp, l2: L.Exp): L.Exp {
   }
 }
 
-const appendPrim: L.Prim = async function (_env, args, app) {
+const appendPrim: L.Prim = function (_env, args, app) {
   const argErr = Utils.checkArgs('append', ['list?'], 'list?', args, app)
+  if (argErr) { return Promise.resolve(argErr) }
   let ret = args[0]
   for (let i = 1; i < args.length; i++) {
     ret = appendOne_(ret, args[i])
   }
-  return ok(ret)
+  return Promise.resolve(ok(ret))
 }
 
 const reversePrim: L.Prim = async function (_env, args, app) {
@@ -925,7 +925,7 @@ const reducePrim: L.Prim = async (env, args, app) =>
       return runtimeError(msg('error-precondition-not-met', 'reduce', '2', 'list is non-empty', L.expToString(args[1])), app)
     } else {
       return evaluateExp(env,
-        L.nlecall(L.nlevar('fold'), [args[0], list[0], L.arrayToList(list.slice(1))]))
+        L.nlecall(L.nlevar('fold'), [fn, list[0], L.arrayToList(list.slice(1))]))
     }
   })
 
@@ -956,7 +956,7 @@ const reduceRightPrim: L.Prim = async (env, args, app) =>
       return runtimeError(msg('error-precondition-not-met', 'reduce-right', '2', 'list is non-empty', L.expToString(args[1])), app)
     } else {
       return evaluateExp(env,
-        L.nlecall(L.nlevar('fold-right'), [args[0], list[list.length - 1], L.arrayToList(list.slice(0, list.length - 1))]))
+        L.nlecall(L.nlevar('fold-right'), [fn, list[list.length - 1], L.arrayToList(list.slice(0, list.length - 1))]))
     }
   })
 
@@ -1002,16 +1002,16 @@ const pipePrim: L.Prim = async (env, args, app) =>
 
 const rangePrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('range', [], 'integer?', args, app).andThen(_ => {
-    if (args.length == 0 || args.length > 3) {
+    if (args.length === 0 || args.length > 3) {
       return runtimeError(msg('error-arity', 'range', '1--3', args.length), app)
     } else {
-      const m = args.length == 1 ? 0 : L.asNum_(args[0])
-      const n = args.length == 1 ? L.asNum_(args[0]) : L.asNum_(args[1])
+      const m = args.length === 1 ? 0 : L.asNum_(args[0])
+      const n = args.length === 1 ? L.asNum_(args[0]) : L.asNum_(args[1])
       const step = args.length < 3 ? 1 : L.asNum_(args[2])
       const arr = []
       // N.B., to prevent the internal infinite loop that would result
       // from having a zero step.
-      if (step == 0) {
+      if (step === 0) {
         return runtimeError(msg('error-precondition-not-met', 'range', '3', 'non-zero', step), app)
       }
       for (let i = m; step > 0 ? i < n : i > n; i += step) {

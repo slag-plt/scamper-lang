@@ -183,7 +183,7 @@ export const modulo: Doc = new Doc(
     'v1: number?',
     'v2: number?'
   ],
-  'Returns \`k = n - d * q\` where `q` is the integer such that `k` has the same sign as the divisor `d` while being as close to 0 as possible. (Source: [MDN docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Remainder).)'
+  'Returns `k = n - d * q` where `q` is the integer such that `k` has the same sign as the divisor `d` while being as close to 0 as possible. (Source: [MDN docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Remainder).)'
 )
 
 export const floor: Doc = new Doc(

@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 import * as L from '../lang.js'
 import { msg } from '../messages.js'
 import { ok } from '../result.js'
@@ -67,72 +68,72 @@ const percussion = (): Percussion => ({ tag: 'percussion' })
 
 type PitchBend = { tag: 'pitchBend', amount: number }
 const pitchBend = (amount: number): PitchBend => ({ tag: 'pitchBend', amount })
-const pitchBendPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('bend', ['number?'], undefined, args, app).andThen(_ => {
+const pitchBendPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('bend', ['number?'], undefined, args, app).andThen(_ => {
     const amount = L.asNum_(args[0])
     if (amount < -1 || amount > 1) {
       return runtimeError(msg('error-precondition-not-met', 'bend', 1, '-1 <= amount <= 1', Pretty.expToString(0, args[0])), app)
     } else {
       return ok(L.nleobj('Mod', pitchBend(amount)))
     }
-  })
+  }))
 
 type Tempo = { tag: 'tempo', beat: Duration, bpm: number }
 const tempo = (beat: Duration, bpm: number): Tempo => ({ tag: 'tempo', beat, bpm })
-const tempoPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('tempo', ['Duration', 'number?'], undefined, args, app).andThen(_ => {
+const tempoPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('tempo', ['Duration', 'number?'], undefined, args, app).andThen(_ => {
     const beat = L.fromObj_<Duration>(args[0])
     const value = L.asNum_(args[1])
     return value < 0
       ? runtimeError(msg('error-precondition-not-met', 'tempo', 1, 'tempo >= 0', Pretty.expToString(0, args[1])), app)
       : ok(L.nleobj('Mod', tempo(beat, value)))
-  })
+  }))
 
 type Dynamics = { tag: 'dynamics', amount: number }
 const dynamics = (amount: number): Dynamics => ({ tag: 'dynamics', amount })
-const dynamicsPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('dynamics', ['number?'], undefined, args, app).andThen(_ => {
+const dynamicsPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('dynamics', ['number?'], undefined, args, app).andThen(_ => {
     const amount = L.asNum_(args[0])
     if (amount < 0 || amount > 127) {
       return runtimeError(msg('error-precondition-not-met', 'dynamics', 1, '0 <= amount <= 127', Pretty.expToString(0, args[0])), app)
     } else {
       return ok(L.nleobj('Mod', dynamics(amount)))
     }
-  })
+  }))
 
 export type Mod = { tag: 'mod', note: Composition, mod: ModKind }
 export const mod = (mod: ModKind, note: Composition): Mod => ({ tag: 'mod', note, mod })
-export const modPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('mod', ['Mod', 'Composition'], undefined, args, app)
+export const modPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('mod', ['Mod', 'Composition'], undefined, args, app)
     .andThen(_ => ok(L.nleobj(
       'Composition',
       mod(
         L.fromObj_<ModKind>(args[0]),
-        L.fromObj_<Composition>(args[1])))))
+        L.fromObj_<Composition>(args[1]))))))
 
 export type Composition = Empty | Note | Rest | Par | Seq | Pickup | Mod
 
-const pitchQPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>
-    ok(L.nlebool(L.isString(args[0]) && isPitchClass(L.asString_(args[0])))))
+const pitchQPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>
+    ok(L.nlebool(L.isString(args[0]) && isPitchClass(L.asString_(args[0]))))))
 
-const octavePrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('octave?', ['any'], undefined, args, app).andThen(_ =>
-    ok(L.nlebool(L.isInteger(args[0]) && isOctave(L.asNum_(args[0])))))
+const octavePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('octave?', ['any'], undefined, args, app).andThen(_ =>
+    ok(L.nlebool(L.isInteger(args[0]) && isOctave(L.asNum_(args[0]))))))
 
-const durQPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('dur?', ['any'], undefined, args, app).andThen(_ =>
-    ok(L.nlebool(args[0].tag == 'obj' && args[0].kind == 'dur')))
+const durQPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('dur?', ['any'], undefined, args, app).andThen(_ =>
+    ok(L.nlebool(args[0].tag === 'obj' && args[0].kind === 'dur'))))
 
-const durPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('dur', ['number?', 'number?'], undefined, args, app).andThen(_ =>
+const durPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('dur', ['number?', 'number?'], undefined, args, app).andThen(_ =>
     ok(L.nleobj('Duration', {
       num: L.asNum_(args[0]),
       den: L.asNum_(args[1])
-    })))
+    }))))
 
-const notePrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('note', ['integer?', 'Duration'], undefined, args, app).andThen(_ => {
+const notePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('note', ['integer?', 'Duration'], undefined, args, app).andThen(_ => {
     const midiNote = L.asNum_(args[0])
     const dur = L.fromObj_<Duration>(args[1])
     if (!isValidMidiNote(midiNote)) {
@@ -141,34 +142,34 @@ const notePrim: L.Prim = async (_env, args, app) =>
     } else {
       return ok(L.nleobj('Composition', note(midiNote, dur)))
     }
-  })
+  }))
 
-const restPrim: L.Prim = async (_env, args, app) => {
+const restPrim: L.Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('rest', ['Duration'], undefined, args, app)
-  if (argErr) { return argErr }
+  if (argErr) { return Promise.resolve(argErr) }
   const dur = L.fromObj_<Duration>(args[0])
-  return ok(L.nleobj('Composition', rest(dur)))
+  return Promise.resolve(ok(L.nleobj('Composition', rest(dur))))
 }
 
-const parPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('par', [], 'Composition', args, app).andThen(_ =>
-    ok(L.nleobj('Composition', par(args.map(e => L.fromObj_<Composition>(e))))))
+const parPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('par', [], 'Composition', args, app).andThen(_ =>
+    ok(L.nleobj('Composition', par(args.map(e => L.fromObj_<Composition>(e)))))))
 
-const seqPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('seq', [], 'Composition', args, app).andThen(_ =>
-    ok(L.nleobj('Composition', seq(args.map(e => L.fromObj_<Composition>(e))))))
+const seqPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('seq', [], 'Composition', args, app).andThen(_ =>
+    ok(L.nleobj('Composition', seq(args.map(e => L.fromObj_<Composition>(e)))))))
 
-const pickupPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('pickup', ['Composition', 'Composition'], undefined, args, app).andThen(_ =>
-    ok(L.nleobj('Composition', pickup(L.fromObj_<Composition>(args[0]), L.fromObj_<Composition>(args[1])))))
+const pickupPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('pickup', ['Composition', 'Composition'], undefined, args, app).andThen(_ =>
+    ok(L.nleobj('Composition', pickup(L.fromObj_<Composition>(args[0]), L.fromObj_<Composition>(args[1]))))))
 
-const numeratorPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('numerator', ['Duration'], undefined, args, app).andThen(_ =>
-    ok(L.nlenumber(L.fromObj_<Duration>(args[0]).num)))
+const numeratorPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('numerator', ['Duration'], undefined, args, app).andThen(_ =>
+    ok(L.nlenumber(L.fromObj_<Duration>(args[0]).num))))
 
-const denominatorPrim: L.Prim = async (_env, args, app) =>
-  Utils.checkArgsResult('denominator', ['Duration'], undefined, args, app).andThen(_ =>
-    ok(L.nlenumber(L.fromObj_<Duration>(args[0]).den)))
+const denominatorPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('denominator', ['Duration'], undefined, args, app).andThen(_ =>
+    ok(L.nlenumber(L.fromObj_<Duration>(args[0]).den))))
 
 const musicEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.nleprim(prim), 'music', undefined, docs)
 
