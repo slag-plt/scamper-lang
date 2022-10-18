@@ -185,12 +185,12 @@ const exptPrim: L.Prim = async (_env, args, app) => numericBOp('expt', (x, y) =>
 //   (angle z)                  ...probably not!
 // Because we don't implement complex numbers.
 
-const numberStringPrim: L.Prim = (_env, args, app) => {
+const numberStringPrim: L.Prim = async (_env, args, app) => {
   // N.B., we don't support (number->string z radix)---no need at this opint.
-  const argErr: Result<L.Exp> = Utils.checkArgsResult('number->string', ['number?'], undefined, args, app)
-  if (argErr) { return Promise.resolve(argErr) }
+  const argErr = Utils.checkArgs('number->string', ['number?'], undefined, args, app)
+  if (argErr) { return argErr }
   const e = args[0]
-  return Promise.resolve(ok(L.nlestr(L.asNum_(e).toString())))
+  return ok(L.nlestr(L.asNum_(e).toString()))
 }
 
 // TODO: implement:

@@ -73,7 +73,7 @@ export function checkArgs (func: string, specs: ArgSpec[], restSpec: ArgSpec | u
   return undefined
 }
 
-export function checkArgsResult <T> (func: string, specs: ArgSpec[], restSpec: ArgSpec | undefined, args: L.Exp[], call: L.Exp): Result<T> {
+export function checkArgsResult (func: string, specs: ArgSpec[], restSpec: ArgSpec | undefined, args: L.Exp[], call: L.Exp): Result<null> {
   const err = checkArgs(func, specs, restSpec, args, call)
-  return err || ok(null as any)
+  return err || ok(null)
 }
