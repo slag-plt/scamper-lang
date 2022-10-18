@@ -1,6 +1,4 @@
-import { evaluateExp, preludeEnv, stepExp, stepStmt } from './runtime.js'
-import { Env, Exp, isStmtDone, Program, indexOfCurrentStmt, serror } from './lang.js'
-import { progToString } from './pretty.js'
+import { Env, Exp, Program } from './lang.js'
 import { parseExp, parseProgram } from './parser.js'
 import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'

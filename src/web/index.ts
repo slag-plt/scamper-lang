@@ -110,27 +110,27 @@ function replaceExplorationWidgets (): void {
         (e as HTMLButtonElement).onclick = () => { trace.stepBackward(); update() }
       })
       forEachByClass(element, 'stmt-forward', e => {
-        (e as HTMLButtonElement).onclick = () => { trace.evalNextStmt(); update() }
+        (e as HTMLButtonElement).onclick = async () => { await trace.evalNextStmt(); update() }
       })
       forEachByClass(element, 'stmt-backward', e => {
         (e as HTMLButtonElement).onclick = () => { trace.revertPrevStmt(); update() }
       })
       forEachByClass(element, 'eval', e => {
-        (e as HTMLButtonElement).onclick = () => { trace.evaluateProg(); update() }
+        (e as HTMLButtonElement).onclick = async () => { await trace.evaluateProg(); update() }
       })
       forEachByClass(element, 'reset', e => {
         (e as HTMLButtonElement).onclick = () => { trace.resetProg(); update() }
       })
       forEachByClass(element, 'add-statement', e => {
-        (e as HTMLButtonElement).onclick = () => {
+        (e as HTMLButtonElement).onclick = async () => {
           // N.B., should really be an id, but the need to give the input a globally
           // unique id!
           const inputs = document.getElementsByClassName('add-statement-input')
           if (inputs.length > 0) {
             const input = inputs[0] as HTMLInputElement
             if (input.value.length > 0) {
-              trace.addStmt(input.value)
-              trace.evaluateProg()
+              await trace.addStmt(input.value)
+              await trace.evaluateProg()
               input.value = ''
               update()
             }

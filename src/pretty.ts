@@ -31,7 +31,6 @@ function isSimpleExp (e: L.Exp): boolean {
     case 'and': return true
     case 'or': return true
     case 'struct': return true
-    case 'obj': return true
     case 'prim': return true
     case 'match': return false
   }
@@ -51,7 +50,6 @@ function nestingDepth (e: L.Exp): number {
     case 'and': return 0 // TODO
     case 'or': return 0 // TODO
     case 'struct': return 0
-    case 'obj': return 0
     case 'prim': return 0
     case 'match': return 0 // TODO
   }
@@ -124,7 +122,7 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
       const preamble = `${e.kind} `
       // N.B., this bracket is difficult to factor out using paren...
       const firstBinding = `${indent(col + 2, `([${e.bindings[0][0].value} ${expToString(col + 2 + e.bindings[0][0].value.length + 1, e.bindings[0][1], htmlOutput)}]`)}`
-      const bindings = e.bindings.length == 1
+      const bindings = e.bindings.length === 1
         ? firstBinding + ')'
         : [firstBinding, ...e.bindings.slice(1).map(b => `${indent(col + 2 + 1, `[${b[0].value} ${expToString(col + 2 + 1 + b[0].value.length + 1, b[1], htmlOutput)}]`)}`)].join('\n') + ')'
       const body = `${indent(col + 2, `${expToString(col + 2, e.body, htmlOutput)}`)}`
@@ -140,14 +138,17 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
     case 'or':
       return parens(e.bracket, ['or', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
     case 'struct':
-      return parens('(', [`struct ${e.kind}`, ...Object.keys(e.obj).map(k => expToString(col, (e.obj as any)[k], htmlOutput))])
-    case 'obj':
-      if (htmlOutput && e.kind === 'Drawing') {
-        return `</code><span class="drawing">${JSON.stringify(e.obj)}</span><code>`
-      } else if (htmlOutput && e.kind === 'Composition') {
-        return `</code><span class="composition">${JSON.stringify(e.obj)}</span><code>`
+      if (e.kind === 'Drawing') {
+        return htmlOutput
+          ? `</code><span class="drawing">${JSON.stringify(e.obj)}</span><code>`
+          : '[object Drawing]'
+      } else if (e.kind === 'Composition') {
+        return htmlOutput
+          ? `</code><span class="composition">${JSON.stringify(e.obj)}</span><code>`
+          : '[object Composition]'
       } else {
-        return `[object ${e.kind}]`
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        return parens('(', [`struct ${e.kind}`, ...Object.keys(e.obj).map(k => expToString(col, (e.obj as any)[k], htmlOutput))])
       }
     case 'prim':
       return `[prim ${e.prim.name}]`

@@ -1,4 +1,7 @@
-import { mod } from '../lib/docs.js'
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as Music from '../lib/music.js'
 import { ICE } from '../result.js'
 import * as JZZ from './jzz/jzz-combined.cjs'
@@ -8,13 +11,13 @@ type Composition = Music.Composition
 type MIDI = any // TODO: ugh, how do I specify this type!?
 type Synth = any // TODO: ...this one, too!
 
-type Msg = MidiMsg
-
 type MidiMsg = {
   tag: 'midi',
   time: number,
   data: MIDI,
 }
+
+type Msg = MidiMsg
 
 const midiMsg = (time: number, data: MIDI): Msg =>
   ({ tag: 'midi', time, data })
@@ -27,20 +30,13 @@ function durationToTimeMs (beat: Duration, bpm: number, dur: Duration) {
   return ratioToDouble(dur) / (ratioToDouble(beat) * bpm) * 60 * 1000
 }
 
-function setPrograms (synth: Synth, programMap: number[]) {
-  console.log(`setPrograms: ${programMap}`)
-  for (let i = 0; i < programMap.length; i++) {
-    synth.setSynth(i, synth.getSynth(programMap[i]))
-  }
-}
-
 function compositionToMsgs (
   beat: Duration, bpm: number, velocity: number, startTime: number,
   program: number, composition: Composition): { endTime: number, msgs: Msg[] } {
   switch (composition.tag) {
     case 'empty':
       return { endTime: startTime, msgs: [] }
-    case 'note':
+    case 'note': {
       const endTime = startTime + durationToTimeMs(beat, bpm, composition.duration)
       return {
         endTime,
@@ -55,7 +51,7 @@ function compositionToMsgs (
           )
         ]
       }
-
+    }
     case 'rest':
       return {
         endTime: startTime + durationToTimeMs(beat, bpm, composition.duration),
@@ -155,7 +151,7 @@ function playback (synth: Synth, composition: Composition): number {
 }
 
 export function emitCompositionWidget (synth: any, node: Element) {
-  const composition = JSON.parse(node.textContent!)
+  const composition = JSON.parse(node.textContent!) as Composition
   node.textContent = '' // N.B., clear the contents of the node for the buttons
   const playButton = document.createElement('button')
   playButton.textContent = '▶'
