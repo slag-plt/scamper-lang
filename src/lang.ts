@@ -1,3 +1,5 @@
+/* eslint-disable no-use-before-define */
+
 import { Range, noRange } from './loc.js'
 import { ErrorDetails, Result } from './result.js'
 
@@ -13,8 +15,6 @@ const nlname = (value: string): Name => name(value, noRange())
 
 // #region Expression forms
 
-/* eslint-disable no-use-before-define */
-
 /**
  * A `Doc` is a convenience class for constructing docstrings for library
  * primitives.
@@ -26,6 +26,7 @@ export class Doc {
    * @param args An array of docstrings for each of the function's arguments.
    * @param desc A prose description of the behavior of the function.
    */
+  // eslint-disable-next-line no-useless-constructor
   constructor (public sig: string, public args: string[], public desc: string) { }
 
   /**
@@ -146,8 +147,6 @@ type Exp
   | EStruct // An object created from a struct constructor
   | EObj // A wrapped, tagged Javascript object
   | EPrim // A primitive function value
-
-/* eslint-enable */
 
 type EVar = { tag: 'var', range: Range, value: string, isValue: boolean, isList: boolean }
 const evar = (range: Range, value: string): EVar => ({ tag: 'var', range, value, isValue: true, isList: false })
@@ -272,10 +271,11 @@ function expToString (e:Exp): string {
       return isList(e)
         ? parens(['list'].concat(unsafeListToArray(e).map(expToString)))
         : parens(['cons', expToString(e.e1), expToString(e.e2)])
-    case 'let': return parens(['let', parens(e.bindings.map(([x, e]) => `(${x} ${expToString(e)})`)), expToString(e.body)])
+    case 'let': return parens(['let', parens(e.bindings.map(([x, e]) => `(${x.value} ${expToString(e)})`)), expToString(e.body)])
     case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
     case 'struct': return `[struct ${(e.obj as any).kind}]`
     case 'obj': return `[object ${e.kind}]`
     case 'prim': return `[prim ${e.prim.name}]`
@@ -452,9 +452,7 @@ function expEquals (e1: Exp, e2: Exp): boolean {
 
 // #region Patterns
 
-/* eslint-disable no-use-before-define */
 type Pat = PVar | PWild | PNull | PLit | PCtor
-/* eslint-enable */
 
 type PVar = { tag: 'var', id: string, range: Range }
 const pvar = (range: Range, id: string): PVar => ({ tag: 'var', id, range })
@@ -490,9 +488,7 @@ function fvarsOfPat (p: Pat): string[] {
 
 // #region Statement and program forms
 
-/* eslint-disable no-use-before-define */
 type SEffect = SImported | SError | SBinding | STestResult | SValue
-/* eslint-enable */
 
 type SImported = { tag: 'imported', source: string }
 const simported = (source: string): SImported => ({ tag: 'imported', source })
@@ -517,9 +513,7 @@ const stestresult = (desc: string, passed: boolean, reason?: string, expected?: 
 type SValue = { tag: 'value', value: Exp }
 const svalue = (value: Exp): SValue => ({ tag: 'value', value })
 
-/* eslint-disable no-use-before-define */
 type Stmt = SImport | SDefine | SExp | SStruct | STestCase | SEffect
-/* eslint-enable */
 
 type SImport = { tag: 'import', range: Range, source: string }
 const simport = (range: Range, source: string): SImport => ({ tag: 'import', range, source })

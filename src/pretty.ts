@@ -124,7 +124,7 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
       const preamble = `${e.kind} `
       // N.B., this bracket is difficult to factor out using paren...
       const firstBinding = `${indent(col + 2, `([${e.bindings[0][0].value} ${expToString(col + 2 + e.bindings[0][0].value.length + 1, e.bindings[0][1], htmlOutput)}]`)}`
-      const bindings = e.bindings.length == 1
+      const bindings = e.bindings.length === 1
         ? firstBinding + ')'
         : [firstBinding, ...e.bindings.slice(1).map(b => `${indent(col + 2 + 1, `[${b[0].value} ${expToString(col + 2 + 1 + b[0].value.length + 1, b[1], htmlOutput)}]`)}`)].join('\n') + ')'
       const body = `${indent(col + 2, `${expToString(col + 2, e.body, htmlOutput)}`)}`
@@ -140,6 +140,7 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
     case 'or':
       return parens(e.bracket, ['or', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
     case 'struct':
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       return parens('(', [`struct ${e.kind}`, ...Object.keys(e.obj).map(k => expToString(col, (e.obj as any)[k], htmlOutput))])
     case 'obj':
       if (htmlOutput && e.kind === 'Drawing') {

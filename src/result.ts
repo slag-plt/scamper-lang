@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 import { Range } from './loc.js'
 
 // TODO: at some point, plumb filenames throughout the entire system so we can report them!
@@ -65,7 +66,7 @@ type Ok<T> = {
 type Result<T> = Error<T> | Ok<T>
 
 function errors <T> (errs: ErrorDetails[]): Error<T> {
-  return { tag: 'error', details: errs, andThen: f => errors(errs), asyncAndThen: async f => errors(errs) }
+  return { tag: 'error', details: errs, andThen: f => errors(errs), asyncAndThen: f => Promise.resolve(errors(errs)) }
 }
 
 function error <T> (phase: string, message: string, range?: Range, src?: string, hint?: string): Error<T> {

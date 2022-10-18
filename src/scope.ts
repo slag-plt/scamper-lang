@@ -14,15 +14,6 @@ function undefinedVariableError (x: string, range: Range): ErrorDetails {
   )
 }
 
-function shadowedVariableError (x: string, range: Range): ErrorDetails {
-  return errorDetails(
-    msg('phase-scope'),
-    msg('error-var-shadowed', x),
-    range,
-    x
-  )
-}
-
 function repeatedVariableError (e: Exp, x: string, range: Range): ErrorDetails {
   return errorDetails(
     msg('phase-scope'),

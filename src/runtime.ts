@@ -1,12 +1,11 @@
 import {
-  asObj_, entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, isObjKind, EnvEntry, nlestruct, asStruct_, isStructKind
+  entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, EnvEntry, nlestruct, asStruct_, isStructKind
   , LetKind,
   nlecall,
   isString,
   isBoolean,
   asBool_,
   asString_,
-  stestcase,
   stestresult,
   ematch,
   Pat,
@@ -17,7 +16,6 @@ import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
 import { imageLib } from './lib/image.js'
 import { musicLib } from './lib/music.js'
-import path from 'path'
 
 function runtimeError <T> (message: string, s?: Exp, hint?: string): Result<T> {
   return s
@@ -86,7 +84,7 @@ function inBindings (x: string, bindings: [Name, Exp][]): boolean {
 }
 
 function substituteInBindings (e1: Exp, x: string, bindings: [Name, Exp][], kind: LetKind): [Name, Exp][] {
-  const result = new Array(bindings.length)
+  const result = new Array<[Name, Exp]>(bindings.length)
   let seenVar = false
   for (let i = 0; i < bindings.length; i++) {
     const [y, body] = bindings[i]
@@ -160,7 +158,7 @@ function tryMatch (e: Exp, p: Pat): Env | undefined {
     const head = p.head
     const args = p.args
     // Special cases: pairs are matched with either pair or cons
-    if ((head === 'pair' || head === 'cons') && args.length == 2 && e.tag == 'pair') {
+    if ((head === 'pair' || head === 'cons') && args.length === 2 && e.tag === 'pair') {
       const env1 = tryMatch(e.e1, args[0])
       const env2 = tryMatch(e.e2, args[1])
       return env1 && env2 ? env1.concat(env2) : undefined
@@ -174,6 +172,7 @@ function tryMatch (e: Exp, p: Pat): Env | undefined {
       if (fields.length === args.length) {
         let env = new Env([])
         for (let i = 0; i < fields.length; i++) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           const env2 = tryMatch((e.obj as any)[fields[i]] as Exp, args[i])
           if (!env2) {
             return undefined
@@ -382,7 +381,7 @@ async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
       return ok(e)
     case 'match':
       if (!isValue(e.scrutinee)) {
-        return (await stepExp(env, e.scrutinee)).asyncAndThen(async scrutinee => ok(ematch(e.range, scrutinee, e.branches, e.bracket)))
+        return (await stepExp(env, e.scrutinee)).asyncAndThen(scrutinee => Promise.resolve(ok(ematch(e.range, scrutinee, e.branches, e.bracket))))
       } else {
         const branches = e.branches
         if (branches.length === 0) {
@@ -451,38 +450,41 @@ async function stepStmt (env: Env, s: Stmt): Promise<[Env, Stmt]> {
       const name = s.id.value
       const predName = `${name}?`
       // primitive for type-testing predicate: id?
-      const predPrim: Prim = async (env, args, app) =>
-        args.length !== 1
+      const predPrim: Prim = (env, args, app) =>
+        Promise.resolve(args.length !== 1
           ? runtimeError(msg('error-arity', predName, 1, args.length), app)
-          : ok(nlebool(isStructKind(args[0], name)))
+          : ok(nlebool(isStructKind(args[0], name))))
       // field-accessing primitives: id-field?
       const fieldPrims: [string, EnvEntry][] = s.fields.map(f => {
         const fieldName = `${name}-${f.value}`
         return [fieldName, entry(
-          nleprim(async (env, args, app) =>
-            args.length !== 1
+          nleprim((env, args, app) =>
+            Promise.resolve(args.length !== 1
               ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
               : !isStructKind(args[0], name)
                   ? runtimeError(msg('error-type-expected-fun', 1, fieldName, `struct ${name}`, args[0].tag))
-                  : ok((asStruct_(args[0]) as any)[f.value] as Exp)),
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                  : ok((asStruct_(args[0]) as any)[f.value] as Exp))),
           `struct ${name}`,
           f.range
         )]
       })
       // constructor primitive: id
-      const ctorPrim: Prim = async (env, args, app) => {
+      const ctorPrim: Prim = (env, args, app) => {
         if (args.length !== s.fields.length) {
-          return runtimeError(msg('error-arity', name, s.fields.length, args.length), app)
+          return Promise.resolve(runtimeError(msg('error-arity', name, s.fields.length, args.length), app))
         } else {
           const obj: any = { }
-          s.fields.forEach((f, i) => obj[f.value] = args[i])
-          return ok(nlestruct(name, obj))
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          s.fields.forEach((f, i) => { obj[f.value] = args[i] })
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          return Promise.resolve(ok(nlestruct(name, obj)))
         }
       }
       return [
         env.concat(new Env([
-          [name, entry(nleprim(ctorPrim), 'struct ${name}', s.id.range)],
-          [predName, entry(nleprim(predPrim), 'struct ${name}', s.id.range)],
+          [name, entry(nleprim(ctorPrim), `struct ${name}`, s.id.range)],
+          [predName, entry(nleprim(predPrim), `struct ${name}`, s.id.range)],
           ...fieldPrims
         ])),
         sbinding(`struct ${name}`)

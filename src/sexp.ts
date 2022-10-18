@@ -393,6 +393,7 @@ function tokenize (src: string): Result<Token[]> {
       if (st.isTracking()) {
         result.push(st.emitToken())
       }
+      // eslint-disable-next-line no-unused-vars
       const _comment = tokenizeLineComment(src, st)
       // N.B., ignore the comment for now!
       // result.push(comment)
@@ -433,30 +434,6 @@ function tokenize (src: string): Result<Token[]> {
   return ok(result)
 }
 
-function consumeCommentTokens (toks: Token[]): Token[] {
-  const result: Token[] = new Array()
-  while (toks.length > 0) {
-    if (toks[0].value.startsWith(';')) {
-      result.push(toks.shift()!)
-    } else if (toks[0].value.startsWith('#|') && toks[0].value.endsWith('|#')) {
-      result.push(toks.shift()!)
-    } else {
-      return toks
-    }
-  }
-  return toks
-}
-
-function coalseCommentTokens (toks: Token[]): Token {
-  const value = toks.map(t => t.value.slice(1)).join(' ')
-  const range = mkRange(
-    mkLoc(toks[0].range.start.line, toks[0].range.start.column),
-    mkLoc(toks[toks.length - 1].range.start.line, toks[toks.length - 1].range.start.column)
-  )
-  return { value, range }
-}
-
-//
 function tokensToSListArgs (endBracket: string, toks: Token[]): Result<Sexp[]> {
   if (toks.length === 0) {
     return lexerError(msg('error-eof'))
