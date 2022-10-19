@@ -1,7 +1,7 @@
 import * as L from './lang.js'
 import { msg } from './messages.js'
 import { runtimeError } from './runtime.js'
-import { Result, join, ok } from './result.js'
+import { Result, ok } from './result.js'
 
 type Env = Map<string, L.Exp>
 
@@ -34,8 +34,6 @@ export function evalExp (env: Env, e: L.Exp): Promise<Result<L.Exp>> {
     case 'match':
       throw new Error('unimplemented!')
     case 'struct':
-      return Promise.resolve(ok(e))
-    case 'obj':
       return Promise.resolve(ok(e))
     case 'prim':
       return Promise.resolve(ok(e))

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable no-use-before-define */
 
 import { Range, noRange } from './loc.js'
@@ -10,6 +11,27 @@ export type BracketKind = '(' | '[' | '{'
 type Name = { value: string, range: Range }
 const name = (value: string, range: Range): Name => ({ value, range })
 const nlname = (value: string): Name => name(value, noRange())
+
+// #endregion
+
+// #region Value forms
+
+/** In Scamper, a Value is, directly, a Javascript value. */
+export type Value = any
+
+/*
+ * Scamper-Javascript value conversion:
+ *
+ * (boolean? e) <=> typeof e === 'boolean'
+ * (number? e) <=> typeof e === 'number'
+ * (char? e) <==> typeof e === 'object': { tag: 'char', value: string }
+ * (string? e) <==> typeof e === 'string'
+ * (function? e) <==> typeof e === 'object': { tag: 'lambda', args: string[], body: Exp } or { tag: 'prim', fn: Prim }
+ * (pair? e) <==> typeof e === 'object': { tag: 'pair', e1: Value, e2: Value }
+ * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, ... }
+ * (object? e) <==> typeof e === 'object': { ... }
+ * (vector? e) <==> Array.isArray(e)
+ */
 
 // #endregion
 
@@ -123,7 +145,8 @@ const lstr = (value: string): LStr => ({ tag: 'str', value })
 
 /** Expressions */
 type Exp
-  = EVar
+  = EValue
+  | EVar
   | ELit
   | ECall
   | ELam
@@ -146,6 +169,9 @@ type Exp
   | EMatch // A pattern match expression
   | EStruct // A tagged Jvascript value
   | EPrim // A primitive function value
+
+type EValue = { tag: 'value', range: Range, value: Value, isValue: boolean, isList: boolean }
+export const nlevalue = (value: Value): EValue => ({ tag: 'value', range: noRange(), value, isValue: true, isList: false })
 
 type EVar = { tag: 'var', range: Range, value: string, isValue: boolean, isList: boolean }
 const evar = (range: Range, value: string): EVar => ({ tag: 'var', range, value, isValue: true, isList: false })
