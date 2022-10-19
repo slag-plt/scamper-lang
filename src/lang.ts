@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -28,10 +29,10 @@ export type Value = any
  * (number? e) <=> typeof e === 'number'
  * (string? e) <==> typeof e === 'string'
  * (null? e) <==> e === null
- * (char? e) <==> typeof e === 'object': { tag: 'char', value: string }
+ * (char? e) <==> typeof e === 'object': { tag: 'char', value: string }  <-- need to deprecate this!
  * (function? e) <==> typeof e === 'object': { tag: 'lambda', args: string[], body: Exp } or { tag: 'prim', fn: Prim }
  * (pair? e) <==> typeof e === 'object': { tag: 'pair', fst: Value, snd: Value }
- * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, ... }
+ * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, fields: Map<string, Value> }
  * (object? e) <==> typeof e === 'object': { ... }
  * (vector? e) <==> Array.isArray(e)
  */
@@ -72,7 +73,7 @@ export function valueArrayToList (vs: Value[]): Value {
   for (let i = vs.length - 1; i >= 0; i--) {
     result = { tag: 'pair', fst: vs[i], snd: result }
   }
-  return result 
+  return result
 }
 
 export function valueToString (v: Value): string {
@@ -92,12 +93,14 @@ export function valueToString (v: Value): string {
         ? `(list ${valueListToArray_(v).map(valueToString).join(' ')})`
         : `(pair ${valueToString(v.fst)} ${valueToString(v.snd)})`
     } else if (v.tag === 'struct') {
-      return parens('(', [`struct ${e.kind}`, ...Object.keys(e.obj).map(k => expToString(col, (e.obj as any)[k], htmlOutput))])
+      return `(struct ${v.kind} ${[...v.fields.values()].map(v => valueToString(v)).join(' ')})`
     } else {
       return '[object Object]'
     }
   } else if (Array.isArray(v)) {
-    throw new ICE('valueToString: vector not yet implemented')
+    throw new ICE('valueToString', 'vector not yet implemented')
+  } else {
+    throw new ICE('valueToString', `unrecognized value: ${v.toString()}`)
   }
 }
 
@@ -351,6 +354,7 @@ function unsafeListToArray (e:Exp): Exp[] {
 
 function expToString (e:Exp): string {
   switch (e.tag) {
+    case 'value': return valueToString(e.value)
     case 'var': return e.value
     case 'lit': return litToString(e.value)
     case 'call': return parens([e.head].concat(e.args).map(expToString))
