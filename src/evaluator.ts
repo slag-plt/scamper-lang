@@ -7,6 +7,8 @@ type Env = Map<string, L.Exp>
 
 export function evalExp (env: Env, e: L.Exp): Promise<Result<L.Exp>> {
   switch (e.tag) {
+    case 'value':
+      return Promise.resolve(ok(e))
     case 'var':
       return Promise.resolve(env.has(e.value)
         ? ok(env.get(e.value)!)

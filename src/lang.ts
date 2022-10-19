@@ -37,6 +37,14 @@ export type Value = any
  * (vector? e) <==> Array.isArray(e)
  */
 
+export const vchar = (value: string): Value => ({ tag: 'char', value })
+export const vlambda = (args: string[], body: Exp): Value => ({ tag: 'lambda', args, body })
+export const vpair = (fst: Value, snd: Value): Value => ({ tag: 'pair', fst, snd })
+export const vstruct = (kind: string, fields: Map<string, Value>): Value => ({ tag: 'struct', kind, fields })
+
+// export const isBoolean = (v: Value): boolean => typeof v === 'boolean'
+// ...
+
 export function isTaggedObject (v: Value): boolean {
   return typeof v === 'object' && Object.hasOwn(v as object, 'tag')
 }
@@ -71,7 +79,7 @@ export function valueArrayToList (vs: Value[]): Value {
   let result: Value = null
   // N.B., append in backwards order because of our cons representation for lists.
   for (let i = vs.length - 1; i >= 0; i--) {
-    result = { tag: 'pair', fst: vs[i], snd: result }
+    result = vpair(vs[i], result)
   }
   return result
 }

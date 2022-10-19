@@ -1,5 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as L from './lang.js'
-import { detailsToCompleteString } from './result.js'
+import { detailsToCompleteString, ICE } from './result.js'
 import * as P from './parser.js'
 
 const namedCharTable = new Map(Array.from(P.namedCharValues.entries()).map(([name, value]) => [value, name]))
@@ -19,6 +23,7 @@ function litToString (l: L.Lit): string {
 
 function isSimpleExp (e: L.Exp): boolean {
   switch (e.tag) {
+    case 'value': return true
     case 'var': return true
     case 'lit': return true
     case 'call': return e.args.every(isSimpleExp)
@@ -38,6 +43,7 @@ function isSimpleExp (e: L.Exp): boolean {
 
 function nestingDepth (e: L.Exp): number {
   switch (e.tag) {
+    case 'value': return 0
     case 'var': return 0
     case 'lit': return 0
     case 'call': return 1 + Math.max(...e.args.map(nestingDepth))
@@ -77,6 +83,34 @@ function patToString (p: L.Pat): string {
     case 'null': return 'null'
     case 'lit': return litToString(p.lit)
     case 'ctor': return parens('(', [p.head, ...p.args.map(patToString)])
+  }
+}
+
+export function valueToString (col: number, v: L.Value, htmlOutput: boolean = false): string {
+  if (typeof v === 'boolean') {
+    return v ? '#t' : '#f'
+  } else if (typeof v === 'number') {
+    return v.toString()
+  } else if (typeof v === 'string') {
+    return `"${v}"`
+  } else if (L.isTaggedObject(v)) {
+    if (v.tag === 'char') {
+      return `#\\${v.value}`
+    } else if (v.tag === 'lambda' || v.tag === 'prim') {
+      return '[object Function]'
+    } else if (v.tag === 'pair') {
+      return L.valueIsList(v)
+        ? `(list ${L.valueListToArray_(v).map(L.valueToString).join(' ')})`
+        : `(pair ${L.valueToString(v.fst)} ${L.valueToString(v.snd)})`
+    } else if (v.tag === 'struct') {
+      return `(struct ${v.kind} ${[...v.fields.values()].map(v => valueToString(col, v, htmlOutput)).join(' ')})`
+    } else {
+      return '[object Object]'
+    }
+  } else if (Array.isArray(v)) {
+    throw new ICE('valueToString', 'vector not yet implemented')
+  } else {
+    throw new ICE('valueToString', `unrecognized value: ${v.toString()}`)
   }
 }
 
