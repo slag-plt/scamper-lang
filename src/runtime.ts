@@ -29,6 +29,8 @@ function namesInclude (names: Name[], x: string): boolean {
 
 function substitute (e1: Exp, x: string, e2: Exp): Exp {
   switch (e2.tag) {
+    case 'value':
+      return e2
     case 'var':
       return e2.value === x ? e1 : e2
     case 'lit':
@@ -192,6 +194,8 @@ function tryMatch (e: Exp, p: Pat): Env | undefined {
 
 async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
   switch (e.tag) {
+    case 'value':
+      return ok(e)
     // N.B., at this point, variables should be free variables bound in the
     // environment. We rely on sprinkled calls to substituteWithEnv once an
     // expression is a value in order to resolve free variables before they

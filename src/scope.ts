@@ -36,6 +36,8 @@ function containsDups (xs: string[]): string | undefined {
 
 function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
   switch (e.tag) {
+    case 'value':
+      return []
     case 'var':
       return bvars.includes(e.value) ? [] : [undefinedVariableError(e.value, e.range)]
     case 'lit':

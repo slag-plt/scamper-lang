@@ -116,6 +116,8 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
 
 export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false): string {
   switch (e.tag) {
+    case 'value':
+      return valueToString(col, e.value, htmlOutput)
     case 'var':
       return e.value
     case 'lit':
