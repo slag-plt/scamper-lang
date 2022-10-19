@@ -35,10 +35,14 @@ export type Value = any
  * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, fields: Map<string, Value> }
  * (object? e) <==> typeof e === 'object': { ... }
  * (vector? e) <==> Array.isArray(e)
+ *
+ * TODO: do we need to "uniquify" the fields so that, e.g., an object can't
+ * mock-up a struct?
  */
 
 export const vchar = (value: string): Value => ({ tag: 'char', value })
 export const vlambda = (args: string[], body: Exp): Value => ({ tag: 'lambda', args, body })
+export const vprim = (fn: Prim): Value => ({ tag: 'prim', fn })
 export const vpair = (fst: Value, snd: Value): Value => ({ tag: 'pair', fst, snd })
 export const vstruct = (kind: string, fields: Map<string, Value>): Value => ({ tag: 'struct', kind, fields })
 
