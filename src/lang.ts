@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable no-use-before-define */
 
 import { Range, noRange } from './loc.js'
-import { ErrorDetails, Result } from './result.js'
+import { ErrorDetails, ICE, Result } from './result.js'
 
 // #region Names
 
@@ -24,14 +26,80 @@ export type Value = any
  *
  * (boolean? e) <=> typeof e === 'boolean'
  * (number? e) <=> typeof e === 'number'
- * (char? e) <==> typeof e === 'object': { tag: 'char', value: string }
  * (string? e) <==> typeof e === 'string'
+ * (null? e) <==> e === null
+ * (char? e) <==> typeof e === 'object': { tag: 'char', value: string }
  * (function? e) <==> typeof e === 'object': { tag: 'lambda', args: string[], body: Exp } or { tag: 'prim', fn: Prim }
- * (pair? e) <==> typeof e === 'object': { tag: 'pair', e1: Value, e2: Value }
+ * (pair? e) <==> typeof e === 'object': { tag: 'pair', fst: Value, snd: Value }
  * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, ... }
  * (object? e) <==> typeof e === 'object': { ... }
  * (vector? e) <==> Array.isArray(e)
  */
+
+export function isTaggedObject (v: Value): boolean {
+  return typeof v === 'object' && Object.hasOwn(v as object, 'tag')
+}
+
+export function valueIsList (v: Value): boolean {
+  while (true) {
+    if (v === null) {
+      return true
+    } else if (isTaggedObject(v) && v.tag === 'pair') {
+      v = v.snd
+    } else {
+      return false
+    }
+  }
+}
+
+export function valueListToArray_ (v: Value): Value[] {
+  const result: Value[] = []
+  while (true) {
+    if (v === null) {
+      return result
+    } else if (isTaggedObject(v) && v.tag === 'pair') {
+      result.push(v.fst)
+      v = v.snd
+    } else {
+      throw new ICE('valueListToArray', `valueListToArray: not a list: ${v}`)
+    }
+  }
+}
+
+export function valueArrayToList (vs: Value[]): Value {
+  let result: Value = null
+  // N.B., append in backwards order because of our cons representation for lists.
+  for (let i = vs.length - 1; i >= 0; i--) {
+    result = { tag: 'pair', fst: vs[i], snd: result }
+  }
+  return result 
+}
+
+export function valueToString (v: Value): string {
+  if (typeof v === 'boolean') {
+    return v ? '#t' : '#f'
+  } else if (typeof v === 'number') {
+    return v.toString()
+  } else if (typeof v === 'string') {
+    return `"${v}"`
+  } else if (isTaggedObject(v)) {
+    if (v.tag === 'char') {
+      return `#\\${v.value}`
+    } else if (v.tag === 'lambda' || v.tag === 'prim') {
+      return '[object Function]'
+    } else if (v.tag === 'pair') {
+      return valueIsList(v)
+        ? `(list ${valueListToArray_(v).map(valueToString).join(' ')})`
+        : `(pair ${valueToString(v.fst)} ${valueToString(v.snd)})`
+    } else if (v.tag === 'struct') {
+      return parens('(', [`struct ${e.kind}`, ...Object.keys(e.obj).map(k => expToString(col, (e.obj as any)[k], htmlOutput))])
+    } else {
+      return '[object Object]'
+    }
+  } else if (Array.isArray(v)) {
+    throw new ICE('valueToString: vector not yet implemented')
+  }
+}
 
 // #endregion
 
