@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable no-use-before-define */
 
 import { Range, noRange } from './loc.js'
@@ -19,8 +15,16 @@ const nlname = (value: string): Name => name(value, noRange())
 
 // #region Value forms
 
+export type TaggedObject = FunctionType | CharType | PairType | StructType
+export type LambdaType = { tag: 'lambda', args: Name[], body: Exp }
+export type PrimType = { tag: 'prim', fn: Prim }
+export type FunctionType = LambdaType | PrimType
+export type CharType = { tag: 'char', value: string }
+export type PairType = { tag: 'pair', fst: Value, snd: Value }
+export type StructType = { tag: 'struct', kind: String, fields: Map<string, Value> }
+
 /** In Scamper, a Value is, directly, a Javascript value. */
-export type Value = any
+export type Value = boolean | number | string | null | object | Value[] | TaggedObject
 
 /*
  * Scamper-Javascript value conversion:
@@ -52,14 +56,14 @@ export const valueIsBoolean = (v: Value): boolean => typeof v === 'boolean'
 export const valueIsNumber = (v: Value): boolean => typeof v === 'number'
 export const valueIsString = (v: Value): boolean => typeof v === 'string'
 export const valueIsNull = (v: Value): boolean => v === null
-export const valueIsChar = (v: Value): boolean => isTaggedObject(v) && v.tag === 'char'
-export const valueIsLambda = (v: Value): boolean => isTaggedObject(v) && v.tag === 'lambda'
-export const valueIsPrim = (v: Value): boolean => isTaggedObject(v) && v.tag === 'prim'
+export const valueIsChar = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'char'
+export const valueIsLambda = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'lambda'
+export const valueIsPrim = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'prim'
 export const valueIsFunction = (v: Value): boolean => valueIsLambda(v) || valueIsPrim(v)
-export const valueIsPair = (v: Value): boolean => isTaggedObject(v) && v.tag === 'pair'
-export const valueIsStruct = (v: Value): boolean => isTaggedObject(v) && v.tag === 'struct'
+export const valueIsPair = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'pair'
+export const valueIsStruct = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'struct'
 export const valueIsStructKind = (v: Value, kind: string): boolean =>
-  valueIsStruct(v) && v.kind === kind
+  valueIsStruct(v) && (v as StructType).kind === kind
 export const valueIsObject = (v: Value): boolean => typeof v === 'object'
 export const valueIsVector = (v: Value): boolean => Array.isArray(v)
 
@@ -67,8 +71,8 @@ export function valueIsList (v: Value): boolean {
   while (true) {
     if (v === null) {
       return true
-    } else if (isTaggedObject(v) && v.tag === 'pair') {
-      v = v.snd
+    } else if (valueIsPair(v)) {
+      v = (v as PairType).snd
     } else {
       return false
     }
@@ -80,11 +84,11 @@ export function valueListToArray_ (v: Value): Value[] {
   while (true) {
     if (v === null) {
       return result
-    } else if (isTaggedObject(v) && v.tag === 'pair') {
-      result.push(v.fst)
-      v = v.snd
+    } else if (valueIsPair(v)) {
+      result.push((v as PairType).fst)
+      v = (v as PairType).snd
     } else {
-      throw new ICE('valueListToArray', `valueListToArray: not a list: ${v}`)
+      throw new ICE('valueListToArray', `valueListToArray: not a list: ${v.toString()}`)
     }
   }
 }
@@ -105,25 +109,23 @@ export function valueToString (v: Value): string {
     return v.toString()
   } else if (typeof v === 'string') {
     return `"${v}"`
-  } else if (isTaggedObject(v)) {
-    if (v.tag === 'char') {
-      return `#\\${v.value}`
-    } else if (v.tag === 'lambda' || v.tag === 'prim') {
-      return '[object Function]'
-    } else if (v.tag === 'pair') {
-      return valueIsList(v)
-        ? `(list ${valueListToArray_(v).map(valueToString).join(' ')})`
-        : `(pair ${valueToString(v.fst)} ${valueToString(v.snd)})`
-    } else if (v.tag === 'struct') {
-      return `(struct ${v.kind} ${[...v.fields.values()].map(v => valueToString(v)).join(' ')})`
-    } else {
-      return '[object Object]'
-    }
+  } else if (valueIsChar(v)) {
+    return `#\\${(v as CharType).value}`
+  } else if (valueIsLambda(v) || valueIsPrim(v)) {
+    return '[object Function]'
+  } else if (valueIsPair(v)) {
+    return valueIsList(v)
+      ? `(list ${valueListToArray_(v).map(valueToString).join(' ')})`
+      : `(pair ${valueToString((v as PairType).fst)} ${valueToString((v as PairType).snd)})`
+  } else if (valueIsStruct(v)) {
+    return `(struct ${(v as StructType).kind.toString()} ${[...(v as StructType).fields.values()].map(v => valueToString(v)).join(' ')})`
   } else if (Array.isArray(v)) {
     throw new ICE('valueToString', 'vector not yet implemented')
-  } else {
-    throw new ICE('valueToString', `unrecognized value: ${v.toString()}`)
+  } else if (typeof v === 'object') {
+    return '[object Object]'
   }
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+  throw new ICE('valueToString', `unknown value encountered: ${v}`)
 }
 
 // #endregion
@@ -246,6 +248,9 @@ export function litToValue (lit: Lit): Value {
     return vchar(lit.value)
   } else if (lit.tag === 'str') {
     return lit.value
+  } else {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    throw new ICE('litToValue', `unknown literal: ${lit}`)
   }
 }
 

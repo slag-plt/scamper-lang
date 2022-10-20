@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as L from './lang.js'
 import { detailsToCompleteString, ICE } from './result.js'
 import * as P from './parser.js'
@@ -89,35 +85,34 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
     return v.toString()
   } else if (typeof v === 'string') {
     return `"${v}"`
-  } else if (L.isTaggedObject(v)) {
-    if (v.tag === 'char') {
-      return `#\\${v.value}`
-    } else if (v.tag === 'lambda' || v.tag === 'prim') {
-      return '[object Function]'
-    } else if (v.tag === 'pair') {
-      return L.valueIsList(v)
-        ? `(list ${L.valueListToArray_(v).map(L.valueToString).join(' ')})`
-        : `(pair ${L.valueToString(v.fst)} ${L.valueToString(v.snd)})`
-    } else if (v.tag === 'struct') {
-      if (v.kind === 'Drawing') {
-        return htmlOutput
-          ? `</code><span class="drawing">${JSON.stringify(v)}</span><code>`
-          : '[object Drawing]'
-      } else if (v.kind === 'Composition') {
-        return htmlOutput
-          ? `</code><span class="composition">${JSON.stringify(v)}</span><code>`
-          : '[object Composition]'
-      } else {
-        return `(struct ${v.kind} ${[...v.fields.values()].map(v => valueToString(col, v, htmlOutput)).join(' ')})`
-      }
+  } else if (L.valueIsChar(v)) {
+    return `#\\${(v as L.CharType).value}`
+  } else if (L.valueIsLambda(v) || L.valueIsPrim(v)) {
+    return '[object Function]'
+  } else if (L.valueIsPair(v)) {
+    return L.valueIsList(v)
+      ? `(list ${L.valueListToArray_(v).map(v => valueToString(col, v, htmlOutput)).join(' ')})`
+      : `(pair ${valueToString(col, (v as L.PairType).fst, htmlOutput)} ${valueToString(col, (v as L.PairType).snd, htmlOutput)})`
+  } else if (L.valueIsStruct(v)) {
+    const s = v as L.StructType
+    if (s.kind === 'Drawing') {
+      return htmlOutput
+        ? `</code><span class="drawing">${JSON.stringify(s)}</span><code>`
+        : '[object Drawing]'
+    } else if (s.kind === 'Composition') {
+      return htmlOutput
+        ? `</code><span class="composition">${JSON.stringify(s)}</span><code>`
+        : '[object Composition]'
     } else {
-      return '[object Object]'
+      return `(struct ${s.kind.toString()} ${[...s.fields.values()].map(v => valueToString(col, v, htmlOutput)).join(' ')})`
     }
   } else if (Array.isArray(v)) {
     throw new ICE('valueToString', 'vector not yet implemented')
-  } else {
-    throw new ICE('valueToString', `unrecognized value: ${v.toString()}`)
+  } else if (typeof v === 'object') {
+    return '[object Object]'
   }
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+  throw new ICE('valueToString', `unknown value encountered: ${v}`)
 }
 
 export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false): string {

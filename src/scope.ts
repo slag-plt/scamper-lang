@@ -1,5 +1,5 @@
 import { ErrorDetails, errorDetails, ICE } from './result.js'
-import { Exp, Env, Value, Program, name, Name, fvarsOfPat } from './lang.js'
+import { Exp, Env, Program, name, Name, fvarsOfPat } from './lang.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
 import { internalLibs, preludeEnv } from './runtime.js'
@@ -14,7 +14,7 @@ function undefinedVariableError (x: string, range: Range): ErrorDetails {
   )
 }
 
-function repeatedVariableError (e: Value, x: string, range: Range): ErrorDetails {
+function repeatedVariableError (e: Exp, x: string, range: Range): ErrorDetails {
   return errorDetails(
     msg('phase-scope'),
     msg('error-var-repeated', x),

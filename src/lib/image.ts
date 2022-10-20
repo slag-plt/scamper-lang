@@ -65,17 +65,17 @@ const ellipse = (width: number, height: number, mode: Mode, color: string): Elli
   color
 })
 
-const ellipsePrim: Prim = (_env, args, app) => {
+const ellipsePrim: L.Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('ellipse', ['number?', 'number?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return Promise.resolve(argErr) }
-  const width = asNum_(args[0])
-  const height = asNum_(args[1])
-  const mode = asString_(args[2])
-  const color = asString_(args[3])
+  const width = args[0] as number
+  const height = args[1] as number
+  const mode = args[2] as string
+  const color = args[3] as string
   if (mode !== 'solid' && mode !== 'outline') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'circle', '3', '"solid" or "outline"', mode), app))
   } else {
-    return Promise.resolve(ok(nlestruct('Drawing', ellipse(width, height, mode, color))))
+    return Promise.resolve(ok(L.vstruct('Drawing', ellipse(width, height, mode, color))))
   }
 }
 

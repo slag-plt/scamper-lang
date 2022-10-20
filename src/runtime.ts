@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as L from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails, ICE } from './result.js'
 import { msg } from './messages.js'
@@ -139,18 +137,18 @@ function tryMatch (v: L.Value, p: L.Pat): L.Env | undefined {
     return new L.Env([])
   } else if (p.tag === 'lit' && p.lit.tag === 'str' && p.lit.value === v) {
     return new L.Env([])
-  } else if (p.tag === 'lit' && p.lit.tag === 'char' && L.valueIsChar(v) && p.lit.value === v.value) {
+  } else if (p.tag === 'lit' && p.lit.tag === 'char' && L.valueIsChar(v) && p.lit.value === (v as L.CharType).value) {
     return new L.Env([])
   } else if (p.tag === 'ctor' && (L.valueIsPair(v) || L.valueIsStruct(v))) {
     const head = p.head
     const args = p.args
     // Special cases: pairs are matched with either pair or cons
     if ((head === 'pair' || head === 'cons') && args.length === 2 && L.valueIsPair(v)) {
-      const env1 = tryMatch(v.fst, args[0])
-      const env2 = tryMatch(v.snd, args[1])
+      const env1 = tryMatch((v as L.PairType).fst, args[0])
+      const env2 = tryMatch((v as L.PairType).snd, args[1])
       return env1 && env2 ? env1.concat(env2) : undefined
     } else if (L.valueIsStructKind(v, head)) {
-      const fields = [...(v.fields as Map<string, L.Value>).values()]
+      const fields = [...((v as L.StructType).fields).values()]
       if (fields.length === args.length) {
         let env = new L.Env([])
         for (let i = 0; i < fields.length; i++) {
@@ -184,7 +182,7 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
     case 'var':
       return ok(e)
     case 'lit':
-      return ok(L.litToValue(e.value))
+      return ok(L.nlevalue(L.litToValue(e.value)))
     case 'call':
       // NOTE: we allow variables in head position so that (f x) works
       // where f is a top-level binding. If we change the infrastructure
@@ -208,16 +206,16 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
           join(e.args.map(x => substituteIfFreeVar(env, x))).asyncAndThen(async (args: L.Exp[]): Promise<Result<L.Exp>> => {
             if (head.tag === 'value') {
               if (L.valueIsLambda(head)) {
-                const formals: L.Name[] = head.value.args
-                const body: L.Exp = head.value.body
+                const formals: L.Name[] = (head.value as L.LambdaType).args
+                const body: L.Exp = (head.value as L.LambdaType).body
                 if (args.length === formals.length) {
                   return ok(substituteAll(args, formals, body))
                 } else {
                   return runtimeError(msg('error-arity', 'lambda', formals.length, args.length), e)
                 }
               } else if (L.valueIsPrim(head)) {
-                const prim: L.Prim = head.value.fn
-                return await prim(env, args, e)
+                const prim: L.Prim = (head.value as L.PrimType).fn
+                return (await prim(env, args, e)).andThen(v => ok(L.nlevalue(v)))
               } else {
                 return runtimeError(msg('error-type-expected-call', e.head.tag), e)
               }
@@ -445,9 +443,9 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
             Promise.resolve(args.length !== 1
               ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
               : !L.valueIsStructKind(args[0], name)
-                  ? runtimeError(msg('error-type-expected-fun', 1, fieldName, `struct ${name}`, args[0].tag))
+                  ? runtimeError(msg('error-type-expected-fun', 1, fieldName, `struct ${name}`, args[0]))
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                  : ok(((args[0].fields as Map<string, L.Exp>).get(f.value)!)))),
+                  : ok((((args[0] as L.StructType).fields).get(f.value)!)))),
           `struct ${name}`,
           f.range
         )]
