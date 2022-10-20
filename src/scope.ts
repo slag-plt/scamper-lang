@@ -85,10 +85,6 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
       return e.args.flatMap((v) => checkExp(bvars, v))
     // N.B., structs are internal, runtime only values, so we'll never
     // encounter these cases with our scope-checker.
-    case 'struct':
-      return []
-    case 'prim':
-      return []
     case 'match': {
       let errors = checkExp(bvars, e.scrutinee)
       e.branches.forEach(branch => {

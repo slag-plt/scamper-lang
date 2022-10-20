@@ -250,8 +250,6 @@ type Exp
 
   // Non-standard forms
   | EMatch // A pattern match expression
-  | EStruct // A tagged Jvascript value
-  | EPrim // A primitive function value
 
 type EValue = { tag: 'value', range: Range, value: Value, isValue: boolean, isList: boolean }
 export const nlevalue = (value: Value): EValue => ({ tag: 'value', range: noRange(), value, isValue: true, isList: false })
@@ -320,12 +318,6 @@ type EOr = { tag: 'or', range: Range, args: Exp[], bracket: BracketKind, isValue
 const eor = (range: Range, args: Exp[], bracket: BracketKind = '('): EOr => ({ tag: 'or', range, args, bracket, isValue: false, isList: false })
 const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 
-type EStruct = { tag: 'struct', range: Range, kind: string, obj: object, isValue: boolean, isList: boolean }
-const nlestruct = (kind: string, obj: object): EStruct => ({ tag: 'struct', range: noRange(), kind, obj, isValue: true, isList: false })
-
-type EPrim = { tag: 'prim', range: Range, prim: Prim, isValue: boolean, isList: boolean }
-const nleprim = (prim: Prim): EPrim => ({ tag: 'prim', range: noRange(), prim, isValue: true, isList: false })
-
 type EMatch = { tag: 'match', range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind, isValue: boolean, isList: boolean }
 const ematch = (range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind): EMatch =>
   ({ tag: 'match', range, scrutinee, branches, bracket, isValue: false, isList: false })
@@ -381,9 +373,6 @@ function expToString (e:Exp): string {
     case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-member-access
-    case 'struct': return `[object ${(e.obj as any).kind}]`
-    case 'prim': return `[prim ${e.prim.name}]`
     case 'match':
       return parens(['match', expToString(e.scrutinee)].concat(e.branches.map(b => parens([patToString(b[0]), expToString(b[1])]))))
   }
@@ -443,22 +432,6 @@ function isList (e:Exp): boolean {
   return e.isList
 }
 
-function isPrim (e:Exp): boolean {
-  return e.tag === 'prim'
-}
-
-function isStruct (e: Exp): boolean {
-  return e.tag === 'struct'
-}
-
-function isStructKind (e: Exp, kind: string): boolean {
-  return e.tag === 'struct' && e.kind === `${kind}`
-}
-
-function isProcedure (e: Exp): boolean {
-  return isLambda(e) || isPrim(e)
-}
-
 function asNum_ (e:Exp): number {
   return ((e as ELit).value as LNum).value
 }
@@ -481,14 +454,6 @@ function asList_ (e: Exp): Exp[] {
 
 function asPair_ (e: Exp): [Exp, Exp] {
   return [(e as EPair).e1, (e as EPair).e2]
-}
-
-function asStruct_ (e: Exp): object {
-  return (e as EStruct).obj
-}
-
-function fromStruct_ <T> (e: Exp): T {
-  return ((e as EStruct).obj as unknown) as T
 }
 
 function nameEquals (n1: Name, n2: Name): boolean {
@@ -683,14 +648,14 @@ function indexOfCurrentStmt (prog: Program): number {
 export {
   Prim, Name, name, nlname,
   Lit, LBool, LNum, LChar, LStr,
-  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, LetKind, ELet, ECond, EAnd, EOr, EStruct,
+  Exp, EVar, ELit, ECall, ELam, EIf, ENil, EPair, LetKind, ELet, ECond, EAnd, EOr,
   lbool, lnum, lchar, lstr, ebool, enumber, echar, estr,
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor, ematch,
   nlebool, nlenumber, nlechar, nlestr,
-  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor, nlestruct, nleprim,
+  nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor,
   litToString, arrayToList, unsafeListToArray, expToString, litEquals, expEquals,
-  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList, isPrim, isStruct, isStructKind, isProcedure,
-  asNum_, asBool_, asChar_, asString_, asList_, asPair_, asStruct_, fromStruct_,
+  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList,
+  asNum_, asBool_, asChar_, asString_, asList_, asPair_,
   Pat, PVar, PWild, PNull, PLit, PCtor, pvar, pwild, pnull, plit, pctor, fvarsOfPat,
   Stmt, serror, sbinding, svalue, simported, sdefine, stestresult, sstruct, stestcase, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString

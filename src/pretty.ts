@@ -35,8 +35,6 @@ function isSimpleExp (e: L.Exp): boolean {
     case 'cond': return false
     case 'and': return true
     case 'or': return true
-    case 'struct': return true
-    case 'prim': return true
     case 'match': return false
   }
 }
@@ -55,8 +53,6 @@ function nestingDepth (e: L.Exp): number {
     case 'cond': return 0 // TODO
     case 'and': return 0 // TODO
     case 'or': return 0 // TODO
-    case 'struct': return 0
-    case 'prim': return 0
     case 'match': return 0 // TODO
   }
 }
@@ -103,7 +99,17 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
         ? `(list ${L.valueListToArray_(v).map(L.valueToString).join(' ')})`
         : `(pair ${L.valueToString(v.fst)} ${L.valueToString(v.snd)})`
     } else if (v.tag === 'struct') {
-      return `(struct ${v.kind} ${[...v.fields.values()].map(v => valueToString(col, v, htmlOutput)).join(' ')})`
+      if (v.kind === 'Drawing') {
+        return htmlOutput
+          ? `</code><span class="drawing">${JSON.stringify(v)}</span><code>`
+          : '[object Drawing]'
+      } else if (v.kind === 'Composition') {
+        return htmlOutput
+          ? `</code><span class="composition">${JSON.stringify(v)}</span><code>`
+          : '[object Composition]'
+      } else {
+        return `(struct ${v.kind} ${[...v.fields.values()].map(v => valueToString(col, v, htmlOutput)).join(' ')})`
+      }
     } else {
       return '[object Object]'
     }
@@ -173,21 +179,6 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
       return parens(e.bracket, ['and', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
     case 'or':
       return parens(e.bracket, ['or', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
-    case 'struct':
-      if (e.kind === 'Drawing') {
-        return htmlOutput
-          ? `</code><span class="drawing">${JSON.stringify(e.obj)}</span><code>`
-          : '[object Drawing]'
-      } else if (e.kind === 'Composition') {
-        return htmlOutput
-          ? `</code><span class="composition">${JSON.stringify(e.obj)}</span><code>`
-          : '[object Composition]'
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-        return parens('(', [`struct ${e.kind}`, ...Object.keys(e.obj).map(k => expToString(col, (e.obj as any)[k], htmlOutput))])
-      }
-    case 'prim':
-      return `[prim ${e.prim.name}]`
     case 'match': {
       const bindings = e.branches.map(b => indent(col + 2, `[${patToString(b[0])} ${expToString(col + 2, b[1], htmlOutput)}]`))
       return parens(e.bracket, [`match ${expToString(col, e.scrutinee, htmlOutput)}`, ...bindings], '\n')

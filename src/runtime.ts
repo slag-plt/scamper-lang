@@ -1,33 +1,21 @@
-import {
-  entry, Env, ecall, eif, elam, elet, epair, isValue, Exp, Stmt, sexp, expToString, sbinding, svalue, serror, Name, econd, nlecond, eand, eor, nlebool, nleand, nleor, simported, nleprim, sdefine, Prim, EnvEntry, nlestruct, asStruct_, isStructKind
-  , LetKind,
-  nlecall,
-  isString,
-  isBoolean,
-  asBool_,
-  asString_,
-  stestresult,
-  ematch,
-  Pat,
-  litEquals
-} from './lang.js'
+import * as L from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails, ICE } from './result.js'
 import { msg } from './messages.js'
 import { preludeEnv } from './lib/prelude.js'
 import { imageLib } from './lib/image.js'
 import { musicLib } from './lib/music.js'
 
-function runtimeError <T> (message: string, s?: Exp, hint?: string): Result<T> {
+function runtimeError <T> (message: string, s?: L.Exp, hint?: string): Result<T> {
   return s
-    ? error(msg('phase-runtime'), message, s.range, expToString(s), hint)
+    ? error(msg('phase-runtime'), message, s.range, L.expToString(s), hint)
     : error(msg('phase-runtime'), message, undefined, undefined, hint)
 }
 
-function namesInclude (names: Name[], x: string): boolean {
+function namesInclude (names: L.Name[], x: string): boolean {
   return names.some(n => n.value === x)
 }
 
-function substitute (e1: Exp, x: string, e2: Exp): Exp {
+function substitute (e1: L.Exp, x: string, e2: L.Exp): L.Exp {
   switch (e2.tag) {
     case 'value':
       return e2
@@ -36,17 +24,17 @@ function substitute (e1: Exp, x: string, e2: Exp): Exp {
     case 'lit':
       return e2
     case 'call':
-      return ecall(e2.range, substitute(e1, x, e2.head), e2.args.map((e) => substitute(e1, x, e)))
+      return L.ecall(e2.range, substitute(e1, x, e2.head), e2.args.map((e) => substitute(e1, x, e)))
     case 'lam':
-      return namesInclude(e2.args, x) ? e2 : elam(e2.range, e2.args, substitute(e1, x, e2.body))
+      return namesInclude(e2.args, x) ? e2 : L.elam(e2.range, e2.args, substitute(e1, x, e2.body))
     case 'if':
-      return eif(e2.range, substitute(e1, x, e2.e1), substitute(e1, x, e2.e2), substitute(e1, x, e2.e3))
+      return L.eif(e2.range, substitute(e1, x, e2.e1), substitute(e1, x, e2.e2), substitute(e1, x, e2.e3))
     case 'nil':
       return e2
     case 'pair':
-      return epair(e2.range, substitute(e1, x, e2.e1), substitute(e1, x, e2.e2))
+      return L.epair(e2.range, substitute(e1, x, e2.e1), substitute(e1, x, e2.e2))
     case 'let':
-      return elet(
+      return L.elet(
         e2.range,
         e2.kind,
         substituteInBindings(e1, x, e2.bindings, e2.kind),
@@ -57,24 +45,20 @@ function substitute (e1: Exp, x: string, e2: Exp): Exp {
         e2.kind !== 'let' && inBindings(x, e2.bindings) ? e2.body : substitute(e1, x, e2.body)
       )
     case 'cond':
-      return econd(e2.range, e2.branches.map(b => [substitute(e1, x, b[0]), substitute(e1, x, b[1])]))
+      return L.econd(e2.range, e2.branches.map(b => [substitute(e1, x, b[0]), substitute(e1, x, b[1])]))
     case 'and':
-      return eand(e2.range, e2.args.map(e => substitute(e1, x, e)))
+      return L.eand(e2.range, e2.args.map(e => substitute(e1, x, e)))
     case 'or':
-      return eor(e2.range, e2.args.map(e => substitute(e1, x, e)))
-    case 'struct':
-      return e2
-    case 'prim':
-      return e2
+      return L.eor(e2.range, e2.args.map(e => substitute(e1, x, e)))
     case 'match':
-      return ematch(e2.range,
+      return L.ematch(e2.range,
         substitute(e1, x, e2.scrutinee),
         e2.branches.map(b => [b[0], substitute(e1, x, b[1])]),
         e2.bracket)
   }
 }
 
-function inBindings (x: string, bindings: [Name, Exp][]): boolean {
+function inBindings (x: string, bindings: [L.Name, L.Exp][]): boolean {
   for (let i = 0; i < bindings.length; i++) {
     if (bindings[i][0].value === x) {
       return true
@@ -83,7 +67,7 @@ function inBindings (x: string, bindings: [Name, Exp][]): boolean {
   return false
 }
 
-function substituteInBindings (e1: Exp, x: string, bindings: [Name, Exp][], kind: LetKind): [Name, Exp][] {
+function substituteInBindings (e1: L.Exp, x: string, bindings: [Name, Exp][], kind: LetKind): [Name, Exp][] {
   const result = new Array<[Name, Exp]>(bindings.length)
   let seenVar = false
   for (let i = 0; i < bindings.length; i++) {
@@ -145,7 +129,7 @@ function substituteIfFreeVar (env: Env, e: Exp): Result<Exp> {
   }
 }
 
-function tryMatch (e: Exp, p: Pat): Env | undefined {
+function tryMatch (v: Value, p: Pat): Env | undefined {
   if (p.tag === 'wild') {
     return new Env([])
   } else if (p.tag === 'null' && e.tag === 'nil') {
@@ -375,10 +359,6 @@ async function stepExp (env: Env, e: Exp): Promise<Result<Exp>> {
             ok(nleor([headp, ...e.args.slice(1)])))
         }
       }
-    case 'struct':
-      return ok(e)
-    case 'prim':
-      return ok(e)
     case 'match':
       if (!isValue(e.scrutinee)) {
         return (await stepExp(env, e.scrutinee)).asyncAndThen(scrutinee => Promise.resolve(ok(ematch(e.range, scrutinee, e.branches, e.bracket))))
