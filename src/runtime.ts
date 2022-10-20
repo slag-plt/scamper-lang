@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as L from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails, ICE } from './result.js'
 import { msg } from './messages.js'
@@ -131,28 +132,28 @@ function tryMatch (v: L.Value, p: L.Pat): L.Env | undefined {
     return new L.Env([])
   } else if (p.tag === 'var') {
     return new L.Env([[p.id, L.entry(v, 'match')]])
-  } else if (p.tag === 'lit' && v.tag === 'lit' && L.litEquals(v.value, p.lit)) {
+  } else if (p.tag === 'lit' && p.lit.tag === 'bool' && p.lit.value === v) {
     return new L.Env([])
-  } else if (p.tag === 'ctor' && (v.tag === 'pair' || v.tag === 'struct')) {
+  } else if (p.tag === 'lit' && p.lit.tag === 'num' && p.lit.value === v) {
+    return new L.Env([])
+  } else if (p.tag === 'lit' && p.lit.tag === 'str' && p.lit.value === v) {
+    return new L.Env([])
+  } else if (p.tag === 'lit' && p.lit.tag === 'char' && L.valueIsChar(v) && p.lit.value === v.value) {
+    return new L.Env([])
+  } else if (p.tag === 'ctor' && (L.valueIsPair(v) || L.valueIsStruct(v))) {
     const head = p.head
     const args = p.args
     // Special cases: pairs are matched with either pair or cons
-    if ((head === 'pair' || head === 'cons') && args.length === 2 && v.tag === 'pair') {
-      const env1 = tryMatch(v.e1, args[0])
-      const env2 = tryMatch(v.e2, args[1])
+    if ((head === 'pair' || head === 'cons') && args.length === 2 && L.valueIsPair(v)) {
+      const env1 = tryMatch(v.fst, args[0])
+      const env2 = tryMatch(v.snd, args[1])
       return env1 && env2 ? env1.concat(env2) : undefined
-    } else if (v.tag === 'struct' && head === v.kind) {
-      // N.B., because we only use strings for object fields in structs, we are
-      // guaranteed that the order we traverse the fields is their insertion
-      // order. This luckily coincides with left-to-right order of declaration
-      // of the fields!
-      // https://stackoverflow.com/questions/5525795/does-javascript-guarantee-object-property-order
-      const fields = Object.getOwnPropertyNames(v.obj)
+    } else if (L.valueIsStructKind(v, head)) {
+      const fields = [...(v.fields as Map<string, L.Value>).values()]
       if (fields.length === args.length) {
         let env = new L.Env([])
         for (let i = 0; i < fields.length; i++) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const env2 = tryMatch((v.obj as any)[fields[i]] as L.Exp, args[i])
+          const env2 = tryMatch(fields[i], args[i])
           if (!env2) {
             return undefined
           }
@@ -204,6 +205,17 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
         // First, substitute away free variables before resolving the call.
         return substituteIfFreeVar(env, e.head).asyncAndThen(head =>
           join(e.args.map(x => substituteIfFreeVar(env, x))).asyncAndThen(async (args: L.Exp[]): Promise<Result<L.Exp>> => {
+            if (head.tag === 'value') {
+              if (L.valueIsLambda(head)) {
+
+              } else if (L.valueIsPrim(head)) {
+
+              } else {
+                return runtimeError(msg('error-type-expected-call', e.head.tag), e)
+              }
+            } else {
+              throw new ICE('stepExp', 'call head is not a value')
+            }
             switch (head.tag) {
               case 'lam':
                 if (args.length === head.args.length) {
