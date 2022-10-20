@@ -46,12 +46,22 @@ export const vprim = (fn: Prim): Value => ({ tag: 'prim', fn })
 export const vpair = (fst: Value, snd: Value): Value => ({ tag: 'pair', fst, snd })
 export const vstruct = (kind: string, fields: Map<string, Value>): Value => ({ tag: 'struct', kind, fields })
 
-// export const isBoolean = (v: Value): boolean => typeof v === 'boolean'
-// ...
-
-export function isTaggedObject (v: Value): boolean {
-  return typeof v === 'object' && Object.hasOwn(v as object, 'tag')
-}
+export const isTaggedObject = (v: Value): boolean =>
+  typeof v === 'object' && Object.hasOwn(v as object, 'tag')
+export const valueIsBoolean = (v: Value): boolean => typeof v === 'boolean'
+export const valueIsNumber = (v: Value): boolean => typeof v === 'number'
+export const valueIsString = (v: Value): boolean => typeof v === 'string'
+export const valueIsNull = (v: Value): boolean => v === null
+export const valueIsChar = (v: Value): boolean => isTaggedObject(v) && v.tag === 'char'
+export const valueIsLambda = (v: Value): boolean => isTaggedObject(v) && v.tag === 'lambda'
+export const valueIsPrim = (v: Value): boolean => isTaggedObject(v) && v.tag === 'prim'
+export const valueIsFunction = (v: Value): boolean => valueIsLambda(v) || valueIsPrim(v)
+export const valueIsPair = (v: Value): boolean => isTaggedObject(v) && v.tag === 'pair'
+export const valueIsStruct = (v: Value): boolean => isTaggedObject(v) && v.tag === 'struct'
+export const valueIsStructKind = (v: Value, kind: string): boolean =>
+  valueIsStruct(v) && v.kind === kind
+export const valueIsObject = (v: Value): boolean => typeof v === 'object'
+export const valueIsVector = (v: Value): boolean => Array.isArray(v)
 
 export function valueIsList (v: Value): boolean {
   while (true) {
@@ -150,8 +160,8 @@ ${this.desc.trim()}
   }
 }
 
-export type EnvEntry = { value: Exp, source: string, range?: Range, doc?: Doc }
-export const entry = (value: Exp, source: string, range?: Range, doc?: Doc): EnvEntry =>
+export type EnvEntry = { value: Value, source: string, range?: Range, doc?: Doc }
+export const entry = (value: Value, source: string, range?: Range, doc?: Doc): EnvEntry =>
   ({ value, source, range, doc })
 
 export class Env {
@@ -202,7 +212,7 @@ export class Env {
  * @param args - the arguments passed to the primitive, assumed to be values.
  * @param app - the full application expression, for error-reporting purposes.
  */
-type Prim = (env:Env, args: Exp[], app: Exp) => Promise<Result<Exp>>
+type Prim = (env: Env, args: Exp[], app: Exp) => Promise<Result<Exp>>
 
 /** Literal expressions */
 type Lit
@@ -225,6 +235,18 @@ const lchar = (value: string): LChar => ({ tag: 'char', value })
 
 type LStr = { 'tag' : 'str', 'value' : string }
 const lstr = (value: string): LStr => ({ tag: 'str', value })
+
+export function litToValue (lit: Lit): Value {
+  if (lit.tag === 'bool') {
+    return lit.value
+  } else if (lit.tag === 'num') {
+    return lit.value
+  } else if (lit.tag === 'char') {
+    return vchar(lit.value)
+  } else if (lit.tag === 'str') {
+    return lit.value
+  }
+}
 
 /** Expressions */
 type Exp
@@ -393,7 +415,7 @@ function patToString (p: Pat): string {
 // #region Expression querying functions
 
 function isValue (e:Exp): boolean {
-  return e.isValue
+  return e.tag === 'value'
 }
 
 function isNumber (e:Exp): boolean {

@@ -5,7 +5,7 @@ import { runtimeError } from '../runtime.js'
 
 type ArgSpec = string
 
-function specToPred (spec: ArgSpec): (arg: L.Exp) => boolean {
+function specToPred (spec: ArgSpec): (arg: L.Value) => boolean {
   switch (spec) {
     case 'any':
       return () => true
@@ -43,7 +43,7 @@ function specToPred (spec: ArgSpec): (arg: L.Exp) => boolean {
   }
 }
 
-export function checkArgs (func: string, specs: ArgSpec[], restSpec: ArgSpec | undefined, args: L.Exp[], call: L.Exp): Error<any> | undefined {
+export function checkArgs (func: string, specs: ArgSpec[], restSpec: ArgSpec | undefined, args: L.Value[], call: L.Value): Error<any> | undefined {
   // First, check the arity of the call
   // N.B., these casts are safe because runtimeError returns an Error<T>.
   // Note that the typechecker can't infer this here, but can below!
@@ -73,7 +73,7 @@ export function checkArgs (func: string, specs: ArgSpec[], restSpec: ArgSpec | u
   return undefined
 }
 
-export function checkArgsResult (func: string, specs: ArgSpec[], restSpec: ArgSpec | undefined, args: L.Exp[], call: L.Exp): Result<null> {
+export function checkArgsResult (func: string, specs: ArgSpec[], restSpec: ArgSpec | undefined, args: L.Value[], call: L.Value): Result<null> {
   const err = checkArgs(func, specs, restSpec, args, call)
   return err || ok(null)
 }

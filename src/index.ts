@@ -1,4 +1,4 @@
-import { Env, Exp, Program } from './lang.js'
+import { Env, Value, Program } from './lang.js'
 import { parseExp, parseProgram } from './parser.js'
 import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'
@@ -23,7 +23,7 @@ export function compileProgram (src: string): Result<Program> {
       ok(prog)))
 }
 
-export function compileExpr (env: Env, src: string): Result<Exp> {
+export function compileExpr (env: Env, src: string): Result<Value> {
   return parseExp(src).andThen(e =>
     detailsToResult(scopeCheckExp(e, env)).andThen(_ =>
       ok(e)))

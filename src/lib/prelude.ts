@@ -7,7 +7,7 @@ import * as Docs from './docs.js'
 import * as Pretty from '../pretty.js'
 import { fs } from '../vfs.js'
 
-function asNumbers (args: L.Exp[]): Result<number[]> {
+function asNumbers (args: L.Value[]): Result<number[]> {
   const result = new Array(args.length)
   for (let i = 0; i < args.length; i++) {
     const e = args[i]
@@ -70,7 +70,7 @@ const nanPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('nan?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.nlebool(Number.isNaN(L.asNum_(args[0]))))))
 
-function compareOp (symbol: string, op: (x: number, y: number) => boolean, args: L.Exp[], app: L.Exp): Promise<Result<L.Exp>> {
+function compareOp (symbol: string, op: (x: number, y: number) => boolean, args: L.Value[], app: L.Value): Promise<Result<L.Value>> {
   return Promise.resolve(Utils.checkArgsResult(symbol, ['number?', 'number?'], undefined, args, app).andThen(_ =>
     asNumbers(args).andThen(
       vs => ok(L.nlebool(op(vs[0], vs[1])))))
@@ -103,17 +103,17 @@ const evenPrim : L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('even?', ['number?'], undefined, args, app).andThen(_ =>
     ok(L.nlebool((L.asNum_(args[0]) & 1) !== 1))))
 
-function numericUOp (symbol: string, op: (x: number) => number, args: L.Exp[], app: L.Exp): Promise<Result<L.Exp>> {
+function numericUOp (symbol: string, op: (x: number) => number, args: L.Value[], app: L.Value): Promise<Result<L.Value>> {
   return Promise.resolve(Utils.checkArgsResult(symbol, ['number?'], undefined, args, app).andThen(_ =>
     asNumbers(args).andThen(vs => ok(L.nlenumber(op(vs[0]))))))
 }
 
-function numericBOp (symbol: string, op: (x: number, y: number) => number, args: L.Exp[], app: L.Exp): Promise<Result<L.Exp>> {
+function numericBOp (symbol: string, op: (x: number, y: number) => number, args: L.Value[], app: L.Value): Promise<Result<L.Value>> {
   return Promise.resolve(Utils.checkArgsResult(symbol, ['number?', 'number?'], undefined, args, app).andThen(_ =>
     asNumbers(args).andThen(vs => ok(L.nlenumber(op(vs[0], vs[1]))))))
 }
 
-function numericNOp (symbol: string, op: (x: number, y: number) => number, def: (x: number) => number, args: L.Exp[], app: L.Exp): Promise<Result<L.Exp>> {
+function numericNOp (symbol: string, op: (x: number, y: number) => number, def: (x: number) => number, args: L.Value[], app: L.Value): Promise<Result<L.Value>> {
   return Promise.resolve(Utils.checkArgsResult(symbol, ['number?'], 'number?', args, app).andThen(_ =>
     args.length === 1
       ? ok(L.nlenumber(def(L.asNum_(args[0]))))
@@ -385,7 +385,7 @@ const makeListPrim: L.Prim = (_env, args, app) => {
   if (argErr) { return Promise.resolve(argErr) }
   const n = L.asNum_(args[0])
   const fill = args[1]
-  let ret: L.Exp = L.nlenil()
+  let ret: L.Value = L.nlenil()
   for (let i = 0; i < n; i++) {
     ret = L.nlepair(fill, ret)
   }
@@ -396,7 +396,7 @@ const lengthPrim: L.Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('length', ['list?'], undefined, args, app)
   if (argErr) { return Promise.resolve(argErr) }
   let length = 0
-  let e: L.Exp = args[0]
+  let e: L.Value = args[0]
   while (e.tag !== 'nil') {
     if (e.tag === 'pair') {
       length += 1
@@ -408,7 +408,7 @@ const lengthPrim: L.Prim = (_env, args, app) => {
   return Promise.resolve(ok(L.nlenumber(length)))
 }
 
-function appendOne_ (l1: L.Exp, l2: L.Exp): L.Exp {
+function appendOne_ (l1: L.Value, l2: L.Value): L.Value {
   if (l1.tag === 'nil') {
     return l2
   } else if (l1.tag === 'pair') {
@@ -438,7 +438,7 @@ const reversePrim: L.Prim = (_env, args, app) => {
     e = (e as L.EPair).e2
   }
   queue.reverse()
-  let ret: L.Exp = L.nlenil()
+  let ret: L.Value = L.nlenil()
   while (queue.length > 0) {
     const next = queue.pop() as L.EPair
     ret = L.nlepair(next.e1, ret)

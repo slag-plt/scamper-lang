@@ -15,46 +15,46 @@ function namesInclude (names: L.Name[], x: string): boolean {
   return names.some(n => n.value === x)
 }
 
-function substitute (e1: L.Exp, x: string, e2: L.Exp): L.Exp {
-  switch (e2.tag) {
+function substitute (v: L.Value, x: string, e: L.Exp): L.Exp {
+  switch (e.tag) {
     case 'value':
-      return e2
+      return e
     case 'var':
-      return e2.value === x ? e1 : e2
+      return e.value === x ? L.nlevalue(v) : e
     case 'lit':
-      return e2
+      return e
     case 'call':
-      return L.ecall(e2.range, substitute(e1, x, e2.head), e2.args.map((e) => substitute(e1, x, e)))
+      return L.ecall(e.range, substitute(v, x, e.head), e.args.map((e) => substitute(v, x, e)))
     case 'lam':
-      return namesInclude(e2.args, x) ? e2 : L.elam(e2.range, e2.args, substitute(e1, x, e2.body))
+      return namesInclude(e.args, x) ? e : L.elam(e.range, e.args, substitute(v, x, e.body))
     case 'if':
-      return L.eif(e2.range, substitute(e1, x, e2.e1), substitute(e1, x, e2.e2), substitute(e1, x, e2.e3))
+      return L.eif(e.range, substitute(v, x, e.e1), substitute(v, x, e.e2), substitute(v, x, e.e3))
     case 'nil':
-      return e2
+      return e
     case 'pair':
-      return L.epair(e2.range, substitute(e1, x, e2.e1), substitute(e1, x, e2.e2))
+      return L.epair(e.range, substitute(v, x, e.e1), substitute(v, x, e.e2))
     case 'let':
       return L.elet(
-        e2.range,
-        e2.kind,
-        substituteInBindings(e1, x, e2.bindings, e2.kind),
+        e.range,
+        e.kind,
+        substituteInBindings(v, x, e.bindings, e.kind),
         // N.B., we only substitute into the body if we didn't shadow x via one
         // of our bindings. Note that this won't occur in the 'let' case.
         // But it occurs in the other cases as long as one of the bindings
         // mentions x.
-        e2.kind !== 'let' && inBindings(x, e2.bindings) ? e2.body : substitute(e1, x, e2.body)
+        e.kind !== 'let' && inBindings(x, e.bindings) ? e.body : substitute(v, x, e.body)
       )
     case 'cond':
-      return L.econd(e2.range, e2.branches.map(b => [substitute(e1, x, b[0]), substitute(e1, x, b[1])]))
+      return L.econd(e.range, e.branches.map(b => [substitute(v, x, b[0]), substitute(v, x, b[1])]))
     case 'and':
-      return L.eand(e2.range, e2.args.map(e => substitute(e1, x, e)))
+      return L.eand(e.range, e.args.map(e => substitute(v, x, e)))
     case 'or':
-      return L.eor(e2.range, e2.args.map(e => substitute(e1, x, e)))
+      return L.eor(e.range, e.args.map(e => substitute(v, x, e)))
     case 'match':
-      return L.ematch(e2.range,
-        substitute(e1, x, e2.scrutinee),
-        e2.branches.map(b => [b[0], substitute(e1, x, b[1])]),
-        e2.bracket)
+      return L.ematch(e.range,
+        substitute(v, x, e.scrutinee),
+        e.branches.map(b => [b[0], substitute(v, x, b[1])]),
+        e.bracket)
   }
 }
 
@@ -67,14 +67,14 @@ function inBindings (x: string, bindings: [L.Name, L.Exp][]): boolean {
   return false
 }
 
-function substituteInBindings (e1: L.Exp, x: string, bindings: [L.Name, L.Exp][], kind: L.LetKind): [L.Name, L.Exp][] {
+function substituteInBindings (v: L.Value, x: string, bindings: [L.Name, L.Exp][], kind: L.LetKind): [L.Name, L.Exp][] {
   const result = new Array<[L.Name, L.Exp]>(bindings.length)
   let seenVar = false
   for (let i = 0; i < bindings.length; i++) {
     const [y, body] = bindings[i]
     // For a 'let', shadowing is local to each binding.
     if (kind === 'let') {
-      result[i] = [y, x === y.value ? body : substitute(e1, x, body)]
+      result[i] = [y, x === y.value ? body : substitute(v, x, body)]
 
     // For a 'let' and 'letrec', shadowing telescopes from previous bindings.
     } else {
@@ -84,10 +84,10 @@ function substituteInBindings (e1: L.Exp, x: string, bindings: [L.Name, L.Exp][]
         // N.B., in the let* case, y is not visible in the body of this binding,
         // but visible in _subsequent_ bindings. In the letrec case, the value
         // is immediately visible so it is shadowed.
-        result[i] = kind === 'let*' ? [y, substitute(e1, x, body)] : [y, body]
+        result[i] = kind === 'let*' ? [y, substitute(v, x, body)] : [y, body]
         seenVar = true
       } else {
-        result[i] = [y, substitute(e1, x, body)]
+        result[i] = [y, substitute(v, x, body)]
       }
     }
   }
@@ -115,12 +115,7 @@ function substituteIfFreeVar (env: L.Env, e: L.Exp): Result<L.Exp> {
       // N.B., repeatedly substitute if a free var is bound to another
       // free var. Kind of gross, probably should re think it.
       if (env.has(e.value)) {
-        const result = env.get(e.value)!.value
-        if (result.tag === 'var') {
-          return substituteIfFreeVar(env, result)
-        } else {
-          return ok(result)
-        }
+        return ok(L.nlevalue(env.get(e.value)!.value))
       } else {
         return runtimeError(msg('error-var-undef', e.value), e)
       }
@@ -129,35 +124,35 @@ function substituteIfFreeVar (env: L.Env, e: L.Exp): Result<L.Exp> {
   }
 }
 
-function tryMatch (e: L.Exp, p: L.Pat): L.Env | undefined {
+function tryMatch (v: L.Value, p: L.Pat): L.Env | undefined {
   if (p.tag === 'wild') {
     return new L.Env([])
-  } else if (p.tag === 'null' && e.tag === 'nil') {
+  } else if (p.tag === 'null' && L.valueIsNull(v)) {
     return new L.Env([])
   } else if (p.tag === 'var') {
-    return new L.Env([[p.id, L.entry(e, 'match')]])
-  } else if (p.tag === 'lit' && e.tag === 'lit' && L.litEquals(e.value, p.lit)) {
+    return new L.Env([[p.id, L.entry(v, 'match')]])
+  } else if (p.tag === 'lit' && v.tag === 'lit' && L.litEquals(v.value, p.lit)) {
     return new L.Env([])
-  } else if (p.tag === 'ctor' && (e.tag === 'pair' || e.tag === 'struct')) {
+  } else if (p.tag === 'ctor' && (v.tag === 'pair' || v.tag === 'struct')) {
     const head = p.head
     const args = p.args
     // Special cases: pairs are matched with either pair or cons
-    if ((head === 'pair' || head === 'cons') && args.length === 2 && e.tag === 'pair') {
-      const env1 = tryMatch(e.e1, args[0])
-      const env2 = tryMatch(e.e2, args[1])
+    if ((head === 'pair' || head === 'cons') && args.length === 2 && v.tag === 'pair') {
+      const env1 = tryMatch(v.e1, args[0])
+      const env2 = tryMatch(v.e2, args[1])
       return env1 && env2 ? env1.concat(env2) : undefined
-    } else if (e.tag === 'struct' && head === e.kind) {
+    } else if (v.tag === 'struct' && head === v.kind) {
       // N.B., because we only use strings for object fields in structs, we are
       // guaranteed that the order we traverse the fields is their insertion
       // order. This luckily coincides with left-to-right order of declaration
       // of the fields!
       // https://stackoverflow.com/questions/5525795/does-javascript-guarantee-object-property-order
-      const fields = Object.getOwnPropertyNames(e.obj)
+      const fields = Object.getOwnPropertyNames(v.obj)
       if (fields.length === args.length) {
         let env = new L.Env([])
         for (let i = 0; i < fields.length; i++) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const env2 = tryMatch((e.obj as any)[fields[i]] as L.Exp, args[i])
+          const env2 = tryMatch((v.obj as any)[fields[i]] as L.Exp, args[i])
           if (!env2) {
             return undefined
           }
@@ -187,7 +182,7 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
     case 'var':
       return ok(e)
     case 'lit':
-      return ok(e)
+      return ok(L.litToValue(e.value))
     case 'call':
       // NOTE: we allow variables in head position so that (f x) works
       // where f is a top-level binding. If we change the infrastructure
@@ -208,7 +203,7 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
         // If we did not stepExp any arguments, then evaluate the full call.
         // First, substitute away free variables before resolving the call.
         return substituteIfFreeVar(env, e.head).asyncAndThen(head =>
-          join(e.args.map(x => substituteIfFreeVar(env, x))).asyncAndThen(async (args: Exp[]): Promise<Result<Exp>> => {
+          join(e.args.map(x => substituteIfFreeVar(env, x))).asyncAndThen(async (args: L.Exp[]): Promise<Result<L.Exp>> => {
             switch (head.tag) {
               case 'lam':
                 if (args.length === head.args.length) {

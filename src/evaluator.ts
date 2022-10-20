@@ -3,9 +3,9 @@ import { msg } from './messages.js'
 import { runtimeError } from './runtime.js'
 import { Result, ok } from './result.js'
 
-type Env = Map<string, L.Exp>
+type Env = Map<string, L.Value>
 
-export function evalExp (env: Env, e: L.Exp): Promise<Result<L.Exp>> {
+export function evalExp (env: Env, e: L.Value): Promise<Result<L.Value>> {
   switch (e.tag) {
     case 'value':
       return Promise.resolve(ok(e))
