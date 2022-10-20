@@ -21,7 +21,7 @@ function litToString (l: L.Lit): string {
   }
 }
 
-function isSimpleExp (e: L.Value): boolean {
+function isSimpleExp (e: L.Exp): boolean {
   switch (e.tag) {
     case 'value': return true
     case 'var': return true
@@ -39,7 +39,7 @@ function isSimpleExp (e: L.Value): boolean {
   }
 }
 
-function nestingDepth (e: L.Value): number {
+function nestingDepth (e: L.Exp): number {
   switch (e.tag) {
     case 'value': return 0
     case 'var': return 0
@@ -120,7 +120,7 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
   }
 }
 
-export function expToString (col: number, e: L.Value, htmlOutput: boolean = false): string {
+export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false): string {
   switch (e.tag) {
     case 'value':
       return valueToString(col, e.value, htmlOutput)

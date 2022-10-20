@@ -30,7 +30,7 @@ export type Value = any
  * (string? e) <==> typeof e === 'string'
  * (null? e) <==> e === null
  * (char? e) <==> typeof e === 'object': { tag: 'char', value: string }  <-- need to deprecate this!
- * (function? e) <==> typeof e === 'object': { tag: 'lambda', args: string[], body: Exp } or { tag: 'prim', fn: Prim }
+ * (function? e) <==> typeof e === 'object': { tag: 'lambda', args: Name[], body: Exp } or { tag: 'prim', fn: Prim }
  * (pair? e) <==> typeof e === 'object': { tag: 'pair', fst: Value, snd: Value }
  * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, fields: Map<string, Value> }
  * (object? e) <==> typeof e === 'object': { ... }
@@ -41,7 +41,7 @@ export type Value = any
  */
 
 export const vchar = (value: string): Value => ({ tag: 'char', value })
-export const vlambda = (args: string[], body: Exp): Value => ({ tag: 'lambda', args, body })
+export const vlambda = (args: Name[], body: Exp): Value => ({ tag: 'lambda', args, body })
 export const vprim = (fn: Prim): Value => ({ tag: 'prim', fn })
 export const vpair = (fst: Value, snd: Value): Value => ({ tag: 'pair', fst, snd })
 export const vstruct = (kind: string, fields: Map<string, Value>): Value => ({ tag: 'struct', kind, fields })
@@ -209,10 +209,11 @@ export class Env {
 /**
  * The type of primitive function implementations.
  * @param env - the current execution environment.
- * @param args - the arguments passed to the primitive, assumed to be values.
+ * @param args - the values passed to the primitive function.
  * @param app - the full application expression, for error-reporting purposes.
+ * @returns the result of the primitive function.
  */
-type Prim = (env: Env, args: Exp[], app: Exp) => Promise<Result<Exp>>
+type Prim = (env: Env, args: Value[], app: Exp) => Promise<Result<Value>>
 
 /** Literal expressions */
 type Lit

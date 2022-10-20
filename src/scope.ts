@@ -1,5 +1,5 @@
 import { ErrorDetails, errorDetails, ICE } from './result.js'
-import { Env, Value, Program, name, Name, fvarsOfPat } from './lang.js'
+import { Exp, Env, Value, Program, name, Name, fvarsOfPat } from './lang.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
 import { internalLibs, preludeEnv } from './runtime.js'
@@ -34,7 +34,7 @@ function containsDups (xs: string[]): string | undefined {
   return undefined
 }
 
-function checkExp (bvars: string[], e: Value): ErrorDetails[] {
+function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
   switch (e.tag) {
     case 'value':
       return []
@@ -140,7 +140,7 @@ function mkInitialBVars (env: Env): string[] {
   return Array.from(env.names())
 }
 
-function scopeCheckExp (e: Value, env: Env = preludeEnv): ErrorDetails[] {
+function scopeCheckExp (e: Exp, env: Env = preludeEnv): ErrorDetails[] {
   return checkExp(mkInitialBVars(env), e)
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as L from './lang.js'
 import { Result, error, join, ok, rethrow, errorDetails, ICE } from './result.js'
@@ -207,26 +208,21 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
           join(e.args.map(x => substituteIfFreeVar(env, x))).asyncAndThen(async (args: L.Exp[]): Promise<Result<L.Exp>> => {
             if (head.tag === 'value') {
               if (L.valueIsLambda(head)) {
-
+                const formals: L.Name[] = head.value.args
+                const body: L.Exp = head.value.body
+                if (args.length === formals.length) {
+                  return ok(substituteAll(args, formals, body))
+                } else {
+                  return runtimeError(msg('error-arity', 'lambda', formals.length, args.length), e)
+                }
               } else if (L.valueIsPrim(head)) {
-
+                const prim: L.Prim = head.value.fn
+                return await prim(env, args, e)
               } else {
                 return runtimeError(msg('error-type-expected-call', e.head.tag), e)
               }
             } else {
               throw new ICE('stepExp', 'call head is not a value')
-            }
-            switch (head.tag) {
-              case 'lam':
-                if (args.length === head.args.length) {
-                  return ok(substituteAll(args, head.args, head.body))
-                } else {
-                  return runtimeError(msg('error-arity', 'lambda', head.args.length, args.length), e)
-                }
-              case 'prim':
-                return await head.prim(env, args, e)
-              default:
-                return runtimeError(msg('error-type-expected-call', e.head.tag), e)
             }
           }))
       }
@@ -440,18 +436,18 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
       const predPrim: L.Prim = (env, args, app) =>
         Promise.resolve(args.length !== 1
           ? runtimeError(msg('error-arity', predName, 1, args.length), app)
-          : ok(L.nlebool(L.isStructKind(args[0], name))))
+          : ok(L.valueIsStructKind(args[0], name)))
       // field-accessing primitives: id-field?
       const fieldPrims: [string, L.EnvEntry][] = s.fields.map(f => {
         const fieldName = `${name}-${f.value}`
-        return [fieldName, entry(
-          L.nleprim((env, args, app) =>
+        return [fieldName, L.entry(
+          L.vprim((_env, args, app) =>
             Promise.resolve(args.length !== 1
               ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
-              : !L.isStructKind(args[0], name)
+              : !L.valueIsStructKind(args[0], name)
                   ? runtimeError(msg('error-type-expected-fun', 1, fieldName, `struct ${name}`, args[0].tag))
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                  : ok((L.asStruct_(args[0]) as any)[f.value] as Exp))),
+                  : ok(((args[0].fields as Map<string, L.Exp>).get(f.value)!)))),
           `struct ${name}`,
           f.range
         )]
@@ -461,17 +457,17 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
         if (args.length !== s.fields.length) {
           return Promise.resolve(runtimeError(msg('error-arity', name, s.fields.length, args.length), app))
         } else {
-          const obj: any = { }
+          const fields = new Map<string, L.Value>()
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          s.fields.forEach((f, i) => { obj[f.value] = args[i] })
+          s.fields.forEach((f, i) => { fields.set(f.value, args[i]) })
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          return Promise.resolve(ok(L.nlestruct(name, obj)))
+          return Promise.resolve(ok(L.vstruct(name, fields)))
         }
       }
       return [
         env.concat(new L.Env([
-          [name, entry(L.nleprim(ctorPrim), `struct ${name}`, s.id.range)],
-          [predName, L.entry(L.nleprim(predPrim), `struct ${name}`, s.id.range)],
+          [name, L.entry(L.vprim(ctorPrim), `struct ${name}`, s.id.range)],
+          [predName, L.entry(L.vprim(predPrim), `struct ${name}`, s.id.range)],
           ...fieldPrims
         ])),
         L.sbinding(`struct ${name}`)

@@ -1,17 +1,18 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call */
 import { join, ok, Result } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { Env, entry, asNum_, asString_, EStruct, nlestruct, nleprim, Prim, Doc, nlestr, asList_, isPair, asPair_, isNumber, nlebool, isStructKind } from '../lang.js'
+import * as L from '../lang.js'
 import { msg } from '../messages.js'
 import * as Utils from './utils.js'
 import * as Docs from './docs.js'
 
-const colorPrim: Prim = (_env, args, app) =>
+const colorPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('color', ['number?', 'number?', 'number?', 'number?'], undefined, args, app).asyncAndThen(_ => {
-    const r = asNum_(args[0])
-    const g = asNum_(args[1])
-    const b = asNum_(args[2])
-    const a = asNum_(args[3])
+    const r = args[0] as number
+    const g = args[1] as number
+    const b = args[2] as number
+    const a = args[3] as number
     const isValid = (n: number) => n >= 0 && n <= 255
     if (!isValid(r)) {
       return Promise.resolve(runtimeError(msg(
@@ -42,7 +43,7 @@ const colorPrim: Prim = (_env, args, app) =>
         'a number in the range 0--1',
         a), app))
     } else {
-      return Promise.resolve(ok(nlestr(`rgba(${asNum_(args[0])}, ${asNum_(args[1])}, ${asNum_(args[2])}, ${asNum_(args[3])})`)))
+      return Promise.resolve(ok(`rgba(${args[0]}, ${args[1]}, ${args[2]}, ${args[3]})`))
     }
   })
 
@@ -51,9 +52,9 @@ type Mode = 'solid' | 'outline'
 /* eslint-disable no-use-before-define */
 export type Drawing = Ellipse | Rectangle | Triangle | Path | Beside | Above | Overlay | OverlayOffset | Rotate | WithDash
 
-const imagePrim: Prim = (_env, args, app) =>
+const imagePrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('image?', ['any'], undefined, args, app).asyncAndThen(_ =>
-    Promise.resolve(ok(nlebool(isStructKind(args[0], 'Drawing')))))
+    Promise.resolve(ok(L.valueIsStructKind(args[0], 'Drawing'))))
 
 type Ellipse = { tag: 'ellipse', width: number, height: number, mode: Mode, color: string }
 const ellipse = (width: number, height: number, mode: Mode, color: string): Ellipse => ({

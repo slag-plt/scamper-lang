@@ -5,7 +5,7 @@ import { Result, ok } from './result.js'
 
 type Env = Map<string, L.Value>
 
-export function evalExp (env: Env, e: L.Value): Promise<Result<L.Value>> {
+export function evalExp (env: Env, e: L.Exp): Promise<Result<L.Value>> {
   switch (e.tag) {
     case 'value':
       return Promise.resolve(ok(e))
@@ -35,9 +35,5 @@ export function evalExp (env: Env, e: L.Value): Promise<Result<L.Value>> {
       throw new Error('unimplemented!')
     case 'match':
       throw new Error('unimplemented!')
-    case 'struct':
-      return Promise.resolve(ok(e))
-    case 'prim':
-      return Promise.resolve(ok(e))
   }
 }

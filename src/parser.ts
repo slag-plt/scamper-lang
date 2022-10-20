@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, echar, econd, eif, elam, elet, ematch, enil, enumber, eor, estr, evar, Value, lbool, lchar, LetKind, lnum, lstr, Name, name, Pat, pctor, plit, pnull, Program, pvar, pwild, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
+import { Exp, eand, ebool, ecall, echar, econd, eif, elam, elet, ematch, enil, enumber, eor, estr, evar, lbool, lchar, LetKind, lnum, lstr, Name, name, Pat, pctor, plit, pnull, Program, pvar, pwild, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps } from './sexp.js'
 import { msg } from './messages.js'
@@ -47,7 +47,7 @@ function sexpToUniqueStringList (s: Sexp): Result<Name[]> {
   }
 }
 
-function sexpToBinding (s: Sexp): Result<[Name, Value]> {
+function sexpToBinding (s: Sexp): Result<[Name, Exp]> {
   switch (s.tag) {
     case 'atom':
       return parserError(msg('error-type-expected', 'binding', 'identifier'), s)
@@ -56,17 +56,17 @@ function sexpToBinding (s: Sexp): Result<[Name, Value]> {
         ? parserError(msg('error-type-expected', 'binding', 'non-binding'), s)
         : s.list[0].tag !== 'atom'
           ? parserError(msg('error-var-binding'), s)
-          : sexpToExp(s.list[1]).andThen((e:Value) =>
-            ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Value]))
+          : sexpToExp(s.list[1]).andThen((e: Exp) =>
+            ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Exp]))
   }
 }
 
-function sexpToBindings (s: Sexp): Result<[Name, Value][]> {
+function sexpToBindings (s: Sexp): Result<[Name, Exp][]> {
   switch (s.tag) {
     case 'atom':
       return parserError(msg('error-type-expected', 'binding list', 'identifier'), s)
     case 'slist': {
-      const result: [Name, Value][] = new Array<[Name, Value]>(s.list.length)
+      const result: [Name, Exp][] = new Array<[Name, Exp]>(s.list.length)
       for (let i = 0; i < s.list.length; i++) {
         const r = sexpToBinding(s.list[i])
         switch (r.tag) {
@@ -81,7 +81,7 @@ function sexpToBindings (s: Sexp): Result<[Name, Value][]> {
   }
 }
 
-function sexpToBranch (s: Sexp): Result<[Value, Value]> {
+function sexpToBranch (s: Sexp): Result<[Exp, Exp]> {
   switch (s.tag) {
     case 'atom':
       return parserError(msg('error-type-expected', 'branch', 'identifier'), s)
@@ -95,7 +95,7 @@ function sexpToBranch (s: Sexp): Result<[Value, Value]> {
   }
 }
 
-function sexpToMatchBranch (s: Sexp): Result<[Pat, Value]> {
+function sexpToMatchBranch (s: Sexp): Result<[Pat, Exp]> {
   switch (s.tag) {
     case 'atom':
       return parserError(msg('error-type-expected', 'branch', 'identifier'), s)
@@ -188,7 +188,7 @@ function sexpToPat (s: Sexp): Result<Pat> {
   }
 }
 
-function sexpToExp (s: Sexp): Result<Value> {
+function sexpToExp (s: Sexp): Result<Exp> {
   switch (s.tag) {
     case 'atom': {
       if (intRegex.test(s.single)) {
@@ -282,7 +282,7 @@ function sexpToExp (s: Sexp): Result<Value> {
   }
 }
 
-function parseExp (src: string): Result<Value> {
+function parseExp (src: string): Result<Exp> {
   return stringToSexp(src).andThen(sexp => sexpToExp(sexp))
 }
 

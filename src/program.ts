@@ -43,11 +43,11 @@ export class ProgramState {
     return st
   }
 
-  stepExp (e: L.Value): Promise<R.Result<L.Value>> {
+  stepExp (e: L.Exp): Promise<R.Result<L.Value>> {
     return Runtime.stepExp(this.env, e)
   }
 
-  evaluateExp (e: L.Value): Promise<R.Result<L.Value>> {
+  evaluateExp (e: L.Exp): Promise<R.Result<L.Value>> {
     return Runtime.evaluateExp(this.env, e)
   }
 
