@@ -76,6 +76,8 @@ export const valueHasPropertyValue = (v: Value, p: string, x: any): boolean =>
   valueHasProperty(v, p) && (v as any)[p] === x
 export const valueIsVector = (v: Value): boolean => Array.isArray(v)
 
+export const valueGetChar_ = (v: Value): string => (v as CharType).value
+
 export function valueIsList (v: Value): boolean {
   while (true) {
     if (v === null) {
@@ -135,6 +137,41 @@ export function valueToString (v: Value): string {
   }
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   throw new ICE('valueToString', `unknown value encountered: ${v}`)
+}
+
+export function valueEquals (v1: Value, v2: Value): boolean {
+  if (valueIsBoolean(v1) && valueIsBoolean(v2)) {
+    return v1 === v2
+  } else if (valueIsNumber(v1) && valueIsNumber(v2)) {
+    return v1 === v2
+  } else if (valueIsString(v1) && valueIsString(v2)) {
+    return v1 === v2
+  } else if (valueIsNull(v1) && valueIsNull(v2)) {
+    return true
+  } else if (valueIsChar(v1) && valueIsChar(v2)) {
+    return (v1 as CharType).value === (v2 as CharType).value
+  } else if (valueIsProcedure(v1) && valueIsProcedure(v2)) {
+    // N.B., strict memory equality for functions
+    return v1 === v2
+  } else if (valueIsPair(v1) && valueIsPair(v2)) {
+    const p1 = v1 as PairType
+    const p2 = v2 as PairType
+    return valueEquals(p1.fst, p2.fst) && valueEquals(p1.snd, p2.snd)
+  } else if (valueIsStruct(v1) && valueIsStruct(v2)) {
+    const s1 = v1 as StructType
+    const s2 = v2 as StructType
+    return s1.kind === s2.kind && s1.fields.length === s2.fields.length &&
+      s1.fields.every((v, i) => valueEquals(v, s2.fields[i]))
+  } else if (valueIsObject(v1) && valueIsObject(v2)) {
+    // TODO: should implement a deep equality check with Object methods
+    return v1 === v2
+  } else if (valueIsVector(v1) && valueIsVector(v2)) {
+    const a1 = v1 as Value[]
+    const a2 = v2 as Value[]
+    return a1.length === a2.length && a1.every((v, i) => valueEquals(v, a2[i]))
+  } else {
+    return false
+  }
 }
 
 // #endregion
@@ -288,8 +325,9 @@ type Exp
   // Non-standard forms
   | EMatch // A pattern match expression
 
-type EValue = { tag: 'value', range: Range, value: Value, isValue: boolean, isList: boolean }
+export type EValue = { tag: 'value', range: Range, value: Value, isValue: boolean, isList: boolean }
 export const nlevalue = (value: Value): EValue => ({ tag: 'value', range: noRange(), value, isValue: true, isList: false })
+export const unpackValue = (e: Exp): Value => (e as EValue).value
 
 type EVar = { tag: 'var', range: Range, value: string, isValue: boolean, isList: boolean }
 const evar = (range: Range, value: string): EVar => ({ tag: 'var', range, value, isValue: true, isList: false })
