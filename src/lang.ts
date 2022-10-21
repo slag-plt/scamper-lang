@@ -127,13 +127,23 @@ export function valueToString (v: Value): string {
   } else if (valueIsPair(v)) {
     return valueIsList(v)
       ? `(list ${valueListToArray_(v).map(valueToString).join(' ')})`
-      : `(pair ${valueToString((v as PairType).fst)} ${valueToString((v as PairType).snd)})`
+      : `(cons ${valueToString((v as PairType).fst)} ${valueToString((v as PairType).snd)})`
   } else if (valueIsStruct(v)) {
     return `(struct ${(v as StructType).kind.toString()} ${(v as StructType).fields.map(v => valueToString(v)).join(' ')})`
   } else if (Array.isArray(v)) {
     throw new ICE('valueToString', 'vector not yet implemented')
+  } else if (v === null) {
+    return 'null'
   } else if (typeof v === 'object') {
-    return '[object Object]'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'drawing') {
+      return '[object Drawing]'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'composition') {
+      return '[object Composition]'
+    } else {
+      return '[object Object]'
+    }
   }
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   throw new ICE('valueToString', `unknown value encountered: ${v}`)

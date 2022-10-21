@@ -96,11 +96,11 @@ const negativePrim : L.Prim = (_env, args, app) =>
 
 const oddPrim : L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('odd?', ['number?'], undefined, args, app).andThen(_ =>
-    ok((args[0] as number & 1) === 1)))
+    ok(((args[0] as number) & 1) === 1)))
 
 const evenPrim : L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('even?', ['number?'], undefined, args, app).andThen(_ =>
-    ok((args[0] as number & 1) !== 1)))
+    ok(((args[0] as number) & 1) !== 1)))
 
 function numericUOp (symbol: string, op: (x: number) => number, args: L.Value[], app: L.Exp): Promise<Result<L.Value>> {
   return Promise.resolve(Utils.checkArgsResult(symbol, ['number?'], undefined, args, app).andThen(_ =>
@@ -199,9 +199,9 @@ const stringNumberPrim: L.Prim = (_env, args, app) => {
   if (argErr) { return Promise.resolve(argErr) }
   const s = args[0] as string
   if (/^[+-]?\d+$/.test(s)) {
-    return Promise.resolve(ok(L.nlenumber(parseInt(s))))
+    return Promise.resolve(ok(parseInt(s)))
   } else if (/^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/.test(s)) {
-    return Promise.resolve(ok(L.nlenumber(parseFloat(s))))
+    return Promise.resolve(ok(parseFloat(s)))
   } else {
     return Promise.resolve(runtimeError(msg('error-runtime-parsing', 'string->number', L.expToString(L.nlevalue(args[0])), 'number'), app))
   }
@@ -292,11 +292,11 @@ const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 // Booleans (6.3)
 
 const notPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('not', ['boolean?'], 'boolean?', args, app).andThen(_ =>
+  Promise.resolve(Utils.checkArgsResult('not', ['boolean?'], undefined, args, app).andThen(_ =>
     ok(!(args[0] as boolean))))
 
 const booleanPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('boolean?', ['any'], 'boolean?', args, app).andThen(_ =>
+  Promise.resolve(Utils.checkArgsResult('boolean?', ['any'], undefined, args, app).andThen(_ =>
     ok(L.valueIsBoolean(args[0]))))
 
 // From racket/base
@@ -382,7 +382,7 @@ const makeListPrim: L.Prim = (_env, args, app) => {
   if (argErr) { return Promise.resolve(argErr) }
   const n = args[0] as number
   const fill = args[1]
-  let ret: L.Value = L.nlenil()
+  let ret: L.Value = null
   for (let i = 0; i < n; i++) {
     ret = L.vpair(fill, ret)
   }
@@ -542,7 +542,7 @@ function mkCharComparePrim (name: string, f: (a: string, b: string) => boolean):
   return (_env, args, app) => {
     const err = Utils.checkArgs(name, [], 'char?', args, app)
     if (err) { return Promise.resolve(err) }
-    return Promise.resolve(ok(L.nlebool(pairwiseSatisfies((a, b) => f(L.valueGetChar_(a), L.valueGetChar_(b)), args))))
+    return Promise.resolve(ok(pairwiseSatisfies((a, b) => f(L.valueGetChar_(a), L.valueGetChar_(b)), args)))
   }
 }
 
@@ -582,7 +582,7 @@ const digitValuePrim: L.Prim = (_env, args, app) => {
   const char = L.valueGetChar_(args[0])
   const n = parseInt(char, 10)
   if (isNaN(n)) {
-    return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'digit-value', 'decimal digit', char), app))
+    return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'digit-value', 1, 'decimal digit', char), app))
   } else {
     return Promise.resolve(ok(n))
   }
@@ -1024,7 +1024,7 @@ const randomPrim: L.Prim = async (_env, args, app) =>
     const n = args[0] as number
     return n <= 0
       ? runtimeError(msg('error-precondition-not-met', 'random', '1', 'positive integer', n), app)
-      : ok(L.nlenumber(Math.floor(Math.random() * n)))
+      : ok(Math.floor(Math.random() * n))
   }))
 
 const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [

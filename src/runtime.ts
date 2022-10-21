@@ -348,8 +348,8 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
           const v = L.unpackIfValue(head)
           if (L.valueIsBoolean(v)) {
             return v
-              ? ok(L.nleor([...e.args.slice(1)]))
-              : ok(L.nlevalue(true))
+              ? ok(L.nlevalue(true))
+              : ok(L.nleor([...e.args.slice(1)]))
           } else {
             return runtimeError(msg('error-type-expected', 'bool', head), e)
           }
@@ -421,10 +421,15 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
       return [env, s]
     case 'define':
       if (L.isValue(s.value)) {
-        return [
-          env.append(s.name.value, L.entry(L.unpackValue(s.value), 'binding', s.name.range)),
+        const result: Result<[L.Env, L.Stmt]> = substituteIfFreeVar(env, s.value).andThen(v => ok([
+          env.append(s.name.value, L.entry(L.unpackValue(v), 'binding', s.name.range)),
           L.sbinding(s.name.value)
-        ]
+        ]))
+        if (result.tag === 'ok') {
+          return result.value
+        } else {
+          return [env, L.serror(result.details)]
+        }
       } else {
         return [
           env,

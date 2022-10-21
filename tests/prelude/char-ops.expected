@@ -1,7 +1,7 @@
 5
 :1:1: Runtime error:
-    digit-value expects that argument decimal digit obeys the following property: a, but undefined was given.
-    In program: (digit-value #a)
+    digit-value expects that argument 1 obeys the following property: decimal digit, but a was given.
+    In program: (digit-value #\a)
 97
 #\a
 #\A

@@ -38,7 +38,7 @@ function specToPred (spec: ArgSpec): (arg: L.Value) => boolean {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       return e => L.valueHasPropertyValue(e, 'renderAs', spec)
     default:
-      if (spec.length > 0 && /[A-Z]/.test(spec[0])) {
+      if (spec.length > 0 && /[A-Za-z]/.test(spec[0])) {
         return e => L.valueIsStructKind(e, spec)
       } else {
         throw new ICE(

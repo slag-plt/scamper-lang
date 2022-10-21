@@ -86,30 +86,41 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
   } else if (typeof v === 'string') {
     return `"${v}"`
   } else if (L.valueIsChar(v)) {
-    return `#\\${(v as L.CharType).value}`
+    const ch = (v as L.CharType).value
+    let printed = ch
+    switch (ch) {
+      // TODO: probably add in special cases for... all the other cases!
+      case ' ': printed = 'space'; break
+      default: break
+    }
+    return `#\\${printed}`
   } else if (L.valueIsLambda(v) || L.valueIsPrim(v)) {
     return '[object Function]'
   } else if (L.valueIsPair(v)) {
     return L.valueIsList(v)
       ? `(list ${L.valueListToArray_(v).map(v => valueToString(col, v, htmlOutput)).join(' ')})`
-      : `(pair ${valueToString(col, (v as L.PairType).fst, htmlOutput)} ${valueToString(col, (v as L.PairType).snd, htmlOutput)})`
+      : `(cons ${valueToString(col, (v as L.PairType).fst, htmlOutput)} ${valueToString(col, (v as L.PairType).snd, htmlOutput)})`
   } else if (L.valueIsStruct(v)) {
     const s = v as L.StructType
-    if (s.kind === 'Drawing') {
-      return htmlOutput
-        ? `</code><span class="drawing">${JSON.stringify(s)}</span><code>`
-        : '[object Drawing]'
-    } else if (s.kind === 'Composition') {
-      return htmlOutput
-        ? `</code><span class="composition">${JSON.stringify(s)}</span><code>`
-        : '[object Composition]'
-    } else {
-      return `(struct ${s.kind.toString()} ${s.fields.map(v => valueToString(col, v, htmlOutput)).join(' ')})`
-    }
+    return `(struct ${s.kind.toString()} ${s.fields.map(v => valueToString(col, v, htmlOutput)).join(' ')})`
   } else if (Array.isArray(v)) {
     throw new ICE('valueToString', 'vector not yet implemented')
+  } else if (v === null) {
+    return 'null'
   } else if (typeof v === 'object') {
-    return '[object Object]'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'drawing') {
+      return htmlOutput
+        ? `</code><span class="drawing">${JSON.stringify(v)}</span><code>`
+        : '[object Drawing]'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'composition') {
+      return htmlOutput
+        ? `</code><span class="composition">${JSON.stringify(v)}</span><code>`
+        : '[object Composition]'
+    } else {
+      return '[object Object]'
+    }
   }
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   throw new ICE('valueToString', `unknown value encountered: ${v}`)
