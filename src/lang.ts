@@ -16,12 +16,12 @@ const nlname = (value: string): Name => name(value, noRange())
 // #region Value forms
 
 export type TaggedObject = FunctionType | CharType | PairType | StructType
-export type LambdaType = { tag: 'lambda', args: Name[], body: Exp }
-export type PrimType = { tag: 'prim', fn: Prim }
+export type LambdaType = { _scamperTag: 'lambda', args: Name[], body: Exp }
+export type PrimType = { _scamperTag: 'prim', fn: Prim }
 export type FunctionType = LambdaType | PrimType
-export type CharType = { tag: 'char', value: string }
-export type PairType = { tag: 'pair', fst: Value, snd: Value }
-export type StructType = { tag: 'struct', kind: string, fields: Value[] }
+export type CharType = { _scamperTag: 'char', value: string }
+export type PairType = { _scamperTag: 'pair', fst: Value, snd: Value }
+export type StructType = { _scamperTag: 'struct', kind: string, fields: Value[] }
 
 /** In Scamper, a Value is, directly, a Javascript value. */
 export type Value = boolean | number | string | null | object | Value[] | TaggedObject
@@ -33,41 +33,47 @@ export type Value = boolean | number | string | null | object | Value[] | Tagged
  * (number? e) <=> typeof e === 'number'
  * (string? e) <==> typeof e === 'string'
  * (null? e) <==> e === null
- * (char? e) <==> typeof e === 'object': { tag: 'char', value: string }  <-- need to deprecate this!
- * (function? e) <==> typeof e === 'object': { tag: 'lambda', args: Name[], body: Exp } or { tag: 'prim', fn: Prim }
- * (pair? e) <==> typeof e === 'object': { tag: 'pair', fst: Value, snd: Value }
- * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, fields: Value[] }
- * (object? e) <==> typeof e === 'object': { ... }
+ * (char? e) <==> typeof e === 'object': { _scamperTag: 'char', value: string }  <-- need to deprecate this!
+ * (function? e) <==> typeof e === 'object': { _scamperTag: 'lambda', args: Name[], body: Exp } or { _scamperTag: 'prim', fn: Prim }
+ * (pair? e) <==> typeof e === 'object': { _scamperTag: 'pair', fst: Value, snd: Value }
+ * (struct? e) <==> typeof e === 'object': { _scamperTag: 'struct', 'kind': string, fields: Value[] }
+ * (object? e) <==> typeof e === 'object': { ... } (no _scamperTag field)
  * (vector? e) <==> Array.isArray(e)
  *
  * TODO: do we need to "uniquify" the fields so that, e.g., an object can't
  * mock-up a struct?
  */
 
-export const vchar = (value: string): Value => ({ tag: 'char', value })
-export const vlambda = (args: Name[], body: Exp): Value => ({ tag: 'lambda', args, body })
-export const vprim = (fn: Prim): Value => ({ tag: 'prim', fn })
-export const vpair = (fst: Value, snd: Value): Value => ({ tag: 'pair', fst, snd })
-export const vstruct = (kind: string, fields: Value[]): Value => ({ tag: 'struct', kind, fields })
+export const vchar = (value: string): Value => ({ _scamperTag: 'char', value })
+export const vlambda = (args: Name[], body: Exp): Value => ({ _scamperTag: 'lambda', args, body })
+export const vprim = (fn: Prim): Value => ({ _scamperTag: 'prim', fn })
+export const vpair = (fst: Value, snd: Value): Value => ({ _scamperTag: 'pair', fst, snd })
+export const vstruct = (kind: string, fields: Value[]): Value => ({ _scamperTag: 'struct', kind, fields })
 
 export const valueIsAny = (v: Value): boolean => true
 export const isTaggedObject = (v: Value): boolean =>
   typeof v === 'object' && Object.hasOwn(v as object, 'tag')
 export const valueIsBoolean = (v: Value): boolean => typeof v === 'boolean'
 export const valueIsNumber = (v: Value): boolean => typeof v === 'number'
+export const valueIsInteger = (v: Value): boolean => valueIsNumber(v) && Number.isInteger(v)
+export const valueIsReal = (v: Value): boolean => valueIsNumber(v) && !Number.isInteger(v)
 export const valueIsString = (v: Value): boolean => typeof v === 'string'
 export const valueIsNull = (v: Value): boolean => v === null
-export const valueIsChar = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'char'
-export const valueIsLambda = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'lambda'
-export const valueIsPrim = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'prim'
+export const valueIsChar = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject)._scamperTag === 'char'
+export const valueIsLambda = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject)._scamperTag === 'lambda'
+export const valueIsPrim = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject)._scamperTag === 'prim'
 export const valueIsProcedure = (v: Value): boolean => valueIsLambda(v) || valueIsPrim(v)
-export const valueIsPair = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'pair'
-export const valueIsStruct = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'struct'
+export const valueIsPair = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject)._scamperTag === 'pair'
+export const valueIsStruct = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject)._scamperTag === 'struct'
 export const valueIsStructKind = (v: Value, kind: string): boolean =>
   valueIsStruct(v) && (v as StructType).kind === kind
 export const valueIsAnyStructKind = (v: Value, kinds: string[]): boolean =>
   valueIsStruct(v) && kinds.includes((v as StructType).kind)
-export const valueIsObject = (v: Value): boolean => typeof v === 'object'
+export const valueIsObject = (v: Value): boolean => typeof v === 'object' && !Object.hasOwn(v as object, '_scamperTag')
+export const valueHasProperty = (v: Value, p: string): boolean => valueIsObject(v) && Object.hasOwn(v as object, p)
+export const valueHasPropertyValue = (v: Value, p: string, x: any): boolean =>
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  valueHasProperty(v, p) && (v as any)[p] === x
 export const valueIsVector = (v: Value): boolean => Array.isArray(v)
 
 export function valueIsList (v: Value): boolean {
