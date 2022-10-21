@@ -52,7 +52,7 @@ export const vstruct = (kind: string, fields: Value[]): Value => ({ _scamperTag:
 
 export const valueIsAny = (v: Value): boolean => true
 export const isTaggedObject = (v: Value): boolean =>
-  typeof v === 'object' && Object.hasOwn(v as object, 'tag')
+  typeof v === 'object' && v !== null && Object.hasOwn(v as object, '_scamperTag')
 export const valueIsBoolean = (v: Value): boolean => typeof v === 'boolean'
 export const valueIsNumber = (v: Value): boolean => typeof v === 'number'
 export const valueIsInteger = (v: Value): boolean => valueIsNumber(v) && Number.isInteger(v)
@@ -328,6 +328,9 @@ type Exp
 export type EValue = { tag: 'value', range: Range, value: Value, isValue: boolean, isList: boolean }
 export const nlevalue = (value: Value): EValue => ({ tag: 'value', range: noRange(), value, isValue: true, isList: false })
 export const unpackValue = (e: Exp): Value => (e as EValue).value
+// N.B., this helper is useful for single stepping where we sometimes need to
+// remove a layer of value wrapping.
+export const unpackIfValue = (e: Exp): Value => e.tag === 'value' ? e.value : e
 
 type EVar = { tag: 'var', range: Range, value: string, isValue: boolean, isList: boolean }
 const evar = (range: Range, value: string): EVar => ({ tag: 'var', range, value, isValue: true, isList: false })
@@ -468,7 +471,10 @@ function patToString (p: Pat): string {
 // #region Expression querying functions
 
 function isValue (e:Exp): boolean {
-  return e.tag === 'value'
+  // N.B., vars are values because wrt single-step evaluation, they are environment
+  // bound free-variables that stand in for values. We lazily substitute them in
+  // runtime.js.
+  return e.tag === 'value' || e.tag === 'var'
 }
 
 function isNumber (e:Exp): boolean {
@@ -643,8 +649,8 @@ type STestResult = {
 const stestresult = (desc: string, passed: boolean, reason?: string, expected?: Exp, actual?: Exp): STestResult =>
   ({ tag: 'testresult', desc, passed, reason, expected, actual })
 
-type SValue = { tag: 'value', value: Exp }
-const svalue = (value: Exp): SValue => ({ tag: 'value', value })
+type SValue = { tag: 'value', value: Value }
+const svalue = (value: Value): SValue => ({ tag: 'value', value })
 
 type Stmt = SImport | SDefine | SExp | SStruct | STestCase | SEffect
 
@@ -688,7 +694,7 @@ function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
         return `[[ Test "${stmt.desc}": failed!\n${msg}]]`
       }
     }
-    case 'value': return expToString(stmt.value)
+    case 'value': return valueToString(stmt.value)
     case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
   }
 }

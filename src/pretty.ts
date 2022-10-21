@@ -206,7 +206,7 @@ export function stmtToString (col: number, stmt: L.Stmt, outputBindings: boolean
         return `[[ Test "${stmt.desc}" failed!\n${msg}\n]]`
       }
     }
-    case 'value': return expToString(col, stmt.value, htmlOutput)
+    case 'value': return valueToString(col, stmt.value, htmlOutput)
     case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
   }
 }

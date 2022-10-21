@@ -6,7 +6,7 @@
       [(zero? n) 1]
       [else (* n (factorial (- n 1)))])))
 
-120
+(factorial 5)
 
 (define red-square (rectangle 15 15 "solid" "red"))
 

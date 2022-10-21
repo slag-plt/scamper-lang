@@ -94,7 +94,7 @@ function substituteInBindings (v: L.Value, x: string, bindings: [L.Name, L.Exp][
   return result
 }
 
-function substituteAll (es: L.Exp[], xs: L.Name[], e: L.Exp) {
+function substituteAll (es: L.Value[], xs: L.Name[], e: L.Exp) {
   for (let i = 0; i < es.length; i++) {
     e = substitute(es[i], xs[i].value, e)
   }
@@ -201,21 +201,20 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
           }
         }
         // If we did not stepExp any arguments, then evaluate the full call.
-        // First, substitute away free variables before resolving the call.
+        // Then, substitute away free variables in the head before resolving the call.
         return substituteIfFreeVar(env, e.head).asyncAndThen(head =>
           join(e.args.map(x => substituteIfFreeVar(env, x))).asyncAndThen(async (args: L.Exp[]): Promise<Result<L.Exp>> => {
             if (head.tag === 'value') {
-              if (L.valueIsLambda(head)) {
-                const formals: L.Name[] = (head.value as L.LambdaType).args
-                const body: L.Exp = (head.value as L.LambdaType).body
-                if (args.length === formals.length) {
-                  return ok(substituteAll(args, formals, body))
+              if (L.valueIsLambda(head.value)) {
+                const lam = head.value as L.LambdaType
+                if (args.length === lam.args.length) {
+                  return ok(substituteAll(args.map(L.unpackIfValue), lam.args, lam.body))
                 } else {
-                  return runtimeError(msg('error-arity', 'lambda', formals.length, args.length), e)
+                  return runtimeError(msg('error-arity', 'lambda', lam.args.length, args.length), e)
                 }
-              } else if (L.valueIsPrim(head)) {
+              } else if (L.valueIsPrim(head.value)) {
                 const prim: L.Prim = (head.value as L.PrimType).fn
-                return (await prim(env, args, e)).andThen(v => ok(L.nlevalue(v)))
+                return (await prim(env, args.map(L.unpackIfValue), e)).andThen(v => ok(L.nlevalue(v)))
               } else {
                 return runtimeError(msg('error-type-expected-call', e.head.tag), e)
               }
@@ -225,33 +224,29 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
           }))
       }
     case 'lam':
-      return ok(e)
+      return ok(L.nlevalue(L.vlambda(e.args, e.body)))
     case 'if':
       if (!L.isValue(e.e1)) {
         return (await stepExp(env, e.e1)).andThen(e1p => ok(L.eif(e.range, e1p, e.e2, e.e3)))
       } else {
         return substituteIfFreeVar(env, e.e1).andThen(e1 => {
-          switch (e1.tag) {
-            case 'lit':
-              if (e1.value.tag === 'bool') {
-                return e1.value.value ? ok(e.e2) : ok(e.e3)
-              } else {
-                return runtimeError(msg('error-type-expected-cond', e1.value.tag), e)
-              }
-            default:
-              return runtimeError(msg('error-type-expected-cond', e1.tag), e)
+          const v1 = L.unpackIfValue(e1)
+          if (L.valueIsBoolean(v1)) {
+            return v1 as boolean ? ok(e.e2) : ok(e.e3)
+          } else {
+            return runtimeError(msg('error-type-expected-cond', e1), e)
           }
         })
       }
     case 'nil':
-      return ok(e)
+      return ok(L.nlevalue(null))
     case 'pair':
       if (!L.isValue(e.e1)) {
         return (await stepExp(env, e.e1)).andThen(e1p => ok(L.epair(e.range, e1p, e.e2)))
       } else if (!L.isValue(e.e2)) {
         return (await stepExp(env, e.e2)).andThen(e2p => ok(L.epair(e.range, e.e1, e2p)))
       } else {
-        return ok(e)
+        return ok(L.nlevalue(L.vpair(L.unpackIfValue(e.e1), L.unpackIfValue(e.e2))))
       }
     case 'let':
       if (e.bindings.length > 0) {
@@ -264,20 +259,20 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
             return ok(L.elet(e.range, e.kind, bindings, e.body))
           })
         } else if (e.bindings.length === 1) {
-          return ok(substitute(e1, x.value, e.body))
+          return ok(substitute(L.unpackIfValue(e1), x.value, e.body))
         } else if (e.kind === 'let') {
           return ok(L.elet(
             e.range,
             e.kind,
             e.bindings.slice(1),
-            substitute(e1, x.value, e.body)
+            substitute(L.unpackIfValue(e1), x.value, e.body)
           ))
         } else if (e.kind === 'let*') {
           return ok(L.elet(
             e.range,
             e.kind,
-            substituteInBindings(e1, x.value, e.bindings.slice(1), e.kind),
-            inBindings(x.value, e.bindings.slice(1)) ? e.body : substitute(e1, x.value, e.body)
+            substituteInBindings(L.unpackIfValue(e1), x.value, e.bindings.slice(1), e.kind),
+            inBindings(x.value, e.bindings.slice(1)) ? e.body : substitute(L.unpackIfValue(e1), x.value, e.body)
           ))
         } else {
           // TODO: the semantics we want... I think... is:
@@ -310,9 +305,10 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
         const body = e.branches[0][1]
         return substituteIfFreeVar(env, guard).asyncAndThen(async guard => {
           if (L.isValue(guard)) {
-            if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === true) {
+            const v = L.unpackIfValue(guard)
+            if (L.valueIsBoolean(v) && v as boolean) {
               return ok(body)
-            } else if (guard.tag === 'lit' && guard.value.tag === 'bool' && guard.value.value === false) {
+            } else if (L.valueIsBoolean(v)) {
               return ok(L.nlecond([...e.branches.slice(1)]))
             } else {
               return runtimeError(msg('error-type-expected-cond', guard.tag), e)
@@ -325,16 +321,17 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
       }
     case 'and':
       if (e.args.length === 0) {
-        return ok(L.nlebool(true))
+        return ok(L.nlevalue(true))
       } else {
         const head = e.args[0]
         if (L.isValue(head)) {
-          if (head.tag === 'lit' && head.value.tag === 'bool') {
-            return head.value.value
+          const v = L.unpackIfValue(head)
+          if (L.valueIsBoolean(v)) {
+            return v
               ? ok(L.nleand([...e.args.slice(1)]))
-              : ok(L.nlebool(false))
+              : ok(L.nlevalue(false))
           } else {
-            return runtimeError(msg('error-type-expected', 'bool', head.tag), e)
+            return runtimeError(msg('error-type-expected', 'bool', head), e)
           }
         } else {
           return (await stepExp(env, head)).andThen(headp =>
@@ -344,16 +341,17 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
     // N.B., or is identical to and expect dualized---factor redundancy?
     case 'or':
       if (e.args.length === 0) {
-        return ok(L.nlebool(false))
+        return ok(L.nlevalue(false))
       } else {
         const head = e.args[0]
         if (L.isValue(head)) {
-          if (head.tag === 'lit' && head.value.tag === 'bool') {
-            return !head.value.value
+          const v = L.unpackIfValue(head)
+          if (L.valueIsBoolean(v)) {
+            return v
               ? ok(L.nleor([...e.args.slice(1)]))
-              : ok(L.nlebool(true))
+              : ok(L.nlevalue(true))
           } else {
-            return runtimeError(msg('error-type-expected', 'bool', head.tag), e)
+            return runtimeError(msg('error-type-expected', 'bool', head), e)
           }
         } else {
           return (await stepExp(env, head)).andThen(headp =>
@@ -369,7 +367,9 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
           return runtimeError(msg('error-match-no-branch-applies'), e)
         } else {
           for (let i = 0; i < branches.length; i++) {
-            const bindings = tryMatch(e.scrutinee, branches[i][0])
+            // TODO: probably bug: need to free-var substitute for e, otherwise pattern matching on
+            // free variables will fail.
+            const bindings = tryMatch(L.unpackIfValue(e.scrutinee), branches[i][0])
             if (bindings) {
               return ok(substituteEnv(bindings, branches[i][1]))
             }
@@ -392,6 +392,10 @@ async function evaluateExp (env: L.Env, e: L.Exp) : Promise<Result<L.Exp>> {
     }
   }
   return ok(e)
+}
+
+export async function evaluateExpToValue (env: L.Env, e: L.Exp) : Promise<Result<L.Value>> {
+  return (await evaluateExp(env, e)).asyncAndThen(e => Promise.resolve(ok(L.unpackValue(e))))
 }
 
 function resultToStmt (result: Result<L.Stmt>): L.Stmt {
@@ -418,7 +422,7 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
     case 'define':
       if (L.isValue(s.value)) {
         return [
-          env.append(s.name.value, L.entry(s.value, 'binding', s.name.range)),
+          env.append(s.name.value, L.entry(L.unpackValue(s.value), 'binding', s.name.range)),
           L.sbinding(s.name.value)
         ]
       } else {
@@ -437,7 +441,7 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
           : ok(L.valueIsStructKind(args[0], name)))
       // field-accessing primitives: id-field?
       const fieldPrims: [string, L.EnvEntry][] = s.fields.map((f, i) => {
-        const fieldName = `${name}-${f.value}`
+        const fieldName: string = `${name}-${f.value}`
         return [fieldName, L.entry(
           L.vprim((_env, args, app) =>
             Promise.resolve(args.length !== 1
@@ -468,20 +472,21 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
       ]
     }
     case 'testcase': {
-      const result: Result<L.Stmt> = await (await evaluateExp(env, s.desc)).asyncAndThen(async e1 =>
-        (await evaluateExp(env, s.expected)).asyncAndThen(async expected =>
-          (await evaluateExp(env, s.actual)).asyncAndThen(async actual =>
-            (await evaluateExp(env, L.nlecall(s.comp, [expected, actual]))).andThen(e2 => {
-              if (!L.isString(e1)) {
-                return runtimeError(msg('error-type-expected', 'string', e1.tag), s.desc)
-              } else if (!L.isBoolean(e2)) {
-                return runtimeError(msg('error-type-expected', 'bool', e2.tag), s.comp)
+      const result: Result<L.Stmt> = await (await evaluateExpToValue(env, s.desc)).asyncAndThen(async e1 =>
+        (await evaluateExpToValue(env, s.expected)).asyncAndThen(async expected =>
+          (await evaluateExpToValue(env, s.actual)).asyncAndThen(async actual =>
+            (await evaluateExpToValue(env, L.nlecall(s.comp, [L.nlevalue(expected), L.nlevalue(actual)]))).andThen(e2 => {
+              if (!L.valueIsString(e1)) {
+                return runtimeError(msg('error-type-expected', 'string', e1), s.desc)
+              } else if (!L.valueIsBoolean(e2)) {
+                return runtimeError(msg('error-type-expected', 'bool', e2), s.comp)
               }
-              const desc = L.asString_(e1)
-              const passed = L.asBool_(e2)
+              const desc = e1 as string
+              const passed = e2 as boolean
               return ok(passed
                 ? L.stestresult(desc, true)
-                : L.stestresult(desc, false, undefined, expected, actual))
+                // TODO: should probably work with values rather than exps here
+                : L.stestresult(desc, false, undefined, L.nlevalue(expected), L.nlevalue(actual)))
             }))))
       if (result.tag === 'error') {
         return [env, L.serror(result.details)]
@@ -492,10 +497,10 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
     // N.B., as a last step, substitute free variables away when they are values.
     case 'exp': {
       const result = L.isValue(s.value)
-        ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(L.svalue(vp))))
+        ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(L.svalue(L.unpackIfValue(vp)))))
         : resultToStmt((await stepExp(env, s.value)).andThen(v =>
           L.isValue(v)
-            ? substituteIfFreeVar(env, v).andThen(vp => ok(L.svalue(vp)))
+            ? substituteIfFreeVar(env, v).andThen(vp => ok(L.svalue(L.unpackIfValue(vp))))
             : ok(L.sexp(v)) as Result<L.Stmt>))
       return [env, result]
     }
