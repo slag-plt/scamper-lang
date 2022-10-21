@@ -15,7 +15,7 @@ export type Duration = {
   kind: 'dur',
   fields: [number, number]
 }
-const dur = (num: number, den: number): Duration => ({ _scamperTag: 'struct', kind: 'dur', fields: [num, den] })
+export const dur = (num: number, den: number): Duration => ({ _scamperTag: 'struct', kind: 'dur', fields: [num, den] })
 
 const isPitchClass = (s: string): boolean =>
   /^[A-Ga-g][#b]{0,2}$/.test(s)
