@@ -21,7 +21,7 @@ export type PrimType = { tag: 'prim', fn: Prim }
 export type FunctionType = LambdaType | PrimType
 export type CharType = { tag: 'char', value: string }
 export type PairType = { tag: 'pair', fst: Value, snd: Value }
-export type StructType = { tag: 'struct', kind: string, fields: Map<string, Value> }
+export type StructType = { tag: 'struct', kind: string, fields: Value[] }
 
 /** In Scamper, a Value is, directly, a Javascript value. */
 export type Value = boolean | number | string | null | object | Value[] | TaggedObject
@@ -36,7 +36,7 @@ export type Value = boolean | number | string | null | object | Value[] | Tagged
  * (char? e) <==> typeof e === 'object': { tag: 'char', value: string }  <-- need to deprecate this!
  * (function? e) <==> typeof e === 'object': { tag: 'lambda', args: Name[], body: Exp } or { tag: 'prim', fn: Prim }
  * (pair? e) <==> typeof e === 'object': { tag: 'pair', fst: Value, snd: Value }
- * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, fields: Map<string, Value> }
+ * (struct? e) <==> typeof e === 'object': { tag: 'struct', 'kind': string, fields: Value[] }
  * (object? e) <==> typeof e === 'object': { ... }
  * (vector? e) <==> Array.isArray(e)
  *
@@ -48,7 +48,7 @@ export const vchar = (value: string): Value => ({ tag: 'char', value })
 export const vlambda = (args: Name[], body: Exp): Value => ({ tag: 'lambda', args, body })
 export const vprim = (fn: Prim): Value => ({ tag: 'prim', fn })
 export const vpair = (fst: Value, snd: Value): Value => ({ tag: 'pair', fst, snd })
-export const vstruct = (kind: string, fields: Map<string, Value>): Value => ({ tag: 'struct', kind, fields })
+export const vstruct = (kind: string, fields: Value[]): Value => ({ tag: 'struct', kind, fields })
 
 export const valueIsAny = (v: Value): boolean => true
 export const isTaggedObject = (v: Value): boolean =>
@@ -121,7 +121,7 @@ export function valueToString (v: Value): string {
       ? `(list ${valueListToArray_(v).map(valueToString).join(' ')})`
       : `(pair ${valueToString((v as PairType).fst)} ${valueToString((v as PairType).snd)})`
   } else if (valueIsStruct(v)) {
-    return `(struct ${(v as StructType).kind.toString()} ${[...(v as StructType).fields.values()].map(v => valueToString(v)).join(' ')})`
+    return `(struct ${(v as StructType).kind.toString()} ${(v as StructType).fields.map(v => valueToString(v)).join(' ')})`
   } else if (Array.isArray(v)) {
     throw new ICE('valueToString', 'vector not yet implemented')
   } else if (typeof v === 'object') {

@@ -104,7 +104,7 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
         ? `</code><span class="composition">${JSON.stringify(s)}</span><code>`
         : '[object Composition]'
     } else {
-      return `(struct ${s.kind.toString()} ${[...s.fields.values()].map(v => valueToString(col, v, htmlOutput)).join(' ')})`
+      return `(struct ${s.kind.toString()} ${s.fields.map(v => valueToString(col, v, htmlOutput)).join(' ')})`
     }
   } else if (Array.isArray(v)) {
     throw new ICE('valueToString', 'vector not yet implemented')

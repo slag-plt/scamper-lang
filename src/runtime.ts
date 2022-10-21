@@ -436,7 +436,7 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
           ? runtimeError(msg('error-arity', predName, 1, args.length), app)
           : ok(L.valueIsStructKind(args[0], name)))
       // field-accessing primitives: id-field?
-      const fieldPrims: [string, L.EnvEntry][] = s.fields.map(f => {
+      const fieldPrims: [string, L.EnvEntry][] = s.fields.map((f, i) => {
         const fieldName = `${name}-${f.value}`
         return [fieldName, L.entry(
           L.vprim((_env, args, app) =>
@@ -444,8 +444,8 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
               ? runtimeError(msg('error-arity', fieldName, 1, args.length), app)
               : !L.valueIsStructKind(args[0], name)
                   ? runtimeError(msg('error-type-expected-fun', 1, fieldName, `struct ${name}`, args[0]))
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                  : ok((((args[0] as L.StructType).fields).get(f.value)!)))),
+                  // N.B., fields are encoded positionally. Field names exist purely at the source level.
+                  : ok((((args[0] as L.StructType).fields[i]))))),
           `struct ${name}`,
           f.range
         )]
@@ -455,11 +455,7 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
         if (args.length !== s.fields.length) {
           return Promise.resolve(runtimeError(msg('error-arity', name, s.fields.length, args.length), app))
         } else {
-          const fields = new Map<string, L.Value>()
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          s.fields.forEach((f, i) => { fields.set(f.value, args[i]) })
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          return Promise.resolve(ok(L.vstruct(name, fields)))
+          return Promise.resolve(ok(L.vstruct(name, [...args])))
         }
       }
       return [
