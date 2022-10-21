@@ -21,7 +21,7 @@ export type PrimType = { tag: 'prim', fn: Prim }
 export type FunctionType = LambdaType | PrimType
 export type CharType = { tag: 'char', value: string }
 export type PairType = { tag: 'pair', fst: Value, snd: Value }
-export type StructType = { tag: 'struct', kind: String, fields: Map<string, Value> }
+export type StructType = { tag: 'struct', kind: string, fields: Map<string, Value> }
 
 /** In Scamper, a Value is, directly, a Javascript value. */
 export type Value = boolean | number | string | null | object | Value[] | TaggedObject
@@ -50,6 +50,7 @@ export const vprim = (fn: Prim): Value => ({ tag: 'prim', fn })
 export const vpair = (fst: Value, snd: Value): Value => ({ tag: 'pair', fst, snd })
 export const vstruct = (kind: string, fields: Map<string, Value>): Value => ({ tag: 'struct', kind, fields })
 
+export const valueIsAny = (v: Value): boolean => true
 export const isTaggedObject = (v: Value): boolean =>
   typeof v === 'object' && Object.hasOwn(v as object, 'tag')
 export const valueIsBoolean = (v: Value): boolean => typeof v === 'boolean'
@@ -59,11 +60,13 @@ export const valueIsNull = (v: Value): boolean => v === null
 export const valueIsChar = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'char'
 export const valueIsLambda = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'lambda'
 export const valueIsPrim = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'prim'
-export const valueIsFunction = (v: Value): boolean => valueIsLambda(v) || valueIsPrim(v)
+export const valueIsProcedure = (v: Value): boolean => valueIsLambda(v) || valueIsPrim(v)
 export const valueIsPair = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'pair'
 export const valueIsStruct = (v: Value): boolean => isTaggedObject(v) && (v as TaggedObject).tag === 'struct'
 export const valueIsStructKind = (v: Value, kind: string): boolean =>
   valueIsStruct(v) && (v as StructType).kind === kind
+export const valueIsAnyStructKind = (v: Value, kinds: string[]): boolean =>
+  valueIsStruct(v) && kinds.includes((v as StructType).kind)
 export const valueIsObject = (v: Value): boolean => typeof v === 'object'
 export const valueIsVector = (v: Value): boolean => Array.isArray(v)
 
