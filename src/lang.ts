@@ -20,7 +20,7 @@ export type LambdaType = { _scamperTag: 'lambda', args: Name[], body: Exp }
 export type PrimType = { _scamperTag: 'prim', fn: Prim }
 export type FunctionType = LambdaType | PrimType
 export type CharType = { _scamperTag: 'char', value: string }
-export type PairType = { _scamperTag: 'pair', fst: Value, snd: Value }
+export type PairType = { _scamperTag: 'pair', fst: Value, snd: Value, isList: boolean }
 export type StructType = { _scamperTag: 'struct', kind: string, fields: Value[] }
 
 /** In Scamper, a Value is, directly, a Javascript value. */
@@ -47,7 +47,12 @@ export type Value = boolean | number | string | null | object | Value[] | Tagged
 export const vchar = (value: string): Value => ({ _scamperTag: 'char', value })
 export const vlambda = (args: Name[], body: Exp): Value => ({ _scamperTag: 'lambda', args, body })
 export const vprim = (fn: Prim): Value => ({ _scamperTag: 'prim', fn })
-export const vpair = (fst: Value, snd: Value): Value => ({ _scamperTag: 'pair', fst, snd })
+export const vpair = (fst: Value, snd: Value): Value => ({
+  _scamperTag: 'pair',
+  fst,
+  snd,
+  isList: snd === null || (valueIsPair(snd) && (snd as PairType).isList)
+})
 export const vstruct = (kind: string, fields: Value[]): Value => ({ _scamperTag: 'struct', kind, fields })
 
 export const valueIsAny = (v: Value): boolean => true
