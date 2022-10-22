@@ -223,42 +223,46 @@ export const entry = (value: Value, source: string, range?: Range, doc?: Doc): E
   ({ value, source, range, doc })
 
 export class Env {
+  parent?: Env
   entries: Map<string, EnvEntry>
 
-  constructor (entries?: Iterable<[string, EnvEntry]>) {
+  constructor (entries?: Iterable<[string, EnvEntry]>, parent?: Env) {
     if (entries) {
       this.entries = new Map(entries)
     } else {
       this.entries = new Map()
     }
+    this.parent = parent
   }
 
   public has (key: string): boolean {
-    return this.entries.has(key)
+    return this.entries.has(key) || (this.parent === undefined ? false : this.parent.has(key))
   }
 
   public get (key: string): EnvEntry | undefined {
-    return this.entries.get(key)
+    return this.entries.has(key)
+      ? this.entries.get(key)
+      : this.parent === undefined ? undefined : this.parent.get(key)
   }
 
-  public items (): Iterable<[string, EnvEntry]> {
-    return this.entries.entries()
+  public items (): [string, EnvEntry][] {
+    return [...this.entries.entries(), ...this.parent === undefined ? [] : this.parent.items()]
   }
 
-  public names (): Iterable<string> {
-    return this.entries.keys()
+  public names (): string[] {
+    return [...this.entries.keys(), ...this.parent === undefined ? [] : this.parent.names()]
   }
 
   public append (key: string, value: EnvEntry): Env {
-    return new Env([...this.entries, [key, value]])
+    return new Env([...this.entries, [key, value]], this.parent)
   }
 
   public concat (other: Env): Env {
-    return new Env([...this.entries, ...other.entries])
+    return new Env([...this.entries, ...other.entries], this.parent)
   }
 
   public without (keys: string[]): Env {
-    const ret = new Env(this.items())
+    const ret = new Env(this.items(), this.parent?.without(keys))
     keys.forEach(k => ret.entries.delete(k))
     return ret
   }

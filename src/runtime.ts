@@ -112,8 +112,6 @@ function substituteEnv (env: L.Env, e: L.Exp) {
 function substituteIfFreeVar (env: L.Env, e: L.Exp): Result<L.Exp> {
   switch (e.tag) {
     case 'var':
-      // N.B., repeatedly substitute if a free var is bound to another
-      // free var. Kind of gross, probably should re think it.
       if (env.has(e.value)) {
         return ok(L.nlevalue(env.get(e.value)!.value))
       } else {
