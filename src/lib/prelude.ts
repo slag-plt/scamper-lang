@@ -470,15 +470,16 @@ const listRefPrim: L.Prim = (_env, args, app) =>
 
 // N.B., list-set! is unimplemented since it is effectful.
 
-// TODO: implement:
+// N.B., association list operations implemented below.
 //   (memq obj list)
 //   (memv obj list)
-//   (member obj list)
 //   (member obj list compare)
 //   (assq obj alist)
 //   (assv obj alist)
 //   (assoc obj alist)
 //   (assoc obj alist compare)
+
+// N.B., no need for list-copy since we have immutable lists.
 //   (list-copy obj)
 
 // Other list functions
@@ -494,6 +495,49 @@ const indexOfPrim: L.Prim = (_env, args, app) =>
     return ok(-1)
   }))
 
+const assocKeyPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('assoc-key?', ['any', 'list?'], undefined, args, app).andThen(_ => {
+    const v = args[0]
+    const list = L.unsafeListToArray(args[1])
+    for (let i = 0; i < list.length; i++) {
+      if (L.isPair(list[i])) {
+        const pair = list[i] as L.EPair
+        if (L.expEquals(pair.e1, v)) {
+          return ok(L.nlebool(true))
+        }
+      } else {
+        return runtimeError(msg('error-precondition-not-met', 'assoc-key?', 2, 'list of pairs', L.expToString(args[1]), app))
+      }
+    }
+    return ok(L.nlebool(false))
+  }))
+
+const assocRefPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('assoc-ref', ['any', 'list?'], undefined, args, app).andThen(_ => {
+    const v = args[0]
+    const list = L.unsafeListToArray(args[1])
+    for (let i = 0; i < list.length; i++) {
+      if (L.isPair(list[i])) {
+        const pair = list[i] as L.EPair
+        if (L.expEquals(pair.e1, v)) {
+          return ok(pair.e2)
+        }
+      } else {
+        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(args[1]), app))
+      }
+    }
+    return runtimeError(msg('error-assoc-not-found', v, L.expToString(args[1])), app)
+  }))
+
+const assocSetPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('assoc-set', ['any', 'any', 'list?'], undefined, args, app).andThen(_ => {
+    const k = args[0]
+    const v = args[1]
+    const list = L.unsafeListToArray(args[2])
+    const ret = L.arrayToList([L.nlepair(k, v), ...list])
+    return ok(ret)
+  }))
+
 const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['list', listPrim, Docs.list],
   ['make-list', makeListPrim, Docs.makeList],
@@ -504,7 +548,10 @@ const listPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['list-drop', listTailPrim, Docs.listDrop],
   ['list-take', listTakePrim, Docs.listTake],
   ['list-ref', listRefPrim, Docs.listRef],
-  ['index-of', indexOfPrim, Docs.indexOf]
+  ['index-of', indexOfPrim, Docs.indexOf],
+  ['assoc-key?', assocKeyPrim, Docs.assocKey],
+  ['assoc-ref', assocRefPrim, Docs.assocRef],
+  ['assoc-set', assocSetPrim, Docs.assocSet]
 ]
 
 // Symbols (6.5)
