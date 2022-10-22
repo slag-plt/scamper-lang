@@ -498,43 +498,43 @@ const indexOfPrim: L.Prim = (_env, args, app) =>
 const assocKeyPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('assoc-key?', ['any', 'list?'], undefined, args, app).andThen(_ => {
     const v = args[0]
-    const list = L.unsafeListToArray(args[1])
+    const list = L.valueListToArray_(args[1])
     for (let i = 0; i < list.length; i++) {
-      if (L.isPair(list[i])) {
-        const pair = list[i] as L.EPair
-        if (L.expEquals(pair.e1, v)) {
-          return ok(L.nlebool(true))
+      if (L.valueIsPair(list[i])) {
+        const pair = list[i] as L.PairType
+        if (L.valueEquals(pair.fst, v)) {
+          return ok(true)
         }
       } else {
-        return runtimeError(msg('error-precondition-not-met', 'assoc-key?', 2, 'list of pairs', L.expToString(args[1]), app))
+        return runtimeError(msg('error-precondition-not-met', 'assoc-key?', 2, 'list of pairs', L.expToString(L.nlevalue(args[1])), app))
       }
     }
-    return ok(L.nlebool(false))
+    return ok(false)
   }))
 
 const assocRefPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('assoc-ref', ['any', 'list?'], undefined, args, app).andThen(_ => {
     const v = args[0]
-    const list = L.unsafeListToArray(args[1])
+    const list = L.valueListToArray_(args[1])
     for (let i = 0; i < list.length; i++) {
-      if (L.isPair(list[i])) {
-        const pair = list[i] as L.EPair
-        if (L.expEquals(pair.e1, v)) {
-          return ok(pair.e2)
+      if (L.valueIsPair(list[i])) {
+        const pair = list[i] as L.PairType
+        if (L.valueEquals(pair.fst, v)) {
+          return ok(pair.snd)
         }
       } else {
-        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(args[1]), app))
+        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(L.nlevalue(args[1])), app))
       }
     }
-    return runtimeError(msg('error-assoc-not-found', v, L.expToString(args[1])), app)
+    return runtimeError(msg('error-assoc-not-found', v, L.expToString(L.nlevalue(args[1]))), app)
   }))
 
 const assocSetPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('assoc-set', ['any', 'any', 'list?'], undefined, args, app).andThen(_ => {
     const k = args[0]
     const v = args[1]
-    const list = L.unsafeListToArray(args[2])
-    const ret = L.arrayToList([L.nlepair(k, v), ...list])
+    const list = L.valueListToArray_(args[2])
+    const ret = L.valueArrayToList([L.vpair(k, v), ...list])
     return ok(ret)
   }))
 
