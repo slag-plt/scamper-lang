@@ -484,6 +484,31 @@ export const indexOf: Doc = new Doc(
   'Returns the index of the first occurrence of `v` in `l` or `-1` if `v` is not in `l`.'
 )
 
+export const assocKey: Doc = new Doc(
+  '(assoc-key? k l): any', [
+    'k: any',
+    'l: list?, an association list'
+  ],
+  'Returns `#t` if `k` is a key in association list `l`.'
+)
+
+export const assocRef: Doc = new Doc(
+  '(assoc-ref k l): any', [
+    'k: any',
+    'l: list?, an association list'
+  ],
+  'Returns the value associated with key `k` in association list `l`.'
+)
+
+export const assocSet: Doc = new Doc(
+  '(assoc-set k v l): list?', [
+    'k: any',
+    'v: any',
+    'l: list?, an association list'
+  ],
+  'Returns a new association list containing the same key-value pairs as `l` except that `k` is associated with `v`.'
+)
+
 export const charQ: Doc = new Doc(
   '(char? v): boolean?', [
     'v: any'

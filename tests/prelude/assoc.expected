@@ -1,0 +1,10 @@
+(list (cons "apples" 5) (cons "bananas" 2) (cons "oranges" 8))
+#t
+#f
+5
+2
+8
+(list (cons "apples" 3) (cons "apples" 5) (cons "bananas" 2) (cons "oranges" 8))
+3
+2
+8
