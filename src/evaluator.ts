@@ -5,6 +5,54 @@ import { Result, ok, join, ICE, errorDetails } from './result.js'
 import { imageLib } from './lib/image.js'
 import { musicLib } from './lib/music.js'
 
+// TODO: this is copy-pasted from runtime.ts---refactor!
+function tryMatch (v: L.Value, p: L.Pat): L.Env | undefined {
+  if (p.tag === 'wild') {
+    return new L.Env([])
+  } else if (p.tag === 'null' && L.valueIsNull(v)) {
+    return new L.Env([])
+  } else if (p.tag === 'var') {
+    return new L.Env([[p.id, L.entry(v, 'match')]])
+  } else if (p.tag === 'lit' && p.lit.tag === 'bool' && p.lit.value === v) {
+    return new L.Env([])
+  } else if (p.tag === 'lit' && p.lit.tag === 'num' && p.lit.value === v) {
+    return new L.Env([])
+  } else if (p.tag === 'lit' && p.lit.tag === 'str' && p.lit.value === v) {
+    return new L.Env([])
+  } else if (p.tag === 'lit' && p.lit.tag === 'char' && L.valueIsChar(v) && p.lit.value === (v as L.CharType).value) {
+    return new L.Env([])
+  } else if (p.tag === 'ctor' && (L.valueIsPair(v) || L.valueIsStruct(v))) {
+    const head = p.head
+    const args = p.args
+    // Special cases: pairs are matched with either pair or cons
+    if ((head === 'pair' || head === 'cons') && args.length === 2 && L.valueIsPair(v)) {
+      const env1 = tryMatch((v as L.PairType).fst, args[0])
+      const env2 = tryMatch((v as L.PairType).snd, args[1])
+      return env1 && env2 ? env1.concat(env2) : undefined
+    } else if (L.valueIsStructKind(v, head)) {
+      const fields = [...((v as L.StructType).fields).values()]
+      if (fields.length === args.length) {
+        let env = new L.Env([])
+        for (let i = 0; i < fields.length; i++) {
+          const env2 = tryMatch(fields[i], args[i])
+          if (!env2) {
+            return undefined
+          }
+          env = env.concat(env2)
+        }
+        return env
+      } else {
+        // TODO: should we throw an error here?
+        return undefined
+      }
+    } else {
+      // N.B., at this point, we have run out of options, so the pattern match
+      // has failed.
+      return undefined
+    }
+  }
+}
+
 export async function evalExp (env: L.Env, e: L.Exp): Promise<Result<L.Value>> {
   switch (e.tag) {
     case 'value':
@@ -48,8 +96,8 @@ export async function evalExp (env: L.Env, e: L.Exp): Promise<Result<L.Value>> {
     case 'let':
       throw new Error('unimplemented!')
     case 'cond':
-      while (e.branches.length > 0) {
-        const [guard, body] = e.branches.shift()!
+      for (let i = 0; i < e.branches.length; i++) {
+        const [guard, body] = e.branches[i]
         const v = await evalExp(env, guard)
         if (v.tag === 'ok' && L.valueIsBoolean(v.value) && (v.value as boolean) === true) {
           return evalExp(env, body)
@@ -72,8 +120,19 @@ export async function evalExp (env: L.Env, e: L.Exp): Promise<Result<L.Value>> {
         }
       }
       return ok(false)
-    case 'match':
-      throw new Error('unimplemented!')
+    case 'match': {
+      return (await evalExp(env, e.scrutinee)).asyncAndThen(async scrutinee => {
+        for (let i = 0; i < e.branches.length; i++) {
+          const [pat, body] = e.branches[i]
+          const env2 = tryMatch(scrutinee, pat)
+          if (env2) {
+            // TODO: env chain instead of concat? Does it matter?
+            return evalExp(env.concat(env2), body)
+          }
+        }
+        return runtimeError(msg('error-match-no-branch-applies'), e)
+      })
+    }
   }
 }
 
