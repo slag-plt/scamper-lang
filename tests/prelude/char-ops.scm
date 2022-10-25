@@ -1,5 +1,5 @@
 (digit-value #\5)
-(digit-value #\a)
+(digit-value #\0)
 
 (char->integer #\a)
 (integer->char 97)

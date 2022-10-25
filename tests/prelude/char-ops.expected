@@ -1,7 +1,5 @@
 5
-:1:1: Runtime error:
-    digit-value expects that argument 1 obeys the following property: decimal digit, but a was given.
-    In program: (digit-value #\a)
+0
 97
 #\a
 #\A

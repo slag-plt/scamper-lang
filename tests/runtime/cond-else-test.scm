@@ -18,7 +18,3 @@
       [else "some-other-type"])))
 
 (type-of red-square)
-
-(cond
-  [#f "shouldn't get here!"]
-  [#f "oh no!"])

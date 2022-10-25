@@ -16,7 +16,7 @@ const nlname = (value: string): Name => name(value, noRange())
 // #region Value forms
 
 export type TaggedObject = FunctionType | CharType | PairType | StructType
-export type LambdaType = { _scamperTag: 'lambda', args: Name[], body: Exp }
+export type LambdaType = { _scamperTag: 'lambda', args: Name[], body: Exp, env?: Env }
 export type PrimType = { _scamperTag: 'prim', fn: Prim }
 export type FunctionType = LambdaType | PrimType
 export type CharType = { _scamperTag: 'char', value: string }
@@ -45,7 +45,7 @@ export type Value = boolean | number | string | null | object | Value[] | Tagged
  */
 
 export const vchar = (value: string): Value => ({ _scamperTag: 'char', value })
-export const vlambda = (args: Name[], body: Exp): Value => ({ _scamperTag: 'lambda', args, body })
+export const vlambda = (args: Name[], body: Exp, env?: Env): Value => ({ _scamperTag: 'lambda', args, body, env })
 export const vprim = (fn: Prim): Value => ({ _scamperTag: 'prim', fn })
 export const vpair = (fst: Value, snd: Value): Value => ({
   _scamperTag: 'pair',
