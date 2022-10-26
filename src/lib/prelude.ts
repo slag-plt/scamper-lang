@@ -534,7 +534,7 @@ const assocRefPrim: L.Prim = (_env, args, app) =>
         return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(args[1]), app))
       }
     }
-    return runtimeError(msg('error-assoc-not-found', v, L.expToString(args[1])), app)
+    return runtimeError(msg('error-assoc-not-found', L.expToString(v), L.expToString(args[1])), app)
   }))
 
 const assocSetPrim: L.Prim = (_env, args, app) =>
