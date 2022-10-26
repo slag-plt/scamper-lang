@@ -542,7 +542,21 @@ const assocSetPrim: L.Prim = (_env, args, app) =>
     const k = args[0]
     const v = args[1]
     const list = L.unsafeListToArray(args[2])
-    const ret = L.arrayToList([L.nlepair(k, v), ...list])
+    // Update the key in-place if possible.
+    for (let i = 0; i < list.length; i++) {
+      if (L.isPair(list[i])) {
+        const pair = list[i] as L.EPair
+        if (L.expEquals(pair.e1, k)) {
+          const ret = [...list]
+          ret[i] = L.nlepair(k, v)
+          return ok(L.arrayToList(ret))
+        }
+      } else {
+        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(args[1]), app))
+      }
+    }
+    // Otherwise, we didn't find the key. Add it to our list.
+    const ret = L.arrayToList([...list, L.nlepair(k, v)])
     return ok(ret)
   }))
 
