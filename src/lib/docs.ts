@@ -835,6 +835,14 @@ export const listString: Doc = new Doc(
   'Returns a string made by joining the characters in `l` together.'
 )
 
+export const stringContains: Doc = new Doc(
+  '(string-contains? s1 s2): boolean?', [
+    's1: string?',
+    's2: string?'
+  ],
+  'Returns `#t` if and only if string `s1` contains string `s2`.'
+)
+
 export const stringSplit: Doc = new Doc(
   '(string-split s sep): list?', [
     's: string?',

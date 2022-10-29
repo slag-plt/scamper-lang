@@ -803,6 +803,10 @@ const listStringPrim: L.Prim = (_env, args, app) =>
 
 // Additional functions from racket/string.
 
+const stringContainsPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('string-contains', ['string?', 'string?'], undefined, args, app).andThen(_ =>
+    ok(L.nlebool(L.asString_(args[1]).includes(L.asString_(args[0]))))))
+
 const stringSplitPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
     ok(L.arrayToList(L.asString_(args[0]).split(L.asString_(args[1])).map(L.nlestr)))))
@@ -863,6 +867,7 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['substring', substringPrim, Docs.substring],
   ['string->list', stringListPrim, Docs.stringList],
   ['list->string', listStringPrim, Docs.listString],
+  ['string-contains', stringContainsPrim, Docs.stringContains],
   ['string-split', stringSplitPrim, Docs.stringSplit],
   ['string-append', stringAppendPrim, Docs.stringAppend],
   ['file->string', fileStringPrim, Docs.fileString],
@@ -1060,7 +1065,7 @@ const pipePrim: L.Prim = async (env, args, app) =>
   })
 
 const rangePrim: L.Prim = (env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('range', [], 'integer?', args, app).andThen(_ => {
+  Promise.resolve(Utils.checkArgsResult('range', [], 'number?', args, app).andThen(_ => {
     if (args.length === 0 || args.length > 3) {
       return runtimeError(msg('error-arity', 'range', '1--3', args.length), app)
     } else {
