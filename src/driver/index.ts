@@ -163,8 +163,8 @@ function main () {
     } else if (opts.useStepper) {
       console.log((await new scamper.ProgramState(prog).evaluate()).toString())
     } else {
-      const effects = await scamper.Evaluator.evalProgram(prog)
-      console.log(effects.map(fx => scamper.Pretty.effectToString(0, fx, false)).filter(s => s.length > 0).join('\n'))
+      const effects = await scamper.evaluateProgram(prog)
+      console.log(effects.map(fx => scamper.effectToString(0, fx, false)).filter(s => s.length > 0).join('\n'))
     }
     process.exit(0)
   })

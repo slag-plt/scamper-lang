@@ -3,7 +3,7 @@ import * as L from '../lang.js'
 import { msg } from '../messages.js'
 import { ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
-import { evalExp } from '../evaluator.js'
+import { evaluateExp } from '../evaluator.js'
 import * as Docs from './docs.js'
 import * as Pretty from '../pretty.js'
 import * as Utils from './utils.js'
@@ -38,7 +38,7 @@ const repeatPrim: L.Prim = async (env, args, app) =>
     if (n < 0) {
       return runtimeError(msg('error-precondition-not-met', 'repeat', 1, 'non-negative integer', Pretty.expToString(0, L.nlevalue(args[0]))))
     } else {
-      return evalExp(env,
+      return evaluateExp(env,
         L.nleif(
           L.nlecall(L.nlevar('='), [L.nlevalue(n), L.nlenumber(0)]),
           L.nlevar('empty'),

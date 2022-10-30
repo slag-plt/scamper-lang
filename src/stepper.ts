@@ -495,21 +495,19 @@ export class ProgramState {
   }
 
   isFullyEvaluated (): boolean {
-    return this.prog.statements.every(L.isStmtDone)
+    return this.prog.every(L.isStmtDone)
   }
 
   async step (): Promise<ProgramState> {
-    for (let i = 0; i < this.prog.statements.length; i++) {
-      const s = this.prog.statements[i]
+    for (let i = 0; i < this.prog.length; i++) {
+      const s = this.prog[i]
       if (!L.isStmtDone(s)) {
         // N.B., make sure to not mutate things, but instead, create a new
         // ProgramState with the updates.
         // const result = await Runtime.stepStmt(this.env, s)
         const result = await stepStmt(this.env, s)
-        const prog = {
-          statements: [...this.prog.statements]
-        }
-        prog.statements[i] = result[1]
+        const prog = [...this.prog]
+        prog[i] = result[1]
         return new ProgramState(prog, result[0])
       }
     }
@@ -609,7 +607,7 @@ export class ProgramTrace {
         prog,
         this.states[this.states.length - 1].env)).andThen(_ => {
         this.states.forEach(st => {
-          st.prog.statements = st.prog.statements.concat(prog.statements)
+          st.prog = st.prog.concat(prog)
         })
         return ok(null)
       }))
@@ -618,7 +616,7 @@ export class ProgramTrace {
         return
       case 'error':
         this.states.forEach(st => {
-          st.prog.statements.push(L.serror(result.details))
+          st.prog.push(L.serror(result.details))
         })
     }
   }

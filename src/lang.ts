@@ -473,7 +473,7 @@ function expToString (e:Exp): string {
     case 'if': return parens(['if', expToString(e.e1), expToString(e.e2), expToString(e.e3)])
     case 'nil': return 'null'
     case 'pair':
-      return isList(e)
+      return e.isList
         ? parens(['list'].concat(unsafeListToArray(e).map(expToString)))
         : parens(['cons', expToString(e.e1), expToString(e.e2)])
     case 'let': return parens(['let', parens(e.bindings.map(([x, e]) => `(${x.value} ${expToString(e)})`)), expToString(e.body)])
@@ -504,66 +504,6 @@ function isValue (e:Exp): boolean {
   // bound free-variables that stand in for values. We lazily substitute them in
   // runtime.js.
   return e.tag === 'value' || e.tag === 'var'
-}
-
-function isNumber (e:Exp): boolean {
-  return e.tag === 'lit' && e.value.tag === 'num'
-}
-
-function isInteger (e:Exp): boolean {
-  return e.tag === 'lit' && e.value.tag === 'num' && Number.isInteger(e.value.value)
-}
-
-function isReal (e:Exp): boolean {
-  return e.tag === 'lit' && e.value.tag === 'num' && !Number.isInteger(e.value.value)
-}
-
-function isBoolean (e:Exp): boolean {
-  return e.tag === 'lit' && e.value.tag === 'bool'
-}
-
-function isString (e:Exp): boolean {
-  return e.tag === 'lit' && e.value.tag === 'str'
-}
-
-function isChar (e:Exp): boolean {
-  return e.tag === 'lit' && e.value.tag === 'char'
-}
-
-function isLambda (e:Exp): boolean {
-  return e.tag === 'lam'
-}
-
-function isPair (e:Exp): boolean {
-  return e.tag === 'pair'
-}
-
-function isList (e:Exp): boolean {
-  return e.isList
-}
-
-function asNum_ (e:Exp): number {
-  return ((e as ELit).value as LNum).value
-}
-
-function asBool_ (e: Exp): boolean {
-  return ((e as ELit).value as LBool).value
-}
-
-function asChar_ (e: Exp): string {
-  return ((e as ELit).value as LChar).value
-}
-
-function asString_ (e: Exp): string {
-  return ((e as ELit).value as LStr).value
-}
-
-function asList_ (e: Exp): Exp[] {
-  return unsafeListToArray(e)
-}
-
-function asPair_ (e: Exp): [Exp, Exp] {
-  return [(e as EPair).e1, (e as EPair).e2]
 }
 
 function nameEquals (n1: Name, n2: Name): boolean {
@@ -658,47 +598,49 @@ function fvarsOfPat (p: Pat): string[] {
 
 export type SEffect = SImported | SError | SBinding | STestResult | SValue
 
-type SImported = { tag: 'imported', source: string }
-const simported = (source: string): SImported => ({ tag: 'imported', source })
+type SImported = { tag: 'imported', range: Range, source: string }
+const simported = (source: string, range: Range = noRange()): SImported => ({ tag: 'imported', range, source })
 
-type SError = { tag: 'error', errors: ErrorDetails[] }
-const serror = (errors: ErrorDetails[]): SEffect => ({ tag: 'error', errors })
+type SError = { tag: 'error', range: Range, errors: ErrorDetails[] }
+const serror = (errors: ErrorDetails[], range: Range = noRange()): SEffect => ({ tag: 'error', range, errors })
 
-type SBinding = { tag: 'binding', name: string }
-const sbinding = (name: string): SBinding => ({ tag: 'binding', name })
+type SBinding = { tag: 'binding', range: Range, name: string }
+const sbinding = (name: string, range: Range = noRange()): SBinding => ({ tag: 'binding', range, name })
 
 type STestResult = {
   tag: 'testresult',
+  range: Range,
   desc: string,
   passed: boolean,
   reason?: string,
   expected?: Exp,
   actual?: Exp
 }
-const stestresult = (desc: string, passed: boolean, reason?: string, expected?: Exp, actual?: Exp): STestResult =>
-  ({ tag: 'testresult', desc, passed, reason, expected, actual })
+const stestresult = (desc: string, passed: boolean, reason?: string, expected?: Exp, actual?: Exp, range: Range = noRange()): STestResult =>
+  ({ tag: 'testresult', range, desc, passed, reason, expected, actual })
 
-type SValue = { tag: 'value', value: Value }
-const svalue = (value: Value): SValue => ({ tag: 'value', value })
+type SValue = { tag: 'value', range: Range, value: Value }
+const svalue = (value: Value, range: Range = noRange()): SValue => ({ tag: 'value', range, value })
 
 type Stmt = SImport | SDefine | SExp | SStruct | STestCase | SEffect
 
 type SImport = { tag: 'import', range: Range, source: string }
 const simport = (range: Range, source: string): SImport => ({ tag: 'import', range, source })
 
-type SDefine = { tag: 'define', name: Name, value: Exp }
-const sdefine = (name: Name, value: Exp): SDefine => ({ tag: 'define', name, value })
+type SDefine = { tag: 'define', range: Range, name: Name, value: Exp }
+const sdefine = (name: Name, value: Exp, range: Range = noRange()): SDefine => ({ tag: 'define', range, name, value })
 
-type SStruct = { tag: 'struct', id: Name, fields: Name[] }
-const sstruct = (id: Name, fields: Name[]): SStruct => ({ tag: 'struct', id, fields })
+type SStruct = { tag: 'struct', range: Range, id: Name, fields: Name[] }
+const sstruct = (id: Name, fields: Name[], range: Range = noRange()): SStruct => ({ tag: 'struct', range, id, fields })
 
-type STestCase = { tag: 'testcase', desc: Exp, comp: Exp, expected: Exp, actual: Exp }
-const stestcase = (desc: Exp, comp: Exp, expected: Exp, actual: Exp): STestCase => ({ tag: 'testcase', desc, comp, expected, actual })
+type STestCase = { tag: 'testcase', range: Range, desc: Exp, comp: Exp, expected: Exp, actual: Exp }
+const stestcase = (desc: Exp, comp: Exp, expected: Exp, actual: Exp, range: Range = noRange()): STestCase =>
+  ({ tag: 'testcase', range, desc, comp, expected, actual })
 
-type SExp = { tag: 'exp', value: Exp }
-const sexp = (value: Exp): SExp => ({ tag: 'exp', value })
+type SExp = { tag: 'exp', range: Range, value: Exp }
+const sexp = (value: Exp, range: Range = noRange()): SExp => ({ tag: 'exp', range, value })
 
-type Program = { statements: Stmt[] }
+type Program = Stmt[]
 
 // #endregion
 
@@ -729,7 +671,7 @@ function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
 }
 
 function progToString (prog: Program, outputBindings: boolean = false): string {
-  return `${prog.statements.map(s => stmtToString(s, outputBindings)).filter(s => s.length > 0).join('\n\n')}`
+  return `${prog.map(s => stmtToString(s, outputBindings)).filter(s => s.length > 0).join('\n\n')}`
 }
 
 // #endregion
@@ -745,8 +687,8 @@ function isStmtDone (stmt: Stmt): boolean {
 }
 
 function indexOfCurrentStmt (prog: Program): number {
-  for (let i = 0; i < prog.statements.length; i++) {
-    if (!isStmtDone(prog.statements[i])) {
+  for (let i = 0; i < prog.length; i++) {
+    if (!isStmtDone(prog[i])) {
       return i
     }
   }
@@ -764,9 +706,7 @@ export {
   nlebool, nlenumber, nlechar, nlestr,
   nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor,
   litToString, arrayToList, unsafeListToArray, expToString, litEquals, expEquals,
-  isValue, isNumber, isInteger, isReal, isBoolean, isString, isChar, isLambda, isPair, isList,
-  asNum_, asBool_, asChar_, asString_, asList_, asPair_,
-  Pat, PVar, PWild, PNull, PLit, PCtor, pvar, pwild, pnull, plit, pctor, fvarsOfPat,
+  isValue, Pat, PVar, PWild, PNull, PLit, PCtor, pvar, pwild, pnull, plit, pctor, fvarsOfPat,
   Stmt, serror, sbinding, svalue, simported, sdefine, stestresult, sstruct, stestcase, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
   Program, indexOfCurrentStmt, progToString
 }

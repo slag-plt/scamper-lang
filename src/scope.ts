@@ -101,7 +101,7 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
 
 function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
   let errors: ErrorDetails[] = []
-  prog.statements.forEach(s => {
+  prog.forEach(s => {
     switch (s.tag) {
       case 'define':
         // if (bvars.includes(s.name.value)) {

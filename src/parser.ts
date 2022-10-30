@@ -336,9 +336,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
 }
 
 function sexpsToProgram (ss: Sexp[]): Result<Program> {
-  return join(ss.map(sexpToStmt)).andThen(statements => ok({
-    statements
-  }))
+  return join(ss.map(sexpToStmt)).andThen(statements => ok(statements))
 }
 
 function parseProgram (src: string): Result<Program> {

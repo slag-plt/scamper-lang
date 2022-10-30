@@ -163,7 +163,7 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
     case 'nil':
       return 'null'
     case 'pair':
-      return L.isList(e)
+      return e.isList
         ? parens(e.bracket, ['list'].concat(L.unsafeListToArray(e).map(arg => expToString(col, arg, htmlOutput))))
         : parens(e.bracket, ['cons', expToString(col, e.e1, htmlOutput), expToString(col, e.e2, htmlOutput)])
     case 'let': {
@@ -235,7 +235,7 @@ export function stmtToString (col: number, stmt: L.Stmt, outputBindings: boolean
 export function progToString (
   col: number, prog: L.Program, outputBindings: boolean = false,
   htmlOutput: boolean = false, lineSep: string = '\n'): string {
-  return prog.statements
+  return prog
     .map(s => stmtToString(col, s, outputBindings, htmlOutput))
     .filter(s => s.length > 0)
     .map(s => htmlOutput ? `<code>${s}</code>` : s)
