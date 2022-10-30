@@ -78,13 +78,6 @@ export async function evalExp (env: L.Env, e: L.Exp): Promise<Result<L.Value>> {
           }
         }))
     case 'lam':
-      // Need to capture local environments only, global environment can change!
-      // Or really: the problem is that defines are mutually recursive in scope.
-      // This freezes the global scope to the current state. We could achieve a
-      // similar effect by making the global scope dynamic---bind the most recent
-      // global scope here rather than the closing environment's scope. That fix
-      // is easiest, but is a global dynamic scope different from a mutually
-      // recursive scope? Probably not when we don't have mutation...?
       return ok(L.vlambda(e.args, e.body, env))
     case 'if':
       return (await evalExp(env, e.e1)).asyncAndThen(async guard =>
@@ -101,23 +94,23 @@ export async function evalExp (env: L.Env, e: L.Exp): Promise<Result<L.Value>> {
           Promise.resolve(ok(L.vpair(v1, v2)))))
     case 'let':
       if (e.kind === 'let') {
-        const envs = new Array<L.Env>(e.bindings.length)
+        const bindings: [string, L.EnvEntry][] = []
         for (let i = 0; i < e.bindings.length; i++) {
           const [x, body] = e.bindings[i]
           const v = await evalExp(env, body)
           if (v.tag === 'ok') {
-            envs[i] = new L.Env([[x.value, L.entry(v.value, 'local')]])
+            bindings.push([x.value, L.entry(v.value, 'local')])
           } else {
             return v
           }
         }
-        return evalExp(env.concat(envs.reduce((acc, env) => acc.concat(env))), e.body)
+        return evalExp(new L.Env(bindings, env), e.body)
       } else if (e.kind === 'let*') {
         for (let i = 0; i < e.bindings.length; i++) {
           const [x, body] = e.bindings[i]
           const v = await evalExp(env, body)
           if (v.tag === 'ok') {
-            env = env.append(x.value, L.entry(v.value, 'local'))
+            env = new L.Env([[x.value, L.entry(v.value, 'local')]], env)
           } else {
             return v
           }
@@ -158,7 +151,7 @@ export async function evalExp (env: L.Env, e: L.Exp): Promise<Result<L.Value>> {
           const env2 = tryMatch(scrutinee, pat)
           if (env2) {
             // TODO: env chain instead of concat? Does it matter?
-            return evalExp(env.concat(env2), body)
+            return evalExp(new L.Env(env2.items(), env), body)
           }
         }
         return runtimeError(msg('error-match-no-branch-applies'), e)
@@ -182,9 +175,8 @@ export async function evalStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]>
     case 'define': {
       const v = await evalExp(env, s.value)
       if (v.tag === 'ok') {
-        return [
-          env.append(s.name.value, L.entry(v.value, 'binding', s.name.range)),
-          L.sbinding(s.name.value)]
+        env.set(s.name.value, L.entry(v.value, 'binding', s.name.range))
+        return [env, L.sbinding(s.name.value)]
       } else {
         return [env, L.serror(v.details)]
       }
@@ -221,14 +213,12 @@ export async function evalStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]>
           return Promise.resolve(ok(L.vstruct(name, [...args])))
         }
       }
-      return [
-        env.concat(new L.Env([
-          [name, L.entry(L.vprim(ctorPrim), `struct ${name}`, s.id.range)],
-          [predName, L.entry(L.vprim(predPrim), `struct ${name}`, s.id.range)],
-          ...fieldPrims
-        ])),
-        L.sbinding(`struct ${name}`)
-      ]
+      env.setAll([
+        [name, L.entry(L.vprim(ctorPrim), `struct ${name}`, s.id.range)],
+        [predName, L.entry(L.vprim(predPrim), `struct ${name}`, s.id.range)],
+        ...fieldPrims
+      ])
+      return [env, L.sbinding(`struct ${name}`)]
     }
     case 'testcase': {
       // TODO: also taken verbatim from runtime.ts---refactor!

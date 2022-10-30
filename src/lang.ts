@@ -271,6 +271,16 @@ export class Env {
     keys.forEach(k => ret.entries.delete(k))
     return ret
   }
+
+  public set (key: string, value: EnvEntry): void {
+    this.entries.set(key, value)
+  }
+
+  public setAll (entries: Iterable<[string, EnvEntry]>): void {
+    for (const [k, v] of entries) {
+      this.set(k, v)
+    }
+  }
 }
 
 /**
