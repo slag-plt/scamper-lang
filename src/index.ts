@@ -4,8 +4,10 @@ import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'
 
 export { Env, EnvEntry } from './lang.js'
+
+export { ProgramState, ProgramTrace } from './stepper.js'
+
 export * from './result.js'
-export { preludeEnv, internalLibs } from './runtime.js'
 export * from './pretty.js'
 export * as Formatter from './formatter.js'
 export * as parser from './parser.js'
@@ -16,8 +18,6 @@ export * as Image from './lib/image.js'
 export * as Music from './lib/music.js'
 export * as Pretty from './pretty.js'
 export * as Vfs from './vfs.js'
-
-export { ProgramState, ProgramTrace } from './program.js'
 
 export function compileProgram (src: string): Result<Program> {
   return parseProgram(src).andThen(prog =>

@@ -2,7 +2,7 @@ import { ErrorDetails, errorDetails, ICE } from './result.js'
 import { Exp, Env, Program, name, Name, fvarsOfPat } from './lang.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
-import { internalLibs, preludeEnv } from './runtime.js'
+import { internalLibs, preludeEnv } from './lib/exports.js'
 import { expToString } from './pretty.js'
 
 function undefinedVariableError (x: string, range: Range): ErrorDetails {

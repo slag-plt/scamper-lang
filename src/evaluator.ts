@@ -253,9 +253,9 @@ export async function evalStmt (env: L.Env, s: L.Stmt): Promise<L.Stmt> {
     }
     case 'import': {
       // TODO: also copy-pasted from runtime.ts---refactor!
-      if (internalLibs.has(s.source)) {
+      if (Libs.internalLibs.has(s.source)) {
         // TODO: mutate environment entries, instead of creating a new one
-        env.setAll([...env.items(), ...internalLibs.get(s.source)!.items()])
+        env.setAll([...env.items(), ...Libs.internalLibs.get(s.source)!.items()])
         return L.simported(s.source)
       } else {
         return L.serror([errorDetails(
@@ -276,8 +276,3 @@ export async function evalProgram (prog: L.Program, initialEnv: L.Env = Libs.pre
   }
   return results
 }
-
-const internalLibs: Map<string, L.Env> = new Map([
-  ['image', Libs.imageLib],
-  ['music', Libs.musicLib]
-])
