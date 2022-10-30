@@ -23,7 +23,7 @@ const midiMsg = (time: number, data: MIDI): Msg =>
   ({ tag: 'midi', time, data })
 
 function ratioToDouble (ratio: Duration) {
-  return ratio.num / ratio.den
+  return ratio.fields[0] / ratio.fields[1]
 }
 
 function durationToTimeMs (beat: Duration, bpm: number, dur: Duration) {
@@ -108,19 +108,19 @@ function compositionToMsgs (
     }
 
     case 'mod': {
-      if (composition.mod.tag === 'percussion') {
+      if (composition.mod.kind === 'percussion') {
         return compositionToMsgs(beat, bpm, velocity, startTime, 9, composition.note)
-      } else if (composition.mod.tag === 'pitchBend') {
+      } else if (composition.mod.kind === 'pitchBend') {
         const msgs = []
         const data = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.note)
-        msgs.push(midiMsg(startTime, JZZ.MIDI.pitchBendF(0, composition.mod.amount)))
+        msgs.push(midiMsg(startTime, JZZ.MIDI.pitchBendF(0, composition.mod.fields[0])))
         msgs.push(...data.msgs)
         msgs.push(midiMsg(data.endTime, JZZ.MIDI.pitchBendF(0, 0)))
         return { msgs, endTime: data.endTime }
-      } else if (composition.mod.tag === 'tempo') {
-        return compositionToMsgs(composition.mod.beat, composition.mod.bpm, velocity, startTime, program, composition.note)
-      } else if (composition.mod.tag === 'dynamics') {
-        return compositionToMsgs(beat, bpm, composition.mod.amount, startTime, program, composition.note)
+      } else if (composition.mod.kind === 'tempo') {
+        return compositionToMsgs(composition.mod.fields[0], composition.mod.fields[1], velocity, startTime, program, composition.note)
+      } else if (composition.mod.kind === 'dynamics') {
+        return compositionToMsgs(beat, bpm, composition.mod.fields[0], startTime, program, composition.note)
       } else {
         throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod}`)
       }
@@ -130,7 +130,7 @@ function compositionToMsgs (
 
 function playback (synth: Synth, composition: Composition): number {
   const startTime = window.performance.now()
-  const msgs = compositionToMsgs({ num: 1, den: 4 }, 120, 64, 0, 0, composition).msgs
+  const msgs = compositionToMsgs(Music.dur(1, 4), 120, 64, 0, 0, composition).msgs
   console.log(msgs)
   let i = 0
   const id = window.setInterval(() => {

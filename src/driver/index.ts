@@ -23,6 +23,7 @@ type CompilerOptions = {
   formatOnly: boolean,
   emitTokens: boolean,
   emitTrace: boolean,
+  useStepper: boolean,
 }
 
 function makeDefaultOptions (): CompilerOptions {
@@ -31,7 +32,8 @@ function makeDefaultOptions (): CompilerOptions {
     checkOnly: false,
     formatOnly: false,
     emitTokens: false,
-    emitTrace: false
+    emitTrace: false,
+    useStepper: false
   }
 }
 
@@ -46,7 +48,8 @@ Options:
 -c, --check      Checks the program for errors, but does not run the program.
 --format         Formats the program, printing the results to stdout.
 --emit-tokens    Prints tokens emitted by the lexer.
---emit-trace     Prints the step-by-step evaluation of the program.
+--emit-trace     Prints the step-by-step evaluation of the program (implies --use-stepper).
+--use-stepper    Uses the stepper instead of the evaluator.
   `.trim())
 }
 
@@ -65,6 +68,8 @@ function processArgs (args: string[]): CompilerOptions {
       opts.emitTokens = true
     } else if (arg === '--emit-trace') {
       opts.emitTrace = true
+    } else if (arg === '--use-stepper') {
+      opts.useStepper = true
     } else if (arg.startsWith('-') || arg.startsWith('--')) {
       console.log(`Unknown option: ${arg}`)
       printHelp()
@@ -155,8 +160,11 @@ function main () {
         console.log(`===== Step ${step++} =====`)
         console.log(state.toString())
       }
-    } else {
+    } else if (opts.useStepper) {
       console.log((await new scamper.ProgramState(prog).evaluate()).toString())
+    } else {
+      const effects = await scamper.evaluateProgram(prog)
+      console.log(effects.map(fx => scamper.effectToString(0, fx, false)).filter(s => s.length > 0).join('\n'))
     }
     process.exit(0)
   })
