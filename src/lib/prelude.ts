@@ -526,7 +526,7 @@ const assocRefPrim: L.Prim = (_env, args, app) =>
         return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(L.nlevalue(args[1])), app))
       }
     }
-    return runtimeError(msg('error-assoc-not-found', v, L.expToString(L.nlevalue(args[1]))), app)
+    return runtimeError(msg('error-assoc-not-found', L.expToString(L.nlevalue(v)), L.expToString(L.nlevalue(args[1]))), app)
   }))
 
 const assocSetPrim: L.Prim = (_env, args, app) =>
@@ -534,7 +534,21 @@ const assocSetPrim: L.Prim = (_env, args, app) =>
     const k = args[0]
     const v = args[1]
     const list = L.valueListToArray_(args[2])
-    const ret = L.valueArrayToList([L.vpair(k, v), ...list])
+    // Update the key in-place if possible.
+    for (let i = 0; i < list.length; i++) {
+      if (L.valueIsPair(list[i])) {
+        const pair = list[i] as L.PairType
+        if (L.valueEquals(pair.fst, k)) {
+          const ret = [...list]
+          ret[i] = L.vpair(k, v)
+          return ok(L.valueArrayToList(ret))
+        }
+      } else {
+        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(L.nlevalue(args[1])), app))
+      }
+    }
+    // Otherwise, we didn't find the key. Add it to our list.
+    const ret = L.valueArrayToList([...list, L.vpair(k, v)])
     return ok(ret)
   }))
 
@@ -779,6 +793,10 @@ const listStringPrim: L.Prim = (_env, args, app) =>
 
 // Additional functions from racket/string.
 
+const stringContainsPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('string-contains', ['string?', 'string?'], undefined, args, app).andThen(_ =>
+    ok((args[1] as string).includes(args[0] as string))))
+
 const stringSplitPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
     ok(L.valueArrayToList((args[0] as string).split(args[1] as string)))))
@@ -839,6 +857,7 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['substring', substringPrim, Docs.substring],
   ['string->list', stringListPrim, Docs.stringList],
   ['list->string', listStringPrim, Docs.listString],
+  ['string-contains', stringContainsPrim, Docs.stringContains],
   ['string-split', stringSplitPrim, Docs.stringSplit],
   ['string-append', stringAppendPrim, Docs.stringAppend],
   ['file->string', fileStringPrim, Docs.fileString],
@@ -1046,7 +1065,7 @@ const pipePrim: L.Prim = async (env, args, app) =>
   })
 
 const rangePrim: L.Prim = (env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('range', [], 'integer?', args, app).andThen(_ => {
+  Promise.resolve(Utils.checkArgsResult('range', [], 'number?', args, app).andThen(_ => {
     if (args.length === 0 || args.length > 3) {
       return runtimeError(msg('error-arity', 'range', '1--3', args.length), app)
     } else {
