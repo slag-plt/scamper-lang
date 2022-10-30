@@ -11,7 +11,13 @@ LEXING_TESTS=$(ls tests/lexing/*.scm)
 RUNTIME_TESTS=$(find tests/runtime -name "*.scm")
 PRELUDE_TESTS=$(find tests/prelude -name "*.scm")
 
-SCAMPER="dist/driver/index.js"
+if [[ $# -eq 1 ]] && [[ $1 == 'stepper' ]]
+then
+  echo 'Evaluating tests with stepper'
+  SCAMPER="dist/driver/index.js --use-stepper"
+else
+  SCAMPER="dist/driver/index.js"
+fi
 
 total=0
 failures=0

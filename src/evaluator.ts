@@ -159,25 +159,25 @@ export async function evalExp (env: L.Env, e: L.Exp): Promise<Result<L.Value>> {
   }
 }
 
-export async function evalStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
+export async function evalStmt (env: L.Env, s: L.Stmt): Promise<L.Stmt> {
   switch (s.tag) {
     case 'error':
-      return [env, s]
+      return s
     case 'binding':
-      return [env, s]
+      return s
     case 'testresult':
-      return [env, s]
+      return s
     case 'value':
-      return [env, s]
+      return s
     case 'imported':
-      return [env, s]
+      return s
     case 'define': {
       const v = await evalExp(env, s.value)
       if (v.tag === 'ok') {
         env.set(s.name.value, L.entry(v.value, 'binding', s.name.range))
-        return [env, L.sbinding(s.name.value)]
+        return L.sbinding(s.name.value)
       } else {
-        return [env, L.serror(v.details)]
+        return L.serror(v.details)
       }
     }
     case 'struct': {
@@ -217,7 +217,7 @@ export async function evalStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]>
         [predName, L.entry(L.vprim(predPrim), `struct ${name}`, s.id.range)],
         ...fieldPrims
       ])
-      return [env, L.sbinding(`struct ${name}`)]
+      return L.sbinding(`struct ${name}`)
     }
     case 'testcase': {
       // TODO: also taken verbatim from runtime.ts---refactor!
@@ -238,34 +238,29 @@ export async function evalStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]>
                 : L.stestresult(desc, false, undefined, L.nlevalue(expected), L.nlevalue(actual)))
             }))))
       if (result.tag === 'error') {
-        return [env, L.serror(result.details)]
+        return L.serror(result.details)
       } else {
-        return [env, result.value]
+        return result.value
       }
     }
     case 'exp': {
       const v = await evalExp(env, s.value)
       if (v.tag === 'ok') {
-        return [env, L.svalue(v.value)]
+        return L.svalue(v.value)
       } else {
-        return [env, L.serror(v.details)]
+        return L.serror(v.details)
       }
     }
     case 'import': {
       // TODO: also copy-pasted from runtime.ts---refactor!
       if (internalLibs.has(s.source)) {
-        return [
-          new L.Env([...env.items(), ...internalLibs.get(s.source)!.items()]),
-          L.simported(s.source)
-        ]
+        // TODO: mutate environment entries, instead of creating a new one
+        env.setAll([...env.items(), ...internalLibs.get(s.source)!.items()])
+        return L.simported(s.source)
       } else {
-        return [
-          env,
-          L.serror([errorDetails(
-            msg('phase-runtime'),
-            msg('error-import-not-found', s.source, s.range)
-          )])
-        ]
+        return L.serror([errorDetails(
+          msg('phase-runtime'),
+          msg('error-import-not-found', s.source, s.range))])
       }
     }
   }
@@ -274,10 +269,9 @@ export async function evalStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]>
 export async function evalProgram (prog: L.Program, initialEnv: L.Env = Libs.preludeEnv): Promise<L.SEffect[]> {
   const statements = prog.statements
   const results: L.SEffect[] = []
-  let env = new L.Env(initialEnv.entries)
+  const env = new L.Env(initialEnv.entries)
   for (let i = 0; i < statements.length; i++) {
-    const [newEnv, result] = await evalStmt(env, statements[i])
-    env = newEnv
+    const result = await evalStmt(env, statements[i])
     results.push(result as L.SEffect)
   }
   return results

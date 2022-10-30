@@ -3,7 +3,6 @@ import * as Parser from './parser.js'
 import * as Pretty from './pretty.js'
 import * as R from './result.js'
 import * as Runtime from './runtime.js'
-import * as Evaluator from './evaluator.js'
 import * as Scope from './scope.js'
 
 export class ProgramState {
@@ -26,7 +25,7 @@ export class ProgramState {
         // N.B., make sure to not mutate things, but instead, create a new
         // ProgramState with the updates.
         // const result = await Runtime.stepStmt(this.env, s)
-        const result = await Evaluator.evalStmt(this.env, s)
+        const result = await Runtime.stepStmt(this.env, s)
         const prog = {
           statements: [...this.prog.statements]
         }

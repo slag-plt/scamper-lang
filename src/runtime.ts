@@ -115,6 +115,7 @@ function substituteIfFreeVar (env: L.Env, e: L.Exp): Result<L.Exp> {
       if (env.has(e.value)) {
         return ok(L.nlevalue(env.get(e.value)!.value))
       } else {
+        console.log('^_^')
         return runtimeError(msg('error-var-undef', e.value), e)
       }
     default:
@@ -222,7 +223,8 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
           }))
       }
     case 'lam':
-      return ok(L.nlevalue(L.vlambda(e.args, e.body)))
+      // N.B., load the closure with the current global environment
+      return ok(L.nlevalue(L.vlambda(e.args, e.body, env)))
     case 'if':
       if (!L.isValue(e.e1)) {
         return (await stepExp(env, e.e1)).andThen(e1p => ok(L.eif(e.range, e1p, e.e2, e.e3)))

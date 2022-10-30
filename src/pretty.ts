@@ -192,6 +192,25 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
   }
 }
 
+export function effectToString (col: number, effect: L.SEffect, outputBindings: boolean = false, htmlOutput: boolean = false): string {
+  switch (effect.tag) {
+    case 'error': return effect.errors.map(err => detailsToCompleteString(err)).join('\n')
+    case 'binding': return outputBindings ? `[[${effect.name} bound]]` : ''
+    case 'testresult': {
+      if (effect.passed) {
+        return `[[ Test "${effect.desc}" passed! ]]`
+      } else {
+        const msg: string = effect.reason
+          ? effect.reason
+          : `  Expected: ${expToString(col, effect.expected!, htmlOutput)}\n  Actual: ${expToString(col, effect.actual!, htmlOutput)}`
+        return `[[ Test "${effect.desc}" failed!\n${msg}\n]]`
+      }
+    }
+    case 'value': return valueToString(col, effect.value, htmlOutput)
+    case 'imported': return outputBindings ? `[[${effect.source} imported]]` : ''
+  }
+}
+
 export function stmtToString (col: number, stmt: L.Stmt, outputBindings: boolean = false, htmlOutput: boolean = false): string {
   switch (stmt.tag) {
     case 'define': {
@@ -205,20 +224,11 @@ export function stmtToString (col: number, stmt: L.Stmt, outputBindings: boolean
       return `(test-case ${expToString(col, stmt.desc, htmlOutput)} ${expToString(col, stmt.comp, htmlOutput)}\n${indent(col + 2, expToString(col + 2, stmt.expected, htmlOutput))}\n${indent(col + 2, expToString(col + 2, stmt.actual, htmlOutput))})`
     case 'exp': return expToString(col, stmt.value, htmlOutput)
     case 'import': return `(import ${stmt.source})`
-    case 'error': return stmt.errors.map(err => detailsToCompleteString(err)).join('\n')
-    case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
-    case 'testresult': {
-      if (stmt.passed) {
-        return `[[ Test "${stmt.desc}" passed! ]]`
-      } else {
-        const msg: string = stmt.reason
-          ? stmt.reason
-          : `  Expected: ${expToString(col, stmt.expected!, htmlOutput)}\n  Actual: ${expToString(col, stmt.actual!, htmlOutput)}`
-        return `[[ Test "${stmt.desc}" failed!\n${msg}\n]]`
-      }
-    }
-    case 'value': return valueToString(col, stmt.value, htmlOutput)
-    case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
+    case 'error': return effectToString(col, stmt, outputBindings, htmlOutput)
+    case 'binding': return effectToString(col, stmt, outputBindings, htmlOutput)
+    case 'testresult': return effectToString(col, stmt, outputBindings, htmlOutput)
+    case 'value': return effectToString(col, stmt, outputBindings, htmlOutput)
+    case 'imported': return effectToString(col, stmt, outputBindings, htmlOutput)
   }
 }
 
