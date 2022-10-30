@@ -1,8 +1,8 @@
 import { ErrorDetails, errorDetails, ICE } from './result.js'
-import { Env, Exp, Program, name, Name, fvarsOfPat } from './lang.js'
+import { Exp, Env, Program, name, Name, fvarsOfPat } from './lang.js'
 import { Range } from './loc.js'
 import { msg } from './messages.js'
-import { internalLibs, preludeEnv } from './runtime.js'
+import { internalLibs, preludeEnv } from './lib/exports.js'
 import { expToString } from './pretty.js'
 
 function undefinedVariableError (x: string, range: Range): ErrorDetails {
@@ -36,6 +36,8 @@ function containsDups (xs: string[]): string | undefined {
 
 function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
   switch (e.tag) {
+    case 'value':
+      return []
     case 'var':
       return bvars.includes(e.value) ? [] : [undefinedVariableError(e.value, e.range)]
     case 'lit':
@@ -83,10 +85,6 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
       return e.args.flatMap((v) => checkExp(bvars, v))
     // N.B., structs are internal, runtime only values, so we'll never
     // encounter these cases with our scope-checker.
-    case 'struct':
-      return []
-    case 'prim':
-      return []
     case 'match': {
       let errors = checkExp(bvars, e.scrutinee)
       e.branches.forEach(branch => {
@@ -103,7 +101,7 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
 
 function checkProgram (bvars: string[], prog: Program): ErrorDetails[] {
   let errors: ErrorDetails[] = []
-  prog.statements.forEach(s => {
+  prog.forEach(s => {
     switch (s.tag) {
       case 'define':
         // if (bvars.includes(s.name.value)) {

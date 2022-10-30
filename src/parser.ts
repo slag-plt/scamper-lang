@@ -1,4 +1,4 @@
-import { eand, ebool, ecall, echar, econd, eif, elam, elet, ematch, enil, enumber, eor, estr, evar, Exp, lbool, lchar, LetKind, lnum, lstr, Name, name, Pat, pctor, plit, pnull, Program, pvar, pwild, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
+import { Exp, eand, ebool, ecall, echar, econd, eif, elam, elet, ematch, enil, enumber, eor, estr, evar, lbool, lchar, LetKind, lnum, lstr, Name, name, Pat, pctor, plit, pnull, Program, pvar, pwild, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps } from './sexp.js'
 import { msg } from './messages.js'
@@ -56,7 +56,7 @@ function sexpToBinding (s: Sexp): Result<[Name, Exp]> {
         ? parserError(msg('error-type-expected', 'binding', 'non-binding'), s)
         : s.list[0].tag !== 'atom'
           ? parserError(msg('error-var-binding'), s)
-          : sexpToExp(s.list[1]).andThen((e:Exp) =>
+          : sexpToExp(s.list[1]).andThen((e: Exp) =>
             ok([name((s.list[0] as Atom).single, (s.list[0] as Atom).range), e] as [Name, Exp]))
   }
 }
@@ -289,7 +289,7 @@ function parseExp (src: string): Result<Exp> {
 function sexpToStmt (s: Sexp): Result<Stmt> {
   switch (s.tag) {
     case 'atom':
-      return sexpToExp(s).andThen(e => ok(sexp(e)))
+      return sexpToExp(s).andThen(e => ok(sexp(e, s.range)))
     case 'slist':
       if (s.list[0].tag === 'atom' && s.list[0].single === 'define') {
         const args = s.list.slice(1)
@@ -297,7 +297,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           ? parserError(`Define expects 2 arguments, ${args.length} given`, s)
           : args[0].tag !== 'atom'
             ? parserError('Define expects a variable as the first argument', s)
-            : sexpToExp(args[1]).andThen(e => ok(sdefine(name((args[0] as Atom).single, (args[0] as Atom).range), e)))
+            : sexpToExp(args[1]).andThen(e => ok(sdefine(name((args[0] as Atom).single, (args[0] as Atom).range), e, s.range)))
       } else if (s.list[0].tag === 'atom' && s.list[0].single === 'import') {
         const args = s.list.slice(1)
         if (args.length !== 1) {
@@ -306,7 +306,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           const source = args[0]
           return source.tag !== 'atom'
             ? parserError(msg('error-type-expected', 'module name', source.tag), s)
-            : ok(simport(s.range, source.single))
+            : ok(simport(source.single, s.range))
         }
       } else if (s.list[0].tag === 'atom' && s.list[0].single === 'struct') {
         const args = s.list.slice(1)
@@ -316,7 +316,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           return parserError(msg('error-type-expected', 'struct name', args[0].tag), s)
         } else {
           return sexpToUniqueStringList(args[1]).andThen(fields =>
-            ok(sstruct(name((args[0] as Atom).single, args[0].range), fields)))
+            ok(sstruct(name((args[0] as Atom).single, args[0].range), fields, s.range)))
         }
       } else if (s.list[0].tag === 'atom' && s.list[0].single === 'test-case') {
         const args = s.list.slice(1)
@@ -327,18 +327,16 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
             sexpToExp(args[1]).andThen(comp =>
               sexpToExp(args[2]).andThen(expected =>
                 sexpToExp(args[3]).andThen(actual =>
-                  ok(stestcase(desc, comp, expected, actual))))))
+                  ok(stestcase(desc, comp, expected, actual, s.range))))))
         }
       } else {
-        return sexpToExp(s).andThen(e => ok(sexp(e)))
+        return sexpToExp(s).andThen(e => ok(sexp(e, s.range)))
       }
   }
 }
 
 function sexpsToProgram (ss: Sexp[]): Result<Program> {
-  return join(ss.map(sexpToStmt)).andThen(statements => ok({
-    statements
-  }))
+  return join(ss.map(sexpToStmt)).andThen(statements => ok(statements))
 }
 
 function parseProgram (src: string): Result<Program> {

@@ -1,5 +1,5 @@
 (list "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld" "HelloWorld")
-(list [prim stringLengthPrim] [prim listQPrim] [prim plusPrim] [prim minusPrim] [prim numeqPrim] [prim stringQPrim])
+(list [object Function] [object Function] [object Function] [object Function] [object Function] [object Function])
 (list null)
 (list null (list 4 5 6))
 15
