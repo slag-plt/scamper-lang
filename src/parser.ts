@@ -289,7 +289,7 @@ function parseExp (src: string): Result<Exp> {
 function sexpToStmt (s: Sexp): Result<Stmt> {
   switch (s.tag) {
     case 'atom':
-      return sexpToExp(s).andThen(e => ok(sexp(e)))
+      return sexpToExp(s).andThen(e => ok(sexp(e, s.range)))
     case 'slist':
       if (s.list[0].tag === 'atom' && s.list[0].single === 'define') {
         const args = s.list.slice(1)
@@ -297,7 +297,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           ? parserError(`Define expects 2 arguments, ${args.length} given`, s)
           : args[0].tag !== 'atom'
             ? parserError('Define expects a variable as the first argument', s)
-            : sexpToExp(args[1]).andThen(e => ok(sdefine(name((args[0] as Atom).single, (args[0] as Atom).range), e)))
+            : sexpToExp(args[1]).andThen(e => ok(sdefine(name((args[0] as Atom).single, (args[0] as Atom).range), e, s.range)))
       } else if (s.list[0].tag === 'atom' && s.list[0].single === 'import') {
         const args = s.list.slice(1)
         if (args.length !== 1) {
@@ -306,7 +306,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           const source = args[0]
           return source.tag !== 'atom'
             ? parserError(msg('error-type-expected', 'module name', source.tag), s)
-            : ok(simport(s.range, source.single))
+            : ok(simport(source.single, s.range))
         }
       } else if (s.list[0].tag === 'atom' && s.list[0].single === 'struct') {
         const args = s.list.slice(1)
@@ -316,7 +316,7 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
           return parserError(msg('error-type-expected', 'struct name', args[0].tag), s)
         } else {
           return sexpToUniqueStringList(args[1]).andThen(fields =>
-            ok(sstruct(name((args[0] as Atom).single, args[0].range), fields)))
+            ok(sstruct(name((args[0] as Atom).single, args[0].range), fields, s.range)))
         }
       } else if (s.list[0].tag === 'atom' && s.list[0].single === 'test-case') {
         const args = s.list.slice(1)
@@ -327,10 +327,10 @@ function sexpToStmt (s: Sexp): Result<Stmt> {
             sexpToExp(args[1]).andThen(comp =>
               sexpToExp(args[2]).andThen(expected =>
                 sexpToExp(args[3]).andThen(actual =>
-                  ok(stestcase(desc, comp, expected, actual))))))
+                  ok(stestcase(desc, comp, expected, actual, s.range))))))
         }
       } else {
-        return sexpToExp(s).andThen(e => ok(sexp(e)))
+        return sexpToExp(s).andThen(e => ok(sexp(e, s.range)))
       }
   }
 }

@@ -625,7 +625,7 @@ const svalue = (value: Value, range: Range = noRange()): SValue => ({ tag: 'valu
 type Stmt = SImport | SDefine | SExp | SStruct | STestCase | SEffect
 
 type SImport = { tag: 'import', range: Range, source: string }
-const simport = (range: Range, source: string): SImport => ({ tag: 'import', range, source })
+const simport = (source: string, range: Range): SImport => ({ tag: 'import', range, source })
 
 type SDefine = { tag: 'define', range: Range, name: Name, value: Exp }
 const sdefine = (name: Name, value: Exp, range: Range = noRange()): SDefine => ({ tag: 'define', range, name, value })
