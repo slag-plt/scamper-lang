@@ -2,8 +2,7 @@ import * as L from './lang.js'
 import { msg } from './messages.js'
 import { runtimeError } from './runtime.js'
 import { Result, ok, join, errorDetails } from './result.js'
-import { imageLib } from './lib/image.js'
-import { musicLib } from './lib/music.js'
+import * as Libs from './lib/exports.js'
 
 // TODO: this is copy-pasted from runtime.ts---refactor!
 function tryMatch (v: L.Value, p: L.Pat): L.Env | undefined {
@@ -272,7 +271,19 @@ export async function evalStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]>
   }
 }
 
+export async function evalProgram (prog: L.Program, initialEnv: L.Env = Libs.preludeEnv): Promise<L.SEffect[]> {
+  const statements = prog.statements
+  const results: L.SEffect[] = []
+  let env = new L.Env(initialEnv.entries)
+  for (let i = 0; i < statements.length; i++) {
+    const [newEnv, result] = await evalStmt(env, statements[i])
+    env = newEnv
+    results.push(result as L.SEffect)
+  }
+  return results
+}
+
 const internalLibs: Map<string, L.Env> = new Map([
-  ['image', imageLib],
-  ['music', musicLib]
+  ['image', Libs.imageLib],
+  ['music', Libs.musicLib]
 ])

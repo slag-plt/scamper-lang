@@ -1,6 +1,7 @@
 import * as L from '../lang.js'
 import { join, ok, Result } from '../result.js'
-import { evaluateExpToValue, runtimeError } from '../runtime.js'
+import { evalExp } from '../evaluator.js'
+import { runtimeError } from '../runtime.js'
 import * as Utils from './utils.js'
 import { msg } from '../messages.js'
 import * as Docs from './docs.js'
@@ -235,7 +236,7 @@ const atanPrim: L.Prim = (_env, args, app) =>
 
 const equalsEpsPrim: L.Prim = (env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('=-eps', ['number?'], undefined, args, app).asyncAndThen(async _ => {
-    return await evaluateExpToValue(env, L.nlelam(['x', 'y'], L.nlecall(L.nlevar('<='), [
+    return await evalExp(env, L.nlelam(['x', 'y'], L.nlecall(L.nlevar('<='), [
       L.nlecall(L.nlevar('abs'), [
         L.nlecall(L.nlevar('-'), [
           L.nlevar('x'), L.nlevar('y')
@@ -303,19 +304,19 @@ const booleanPrim: L.Prim = (_env, args, app) =>
 
 const nandPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('nand', [], 'boolean?', args, app).asyncAndThen(_ =>
-    evaluateExpToValue(env, L.nlecall(L.nlevar('not'), [L.nleand(asValues(args))])))
+    evalExp(env, L.nlecall(L.nlevar('not'), [L.nleand(asValues(args))])))
 
 const norPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('nand', [], 'boolean?', args, app).asyncAndThen(_ =>
-    evaluateExpToValue(env, L.nlecall(L.nlevar('not'), [L.nleor(asValues(args))])))
+    evalExp(env, L.nlecall(L.nlevar('not'), [L.nleor(asValues(args))])))
 
 const impliesPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('implies', ['boolean?', 'boolean?'], undefined, args, app).asyncAndThen(_ =>
-    evaluateExpToValue(env, L.nleif(L.nlevalue(args[0]), L.nlevalue(args[1]), L.nlebool(true))))
+    evalExp(env, L.nleif(L.nlevalue(args[0]), L.nlevalue(args[1]), L.nlebool(true))))
 
 const xorPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('xor', ['boolean?', 'boolean?'], undefined, args, app).asyncAndThen(_ =>
-    evaluateExpToValue(env, L.nleor([
+    evalExp(env, L.nleor([
       L.nleand([L.nlevalue(args[0]), L.nlecall(L.nlevar('not'), [L.nlevalue(args[1])])]),
       L.nleand([L.nlecall(L.nlevar('not'), [L.nlevalue(args[0])]), L.nlevalue(args[1])])
     ])))
@@ -808,7 +809,7 @@ const fileStringPrim: L.Prim = (_env, args, app) =>
 
 const fileLinesPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('file->lines', ['string?'], undefined, args, app).asyncAndThen(_ =>
-    evaluateExpToValue(env, L.nlecall(L.nlevar('string-split'), [
+    evalExp(env, L.nlecall(L.nlevar('string-split'), [
       L.nlecall(L.nlevar('file->string'), [L.nlevalue(args[0])]),
       L.nlestr('\n')
     ])))
@@ -881,12 +882,12 @@ const procedurePrim: L.Prim = (_env, args, app) =>
 
 const applyPrim: L.Prim = (env, args, app) =>
   Utils.checkArgsResult('apply', ['procedure?'], 'list?', args, app).asyncAndThen(_ =>
-    evaluateExpToValue(env, L.nlecall(L.nlevalue(args[0]), L.valueListToArray_(args[1]).map(L.nlevalue))))
+    evalExp(env, L.nlecall(L.nlevalue(args[0]), L.valueListToArray_(args[1]).map(L.nlevalue))))
 
 const stringMapPrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('string-map', ['procedure?', 'string?'], 'string?', args, app).asyncAndThen(async _ => {
     const result = await Promise.all((args[1] as string).split('').map(async c =>
-      await evaluateExpToValue(env, L.nlecall(L.nlevalue(args[0]), [L.nlechar(c)]))))
+      await evalExp(env, L.nlecall(L.nlevalue(args[0]), [L.nlechar(c)]))))
     return join(result).andThen(vs => {
       for (const v of vs) {
         if (!L.valueIsChar(v)) {
@@ -930,7 +931,7 @@ const mapPrim: L.Prim = async (env, args, app) =>
     }
     const xs = transpose(lists)
     const exp = L.arrayToList(xs.map(vs => L.nlecall(L.nlevalue(fn), asValues(vs))))
-    return evaluateExpToValue(env, exp)
+    return evalExp(env, exp)
   })
 
 // Additional list pipeline functions from racket/base
@@ -943,7 +944,7 @@ const filterPrim: L.Prim = async (env, args, app) =>
     for (let i = 0; i < list.length; i++) {
       const e = list[i]
       // TODO: revisit me once I fix evaluteExp to return a value
-      const res = await evaluateExpToValue(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(e)]))
+      const res = await evalExp(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(e)]))
       if (res.tag === 'error') {
         return res
       } else if (!L.valueIsBoolean(res.value)) {
@@ -962,7 +963,7 @@ const foldPrim: L.Prim = async (env, args, app) =>
     const list = L.valueListToArray_(args[2])
     for (let i = 0; i < list.length; i++) {
       const e = list[i]
-      const res = await evaluateExpToValue(env, L.nlecall(L.nlevalue(fn), asValues([result, e])))
+      const res = await evalExp(env, L.nlecall(L.nlevalue(fn), asValues([result, e])))
       if (res.tag === 'error') {
         return res
       } else {
@@ -980,7 +981,7 @@ const reducePrim: L.Prim = async (env, args, app) =>
     if (list.length === 0) {
       return runtimeError(msg('error-precondition-not-met', 'reduce', '2', 'list is non-empty', L.expToString(L.nlevalue(args[1]))), app)
     } else {
-      return evaluateExpToValue(env,
+      return evalExp(env,
         L.nlecall(L.nlevar('fold'), [L.nlevalue(fn), L.nlevalue(list[0]), L.nlevalue(L.valueArrayToList(list.slice(1)))]))
     }
   })
@@ -993,7 +994,7 @@ const foldRightPrim: L.Prim = async (env, args, app) =>
     const list = L.valueListToArray_(args[2]).reverse()
     for (let i = 0; i < list.length; i++) {
       const e = list[i]
-      const res = await evaluateExpToValue(env, L.nlecall(L.nlevalue(fn), asValues([e, result])))
+      const res = await evalExp(env, L.nlecall(L.nlevalue(fn), asValues([e, result])))
       if (res.tag === 'error') {
         return res
       } else {
@@ -1010,7 +1011,7 @@ const reduceRightPrim: L.Prim = async (env, args, app) =>
     if (list.length === 0) {
       return runtimeError(msg('error-precondition-not-met', 'reduce-right', '2', 'list is non-empty', L.expToString(L.nlevalue(args[1]))), app)
     } else {
-      return evaluateExpToValue(env,
+      return evalExp(env,
         L.nlecall(L.nlevar('fold-right'), asValues([
           fn,
           list[list.length - 1],
@@ -1061,7 +1062,7 @@ const pipePrim: L.Prim = async (env, args, app) =>
     for (let i = 1; i < args.length; i++) {
       pipeline = L.nlecall(L.nlevalue(args[i]), [pipeline])
     }
-    return evaluateExpToValue(env, pipeline)
+    return evalExp(env, pipeline)
   })
 
 const rangePrim: L.Prim = (env, args, app) =>

@@ -656,7 +656,7 @@ function fvarsOfPat (p: Pat): string[] {
 
 // #region Statement and program forms
 
-type SEffect = SImported | SError | SBinding | STestResult | SValue
+export type SEffect = SImported | SError | SBinding | STestResult | SValue
 
 type SImported = { tag: 'imported', source: string }
 const simported = (source: string): SImported => ({ tag: 'imported', source })
