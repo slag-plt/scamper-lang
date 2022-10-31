@@ -8,6 +8,7 @@ export * from './pretty.js'
 export * from './result.js'
 export * from './stepper.js'
 
+export * as Lang from './lang.js'
 export * as Formatter from './formatter.js'
 export * as parser from './parser.js'
 export * as sexp from './sexp.js'
