@@ -1,0 +1,11 @@
+(vector)
+#t
+0
+(vector 1 2 3 4 5)
+#t
+5
+3
+5
+(vector 2 3 4 5 6)
+(vector 0 5 10 15 20 25 30)
+(vector 0 15 30)

@@ -20,6 +20,7 @@ const templates: Messages = new Map([
   ['error-hole', (_) => 'A hole was encountered!'],
   ['error-import-not-found', (vs) => `Import ${vs[0]} not found`],
   ['error-index-string', (vs) => `${vs[0]} is not a valid index into string "${vs[1]}"`],
+  ['error-index-vector', (vs) => `${vs[0]} is not a valid index into vector "${vs[1]}"`],
   ['error-invalid-char-constant', (_) => 'Invalid character constant encountered'],
   ['error-invalid-string-literal', (_) => 'Invalid string literal encountered'],
   ['error-match-no-branch-applies', (_) => 'No branch of the match expression applies to the scrutinee.'],

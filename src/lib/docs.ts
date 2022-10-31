@@ -821,6 +821,58 @@ export const fileLines: Doc = new Doc(
   'Returns the contents of the file at `path` as a list of strings, one for each line.'
 )
 
+export const vectorQ: Doc = new Doc(
+  '(vector? v): boolean', [
+    'v: any'
+  ],
+  'Returns `#t` if and only `v` is a vector.'
+)
+
+export const vector: Doc = new Doc(
+  '(vector v1 v2 ...): vector?', [
+    'v: any'
+  ],
+  'Returns a vector consisting of the values `v1`, `v2`, ...'
+)
+
+export const vectorLength: Doc = new Doc(
+  '(vector-length v): integer?', [
+    'v: vector?'
+  ],
+  'Returns the length of vector `v`.'
+)
+
+export const vectorRef: Doc = new Doc(
+  '(vector-ref v n): any?', [
+    'v: vector?',
+    'n: integer?, a valid index into v'
+  ],
+  'Returns the value at index `n` of vector `v`.'
+)
+
+export const vectorList: Doc = new Doc(
+  '(vector->list v): list?', [
+    'v: vector?'
+  ],
+  'Returns a list consisting of the values in vector `v`.'
+)
+
+export const listVector: Doc = new Doc(
+  '(list->vector l): vector?', [
+    'l: list?'
+  ],
+  'Returns a vector consisting of the values in list `l`.'
+)
+
+export const vectorRange: Doc = new Doc(
+  '(vector-range beg end): vector?', [
+    'beg: integer?, this argument can be omitted',
+    'end: integer?',
+    'step: integer?, step > 0, this argument can be omitted'
+  ],
+  'Returns a vector containing the numbers from `beg` to `end` (exclusive). If `beg` is not given, it defaults to 0. If step is not given, it defaults to 1.'
+)
+
 export const stringList: Doc = new Doc(
   '(string->list s): list?', [
     's: string?'
@@ -924,6 +976,22 @@ export const reduceRight: Doc = new Doc(
   'Like `fold-right` but uses the last element of `l` as the initial value.'
 )
 
+export const vectorMap: Doc = new Doc(
+  '(vector-map f v): vector?', [
+    'f: procedure?',
+    'v: vector?'
+  ],
+  'Returns a new vector containing the results of applying `f` to each element of `v`.'
+)
+
+export const vectorFilter: Doc = new Doc(
+  '(vector-filter f l): list?', [
+    'f: procedure?, a predicate',
+    'l: vector?'
+  ],
+  'Returns a new vector containing the elements of `l` for which `f` returns `#t`.'
+)
+
 export const error: Doc = new Doc(
   '(error msg): any', [
     'msg: string?'
@@ -961,9 +1029,10 @@ export const pipe: Doc = new Doc(
 export const range: Doc = new Doc(
   '(range beg end): list?', [
     'beg: integer?, this argument can be omitted',
-    'end: integer?, n >= 0'
+    'end: integer?',
+    'step: integer?, step > 0, this argument can be omitted'
   ],
-  'Returns a list containing the numbers from `beg` to `end` (exclusive). If `beg` is not given, it defaults to 0.'
+  'Returns a list containing the numbers from `beg` to `end` (exclusive). If `beg` is not given, it defaults to 0. If step is not given, it defaults to 1.'
 )
 
 export const random: Doc = new Doc(

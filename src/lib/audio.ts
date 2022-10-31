@@ -15,8 +15,8 @@ export type SampleNode = { renderAs: 'audio', tag: 'sample', data: Float32Array,
 export const sampleNode = (data: Float32Array): AudioPipeline => ({ renderAs: 'audio', tag: 'sample', data, storeTag: undefined })
 
 const sampleNodePrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('sample-node', ['list?'], undefined, args, app).andThen(_ => {
-    const data = L.valueListToArray_(args[0])
+  Promise.resolve(Utils.checkArgsResult('sample-node', ['vector?'], undefined, args, app).andThen(_ => {
+    const data = args[0] as L.Value[]
     for (let i = 0; i < data.length; i++) {
       if (typeof data[i] !== 'number' || data[i] as number < -1.0 || data[i] as number > 1.0) {
         return runtimeError(msg('error-precondition-not-met',

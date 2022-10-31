@@ -867,7 +867,71 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
 
 // Vectors (6.8)
 
-// N.B., vector operations are unimplemented because they are inherently effectful.
+const vectorQPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector?', ['any'], undefined, args, app).andThen(_ =>
+    ok(L.valueIsVector(args[0]))))
+
+const vectorPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector', [], 'any', args, app).andThen(_ =>
+    // N.B., the arguments themselves are the vector of values! Cheeky, but
+    // once we have mutation, this won't fly at all!
+    ok(args)))
+
+const vectorLengthPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector-length', ['vector?'], undefined, args, app).andThen(_ =>
+    ok((args[0] as L.Value[]).length)))
+
+const vectorRefPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector-ref', ['vector?', 'integer?'], undefined, args, app).andThen(_ => {
+    const vec = args[0] as L.Value[]
+    const i = args[1] as number
+    if (i < 0 || i >= vec.length) {
+      return runtimeError(msg('error-index-vector', i, Pretty.valueToString(0, vec)), app)
+    } else {
+      return ok(vec[i])
+    }
+  }))
+
+const vectorListPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector->list', ['vector?'], undefined, args, app).andThen(_ =>
+    ok(L.valueArrayToList(args[0] as L.Value[]))))
+
+const listVectorPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('list->vector', ['list?'], undefined, args, app).andThen(_ =>
+    ok(L.valueListToArray_(args[0] as L.Value[]))))
+
+// N.B., this is identical to rangePrim except it does not conver the output
+// to a list! Probably should refactor this...
+const vectorRangePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector-range', [], 'number?', args, app).andThen(_ => {
+    if (args.length === 0 || args.length > 3) {
+      return runtimeError(msg('error-arity', 'vector-range', '1--3', args.length), app)
+    } else {
+      const m = args.length === 1 ? 0 : args[0] as number
+      const n = args.length === 1 ? args[0] as number : args[1] as number
+      const step = args.length < 3 ? 1 : args[2] as number
+      const arr = []
+      // N.B., to prevent the internal infinite loop that would result
+      // from having a zero step.
+      if (step === 0) {
+        return runtimeError(msg('error-precondition-not-met', 'vector-range', '3', 'non-zero', step), app)
+      }
+      for (let i = m; step > 0 ? i < n : i > n; i += step) {
+        arr.push(i)
+      }
+      return ok(arr)
+    }
+  }))
+
+const vectorPrimitives: [string, L.Prim, L.Doc][] = [
+  ['vector?', vectorQPrim, Docs.vectorQ],
+  ['vector', vectorPrim, Docs.vector],
+  ['vector-length', vectorLengthPrim, Docs.vectorLength],
+  ['vector-ref', vectorRefPrim, Docs.vectorRef],
+  ['vector->list', vectorListPrim, Docs.vectorList],
+  ['list->vector', listVectorPrim, Docs.listVector],
+  ['vector-range', vectorRangePrim, Docs.vectorRange]
+]
 
 // Bytevectors (6.9)
 
@@ -1050,7 +1114,21 @@ const reduceRightPrim: L.Prim = async (env, args, app) =>
     }
   })
 
-// N.B., (vector-map fn v1 ... vk) not implemented since vectors are not implemented.
+const vectorMapPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('vector-map', ['procedure?', 'vector?'], undefined, args, app).asyncAndThen(async _ => {
+    const fn = args[0]
+    const vector = args[1] as L.Value[]
+    const result = []
+    for (let i = 0; i < vector.length; i++) {
+      const v = await evaluateExp(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(vector[i])]))
+      if (v.tag === 'error') {
+        return v
+      } else {
+        result.push(v.value)
+      }
+    }
+    return ok(result)
+  })
 
 // TODO: implement:
 //   (for-each fn l1 ... lk)
@@ -1066,6 +1144,27 @@ const reduceRightPrim: L.Prim = async (env, args, app) =>
 //   (dynamic-wind before thunk after)
 
 // Additional control features
+
+const vectorFilterPrim: L.Prim = (env, args, app) =>
+  Utils.checkArgsResult('vector-filter', ['procedure?', 'vector?'], undefined, args, app).asyncAndThen(async _ => {
+    const fn = args[0]
+    const vector = args[1] as L.Value[]
+    const result = []
+    for (let i = 0; i < vector.length; i++) {
+      const v = await evaluateExp(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(vector[i])]))
+      if (v.tag === 'error') {
+        return v
+      } else if (!L.valueIsBoolean(v.value)) {
+        return runtimeError(msg('error-type-filter-bool', Pretty.valueToString(0, v.value)), app)
+      } else if (v.value as boolean) {
+        result.push(vector[i])
+      }
+    }
+    return ok(result)
+  })
+
+// TODO: implement fold/reduce variants for vectors
+
 const errorPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('error', ['string?'], undefined, args, app).andThen(_ =>
     runtimeError(msg('error-runtime', args[0] as string), app)))
@@ -1125,7 +1224,7 @@ const randomPrim: L.Prim = async (_env, args, app) =>
       : ok(Math.floor(Math.random() * n))
   }))
 
-const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
+const controlPrimitives: [string, L.Prim, L.Doc][] = [
   ['procedure?', procedurePrim, Docs.procedure],
   ['apply', applyPrim, Docs.apply],
   ['string-map', stringMapPrim, Docs.stringMap],
@@ -1135,6 +1234,8 @@ const controlPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['reduce', reducePrim, Docs.reduce],
   ['fold-right', foldRightPrim, Docs.foldRight],
   ['reduce-right', reduceRightPrim, Docs.reduceRight],
+  ['vector-map', vectorMapPrim, Docs.vectorMap],
+  ['vector-filter', vectorFilterPrim, Docs.vectorFilter],
   ['error', errorPrim, Docs.error],
   ['??', qqPrim, Docs.qq],
   ['compose', composePrim, Docs.compose],
@@ -1171,6 +1272,7 @@ export const preludeEnv = new L.Env([
   ...pairListPrimitives,
   ...listPrimitives,
   ...stringPrimitives,
+  ...vectorPrimitives,
   ...controlPrimitives
 ].map(v => [v[0], L.entry(L.vprim(v[1]), 'prelude', undefined, v[2])]))
   .append('else', elseConst)

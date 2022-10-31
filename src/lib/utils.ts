@@ -27,6 +27,8 @@ function specToPred (spec: ArgSpec): (arg: L.Value) => boolean {
       return L.valueIsPair
     case 'list?':
       return L.valueIsList
+    case 'vector?':
+      return L.valueIsVector
     case 'prim?':
       return L.valueIsPrim
     case 'struct?':

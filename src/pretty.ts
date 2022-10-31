@@ -105,7 +105,9 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
     const s = v as L.StructType
     return `(struct ${s.kind.toString()} ${s.fields.map(v => valueToString(col, v, htmlOutput)).join(' ')})`
   } else if (Array.isArray(v)) {
-    throw new ICE('valueToString', 'vector not yet implemented')
+    return v.length === 0
+      ? '(vector)'
+      : `(vector ${v.map(v => valueToString(col, v, htmlOutput)).join(' ')})`
   } else if (v === null) {
     return 'null'
   } else if (typeof v === 'object') {
