@@ -924,14 +924,45 @@ function transpose <T> (arr: T[][]): T[][] {
 const mapPrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('map', ['procedure?', 'list?'], 'list?', args, app).asyncAndThen(async _ => {
     const fn = args[0]
-    const lists = args.slice(1).map(L.valueListToArray_)
-    if (!(lists.map(l => l.length).every(n => n === lists[0].length))) {
-      return runtimeError(msg('error-precondition-not-met', 'map', 2,
-        'all lists have the same length', Pretty.expToString(0, app)), app)
+    // N.B., non-recursive, linear-time map when only one list is involved
+    if (args.length === 2) {
+      const list = args[1]
+      if (list === null) {
+        return Promise.resolve(ok(null))
+      } else {
+        let cur = list as L.PairType
+        const ret = L.vpair(cur.fst, null) as L.PairType
+        let result = await evaluateExp(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(cur.fst)]))
+        if (result.tag === 'error') {
+          return Promise.resolve(result)
+        } else {
+          ret.fst = result.value
+        }
+        let curRet: L.PairType = ret
+        while (cur.snd !== null) {
+          cur = cur.snd as L.PairType
+          const newNode = L.vpair(null, null) as L.PairType
+          result = await evaluateExp(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(cur.fst)]))
+          if (result.tag === 'error') {
+            return Promise.resolve(result)
+          } else {
+            newNode.fst = result.value
+          }
+          curRet.snd = newNode
+          curRet = newNode
+        }
+        return Promise.resolve(ok(ret))
+      }
+    } else {
+      const lists = args.slice(1).map(L.valueListToArray_)
+      if (!(lists.map(l => l.length).every(n => n === lists[0].length))) {
+        return runtimeError(msg('error-precondition-not-met', 'map', 2,
+          'all lists have the same length', Pretty.expToString(0, app)), app)
+      }
+      const xs = transpose(lists)
+      const exp = L.arrayToList(xs.map(vs => L.nlecall(L.nlevalue(fn), asValues(vs))))
+      return evaluateExp(env, exp)
     }
-    const xs = transpose(lists)
-    const exp = L.arrayToList(xs.map(vs => L.nlecall(L.nlevalue(fn), asValues(vs))))
-    return evaluateExp(env, exp)
   })
 
 // Additional list pipeline functions from racket/base
