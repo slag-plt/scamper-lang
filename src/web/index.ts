@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import * as Scamper from '../index.js'
+import * as Audio from './audio.js'
 import * as Image from './image.js'
 import * as Music from './music.js'
-import * as Scamper from '../index.js'
 import * as JZZ from './jzz/jzz-combined.cjs'
 
 import 'prismjs'
@@ -19,6 +20,9 @@ declare let Prism: any
 // The singleton instance of the JZZ.Tiny synth
 const SYNTH = JZZ.synth.Tiny()
 
+// The singleton audio context
+const audioContext = new AudioContext({ sampleRate: 48000 })
+
 function forEachByClass (elt: Element | Document, cls: string, fn: (e: Element) => void) {
   // N.B., we need to freeze the list of elements to an array because fn
   // may manipulate the DOM and getElementsByClassName returns a live
@@ -30,6 +34,7 @@ function forEachByClass (elt: Element | Document, cls: string, fn: (e: Element) 
 function renderRichWidgets (root: Element | Document): void {
   forEachByClass(root, 'drawing', Image.emitDrawingWidget)
   forEachByClass(root, 'composition', e => Music.emitCompositionWidget(SYNTH, e))
+  forEachByClass(root, 'audio', e => Audio.emitAudioWidget(Scamper.store, audioContext, e))
   Prism.highlightAll()
 }
 
@@ -50,7 +55,7 @@ async function replaceOutputWidgets () {
     const result = await Scamper.compileProgram(src).asyncAndThen(async prog =>
       Scamper.ok({
         statements: prog,
-        outputs: (await new Scamper.ProgramState(prog).evaluate()).prog
+        outputs: await Scamper.evaluateProgram(prog)
       }))
     if (result.tag === 'error') {
       element.innerHTML = sanitize(Scamper.errorToString(result))

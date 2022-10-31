@@ -1294,3 +1294,12 @@ export const sn: Doc = new Doc(
 export const tn: Doc = new Doc(
   'tn: dur?', [], 'A thirty-secondth note duration (1/32).'
 )
+
+/// // audio ///////////////////////////////////////////////////////////////////
+
+export const sampleNode: Doc = new Doc(
+  '(sample-node data): audio-node?', [
+    'data: list?, a list of numbers in the range (-1.0, 1.0)'
+  ],
+  'Creates a new audio node that plays the given sample data.'
+)

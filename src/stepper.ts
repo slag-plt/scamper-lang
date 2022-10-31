@@ -114,7 +114,6 @@ function substituteIfFreeVar (env: L.Env, e: L.Exp): Result<L.Exp> {
       if (env.has(e.value)) {
         return ok(L.nlevalue(env.get(e.value)!.value))
       } else {
-        console.log('^_^')
         return runtimeError(msg('error-var-undef', e.value), e)
       }
     default:

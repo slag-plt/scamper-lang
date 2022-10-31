@@ -131,7 +131,6 @@ function compositionToMsgs (
 function playback (synth: Synth, composition: Composition): number {
   const startTime = window.performance.now()
   const msgs = compositionToMsgs(Music.dur(1, 4), 120, 64, 0, 0, composition).msgs
-  console.log(msgs)
   let i = 0
   const id = window.setInterval(() => {
     const now = window.performance.now()

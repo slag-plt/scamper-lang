@@ -1,6 +1,7 @@
 import * as L from './lang.js'
 import { detailsToCompleteString, ICE } from './result.js'
 import * as P from './parser.js'
+import * as Runtime from './runtime.js'
 
 const namedCharTable = new Map(Array.from(P.namedCharValues.entries()).map(([name, value]) => [value, name]))
 
@@ -109,7 +110,14 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
     return 'null'
   } else if (typeof v === 'object') {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'drawing') {
+    if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'audio') {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+      (v as any).storeTag = Runtime.store.add((v as any).data)
+      return htmlOutput
+        ? `</code><span class="audio">${JSON.stringify(v)}</span><code>`
+        : '[object AudioPipeline]'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'drawing') {
       return htmlOutput
         ? `</code><span class="drawing">${JSON.stringify(v)}</span><code>`
         : '[object Drawing]'

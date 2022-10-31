@@ -54,3 +54,29 @@ export function tryMatch (v: L.Value, p: L.Pat): L.Env | undefined {
     }
   }
 }
+
+export class Store {
+  private counter: number
+  private readonly store: Map<number, L.Value>
+
+  constructor () {
+    this.counter = 0
+    this.store = new Map()
+  }
+
+  add (value: L.Value): number {
+    const key = this.counter++
+    this.store.set(key, value)
+    return key
+  }
+
+  get (key: number): L.Value | undefined {
+    return this.store.get(key)
+  }
+
+  has (key: number): boolean {
+    return this.store.has(key)
+  }
+}
+
+export const store = new Store()
