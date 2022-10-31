@@ -21,7 +21,7 @@ declare let Prism: any
 const SYNTH = JZZ.synth.Tiny()
 
 // The singleton audio context
-const audioContext = new AudioContext({ sampleRate: 48000 })
+const audioContext = new AudioContext({ sampleRate: 16000 }) // TODO: need to parameterize this!
 
 function forEachByClass (elt: Element | Document, cls: string, fn: (e: Element) => void) {
   // N.B., we need to freeze the list of elements to an array because fn
