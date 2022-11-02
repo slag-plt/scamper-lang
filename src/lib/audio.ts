@@ -20,7 +20,7 @@ const sampleNodePrim: L.Prim = (_env, args, app) =>
     for (let i = 0; i < data.length; i++) {
       if (typeof data[i] !== 'number' || data[i] as number < -1.0 || data[i] as number > 1.0) {
         return runtimeError(msg('error-precondition-not-met',
-          'simple-note', 1, 'list of numbers between -1.0 and 1.0', Pretty.valueToString(0, data[i])))
+          'sample-node', 1, 'list of numbers between -1.0 and 1.0', Pretty.valueToString(0, data[i])))
       }
     }
     return ok(sampleNode(new Float32Array(data as number[])))

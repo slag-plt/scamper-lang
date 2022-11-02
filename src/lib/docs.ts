@@ -977,11 +977,11 @@ export const reduceRight: Doc = new Doc(
 )
 
 export const vectorMap: Doc = new Doc(
-  '(vector-map f v): vector?', [
+  '(vector-map f v1 .. vk): vector?', [
     'f: procedure?',
     'v: vector?'
   ],
-  'Returns a new vector containing the results of applying `f` to each element of `v`.'
+  'Returns a new vector containing the results of applying `f` to each element of `v1`, ..., `vk` in a element-wise fashion.'
 )
 
 export const vectorFilter: Doc = new Doc(
@@ -1368,7 +1368,7 @@ export const tn: Doc = new Doc(
 
 export const sampleNode: Doc = new Doc(
   '(sample-node data): audio-node?', [
-    'data: list?, a list of numbers in the range (-1.0, 1.0)'
+    'data: vector?, a vector of numbers in the range (-1.0, 1.0)'
   ],
   'Creates a new audio node that plays the given sample data.'
 )
