@@ -1175,8 +1175,8 @@ const vectorFilterPrim: L.Prim = (env, args, app) =>
 // TODO: implement fold/reduce variants for vectors
 
 const errorPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('error', ['string?'], undefined, args, app).andThen(_ =>
-    runtimeError(msg('error-runtime', args[0] as string), app)))
+  Promise.resolve(Utils.checkArgsResult('error', ['string?'], 'any', args, app).andThen(_ =>
+    runtimeError(msg('error-runtime', args[0], args.slice(1).map(v => Pretty.valueToString(0, v))), app)))
 
 const qqPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('??', [], undefined, args, app).andThen(_ =>
