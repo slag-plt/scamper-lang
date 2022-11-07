@@ -25,3 +25,5 @@ non-empty
 range-test
 
 (vector-filter (lambda (x) (= (remainder x 3) 0)) range-test)
+
+(vector-map * (vector 1 2 3) (vector 4 5 6))

@@ -1115,12 +1115,21 @@ const reduceRightPrim: L.Prim = async (env, args, app) =>
   })
 
 const vectorMapPrim: L.Prim = async (env, args, app) =>
-  Utils.checkArgsResult('vector-map', ['procedure?', 'vector?'], undefined, args, app).asyncAndThen(async _ => {
+  Utils.checkArgsResult('vector-map', ['procedure?', 'vector?'], 'vector?', args, app).asyncAndThen(async _ => {
     const fn = args[0]
-    const vector = args[1] as L.Value[]
-    const result = []
-    for (let i = 0; i < vector.length; i++) {
-      const v = await evaluateExp(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(vector[i])]))
+    const vectors = args.slice(1) as L.Value[][]
+    const len = vectors[0].length
+    if (!(vectors.every(v => v.length === len))) {
+      return runtimeError(msg('error-precondition-not-met', 'vector-map', 2,
+        'all vectors have the same length', Pretty.expToString(0, app)), app)
+    }
+    const result: L.Value[] = []
+    for (let i = 0; i < len; i++) {
+      const args: L.Exp[] = new Array<L.Exp>(vectors.length)
+      for (let j = 0; j < vectors.length; j++) {
+        args[j] = L.nlevalue(vectors[j][i])
+      }
+      const v = await evaluateExp(env, L.nlecall(L.nlevalue(fn), args))
       if (v.tag === 'error') {
         return v
       } else {
@@ -1166,8 +1175,8 @@ const vectorFilterPrim: L.Prim = (env, args, app) =>
 // TODO: implement fold/reduce variants for vectors
 
 const errorPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('error', ['string?'], undefined, args, app).andThen(_ =>
-    runtimeError(msg('error-runtime', args[0] as string), app)))
+  Promise.resolve(Utils.checkArgsResult('error', ['string?'], 'any', args, app).andThen(_ =>
+    runtimeError(msg('error-runtime', args[0], args.slice(1).map(v => Pretty.valueToString(0, v))), app)))
 
 const qqPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('??', [], undefined, args, app).andThen(_ =>
