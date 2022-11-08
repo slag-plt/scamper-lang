@@ -5,6 +5,22 @@ import * as Pretty from '../pretty.js'
 import * as Utils from './utils.js'
 import { msg } from '../messages.js'
 
+const jsNewDoc: L.Doc = new L.Doc(
+  '(js-new class v1 v2 ...)', [
+    'class: string?',
+    'v: any?'
+  ],
+  'Creates a new instance of the given class. The class must be declared in the global scope.'
+)
+
+const jsNewPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('js-new', ['string?'], 'any', args, app).andThen(_ => {
+    const className = args[0] as string
+    const ctorArgs = args.slice(1) as any[]
+    // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+    return new (eval(className))(...ctorArgs)
+  }))
+
 const jsObjDoc: L.Doc = new L.Doc(
   '(js-obj k1 v1 k2 v2 ...): boolean?', [
     'k: string?',
@@ -14,7 +30,7 @@ const jsObjDoc: L.Doc = new L.Doc(
 )
 
 const jsObjPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('jsObjPrim', [], 'any', args, app).andThen(_ => {
+  Promise.resolve(Utils.checkArgsResult('js-obj', [], 'any', args, app).andThen(_ => {
     if (args.length % 2 !== 0) {
       return runtimeError(msg('error-js-obj-args'), app)
     } else {
@@ -53,7 +69,7 @@ const jsCallDoc: L.Doc = new L.Doc(
 )
 
 const jsCallPrim: L.Prim = (env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('jsCallPrim', ['any'], 'any', args, app).andThen(_ => {
+  Promise.resolve(Utils.checkArgsResult('js-call', ['any'], 'any', args, app).andThen(_ => {
     if (typeof args[0] !== 'function') {
       return runtimeError(msg('error-precondition-not-met', 'js-call', 1, 'function', Pretty.valueToString(0, args[0])))
     } else {
@@ -71,7 +87,7 @@ const jsMethodDoc: L.Doc = new L.Doc(
 )
 
 const jsMethodPrim: L.Prim = (env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('jsCallPrim', ['any', 'string?'], 'any', args, app).andThen(_ => {
+  Promise.resolve(Utils.checkArgsResult('js-method', ['any', 'string?'], 'any', args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const obj = args[0] as any
     const f = args[1] as string
@@ -84,6 +100,7 @@ const jsEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'js', und
 
 export const jsLib: L.Env = new L.Env([
   ['js-obj', jsEntry(jsObjPrim, jsObjDoc)],
+  ['js-new', jsEntry(jsNewPrim, jsNewDoc)],
   ['js-get', jsEntry(jsGetPrim, jsGetDoc)],
   ['js-call', jsEntry(jsCallPrim, jsCallDoc)],
   ['js-method', jsEntry(jsMethodPrim, jsMethodDoc)]

@@ -108,18 +108,18 @@ function compositionToMsgs (
     }
 
     case 'mod': {
-      if (composition.mod.kind === 'percussion') {
+      if (composition.mod.type === 'percussion') {
         return compositionToMsgs(beat, bpm, velocity, startTime, 9, composition.note)
-      } else if (composition.mod.kind === 'pitchBend') {
+      } else if (composition.mod.type === 'pitchBend') {
         const msgs = []
         const data = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.note)
         msgs.push(midiMsg(startTime, JZZ.MIDI.pitchBendF(0, composition.mod.fields[0])))
         msgs.push(...data.msgs)
         msgs.push(midiMsg(data.endTime, JZZ.MIDI.pitchBendF(0, 0)))
         return { msgs, endTime: data.endTime }
-      } else if (composition.mod.kind === 'tempo') {
+      } else if (composition.mod.type === 'tempo') {
         return compositionToMsgs(composition.mod.fields[0], composition.mod.fields[1], velocity, startTime, program, composition.note)
-      } else if (composition.mod.kind === 'dynamics') {
+      } else if (composition.mod.type === 'dynamics') {
         return compositionToMsgs(beat, bpm, composition.mod.fields[0], startTime, program, composition.note)
       } else {
         throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod}`)

@@ -71,12 +71,12 @@ const pickup = (pickup: Composition, notes: Composition): Composition =>
   ({ renderAs: 'composition', tag: 'pickup', pickup, notes })
 
 type ModKind = Percussion | PitchBend | Tempo | Dynamics
-type Percussion = { _scamperTag: 'struct', kind: 'percussion', fields: []}
-const percussion = (): Percussion => ({ _scamperTag: 'struct', kind: 'percussion', fields: [] })
+type Percussion = { _scamperTag: 'struct', kind: 'mod', type: 'percussion', fields: []}
+const percussion = (): Percussion => ({ _scamperTag: 'struct', kind: 'mod', type: 'percussion', fields: [] })
 
-type PitchBend = { _scamperTag: 'struct', kind: 'pitchBend', fields: [number] }
+type PitchBend = { _scamperTag: 'struct', kind: 'mod', type: 'pitchBend', fields: [number] }
 const pitchBend = (amount: number): PitchBend =>
-  ({ _scamperTag: 'struct', kind: 'pitchBend', fields: [amount] })
+  ({ _scamperTag: 'struct', kind: 'mod', type: 'pitchBend', fields: [amount] })
 const pitchBendPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('bend', ['number?'], undefined, args, app).andThen(_ => {
     const amount = args[0] as number
@@ -87,8 +87,8 @@ const pitchBendPrim: L.Prim = (_env, args, app) =>
     }
   }))
 
-type Tempo = { _scamperTag: 'struct', kind: 'tempo', fields: [Duration, number] }
-const tempo = (beat: Duration, bpm: number): Tempo => ({ _scamperTag: 'struct', kind: 'tempo', fields: [beat, bpm] })
+type Tempo = { _scamperTag: 'struct', kind: 'mod', type: 'tempo', fields: [Duration, number] }
+const tempo = (beat: Duration, bpm: number): Tempo => ({ _scamperTag: 'struct', kind: 'mod', type: 'tempo', fields: [beat, bpm] })
 const tempoPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('tempo', ['duration', 'number?'], undefined, args, app).andThen(_ => {
     const beat = args[0] as Duration
@@ -98,8 +98,8 @@ const tempoPrim: L.Prim = (_env, args, app) =>
       : ok(tempo(beat, value))
   }))
 
-type Dynamics = { _scamperTag: 'struct', kind: 'dynamics', fields: [number] }
-const dynamics = (amount: number): Dynamics => ({ _scamperTag: 'struct', kind: 'dynamics', fields: [amount] })
+type Dynamics = { _scamperTag: 'struct', kind: 'mod', type: 'dynamics', fields: [number] }
+const dynamics = (amount: number): Dynamics => ({ _scamperTag: 'struct', kind: 'mod', type: 'dynamics', fields: [amount] })
 const dynamicsPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('dynamics', ['number?'], undefined, args, app).andThen(_ => {
     const amount = args[0] as number

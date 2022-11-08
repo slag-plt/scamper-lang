@@ -1,10 +1,6 @@
 {
   "name": "scamper-lang",
-<<<<<<< HEAD
-  "version": "1.5.5",
-=======
   "version": "1.5.7",
->>>>>>> 4cd056c5610f47de8797db221f17988aa13b2522
   "repository": {
     "type": "git",
     "url": "https://github.com/slag-plt/scamper-lang.git"
