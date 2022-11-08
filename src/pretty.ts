@@ -3,18 +3,27 @@ import { detailsToCompleteString, ICE } from './result.js'
 import * as P from './parser.js'
 import * as Runtime from './runtime.js'
 
+// N.B., Because we output to HTML, we must take care to escape HTML entities.
+// But we can't escape all the entities---we want to leave the angle brackets
+// that should ACTUALLY be interpreted as html tags! In the future, we should
+// rely on hacky two-phase output to render html, but for now, we have to
+// do a "deep" sanitization of entities, escaping in all cases except when we
+// emit actual html tags.
+const sanitize = (s: string, htmlOutput: boolean): string =>
+  htmlOutput ? s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : s
+
 const namedCharTable = new Map(Array.from(P.namedCharValues.entries()).map(([name, value]) => [value, name]))
 
 function charToName (s: string): string {
   return namedCharTable.get(s) ?? s
 }
 
-function litToString (l: L.Lit): string {
+function litToString (l: L.Lit, htmlOutput: boolean): string {
   switch (l.tag) {
     case 'bool': return l.value ? '#t' : '#f'
     case 'num': return l.value.toString()
-    case 'char': return `#\\${charToName(l.value)}`
-    case 'str': return `"${l.value}"`
+    case 'char': return `#\\${sanitize(charToName(l.value), htmlOutput)}`
+    case 'str': return `"${sanitize(l.value, htmlOutput)}"`
   }
 }
 
@@ -69,13 +78,13 @@ function indent (col: number, s: string): string {
   return `${' '.repeat(col)}${s}`
 }
 
-function patToString (p: L.Pat): string {
+function patToString (p: L.Pat, htmlOutput: boolean): string {
   switch (p.tag) {
-    case 'var': return p.id
+    case 'var': return sanitize(p.id, htmlOutput)
     case 'wild': return '_'
     case 'null': return 'null'
-    case 'lit': return litToString(p.lit)
-    case 'ctor': return parens('(', [p.head, ...p.args.map(patToString)])
+    case 'lit': return litToString(p.lit, htmlOutput)
+    case 'ctor': return parens('(', [p.head, ...p.args.map(p => patToString(p, htmlOutput))])
   }
 }
 
@@ -85,7 +94,7 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
   } else if (typeof v === 'number') {
     return v.toString()
   } else if (typeof v === 'string') {
-    return `"${v}"`
+    return `"${sanitize(v, htmlOutput)}"`
   } else if (L.valueIsChar(v)) {
     const ch = (v as L.CharType).value
     let printed = ch
@@ -94,7 +103,7 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
       case ' ': printed = 'space'; break
       default: break
     }
-    return `#\\${printed}`
+    return `#\\${sanitize(printed, htmlOutput)}`
   } else if (L.valueIsLambda(v) || L.valueIsPrim(v)) {
     return '[object Function]'
   } else if (L.valueIsPair(v)) {
@@ -116,17 +125,17 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       (v as any).storeTag = Runtime.store.add((v as any).data)
       return htmlOutput
-        ? `</code><span class="audio">${JSON.stringify(v)}</span><code>`
+        ? `</code><span class="audio">${sanitize(JSON.stringify(v), htmlOutput)}</span><code>`
         : '[object AudioPipeline]'
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'drawing') {
       return htmlOutput
-        ? `</code><span class="drawing">${JSON.stringify(v)}</span><code>`
+        ? `</code><span class="drawing">${sanitize(JSON.stringify(v), htmlOutput)}</span><code>`
         : '[object Drawing]'
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'composition') {
       return htmlOutput
-        ? `</code><span class="composition">${JSON.stringify(v)}</span><code>`
+        ? `</code><span class="composition">${sanitize(JSON.stringify(v), htmlOutput)}</span><code>`
         : '[object Composition]'
     } else {
       return '[object Object]'
@@ -141,9 +150,9 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
     case 'value':
       return valueToString(col, e.value, htmlOutput)
     case 'var':
-      return e.value
+      return sanitize(e.value, htmlOutput)
     case 'lit':
-      return litToString(e.value)
+      return litToString(e.value, htmlOutput)
     case 'call': {
       const allExps = [e.head, ...e.args]
       if (allExps.every(isSimpleExp) && allExps.every(e => nestingDepth(e) <= 4) && e.args.length <= 5) {
@@ -196,7 +205,7 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
     case 'or':
       return parens(e.bracket, ['or', ...e.args.map(arg => expToString(col + 2, arg, htmlOutput))])
     case 'match': {
-      const bindings = e.branches.map(b => indent(col + 2, `[${patToString(b[0])} ${expToString(col + 2, b[1], htmlOutput)}]`))
+      const bindings = e.branches.map(b => indent(col + 2, `[${patToString(b[0], htmlOutput)} ${expToString(col + 2, b[1], htmlOutput)}]`))
       return parens(e.bracket, [`match ${expToString(col, e.scrutinee, htmlOutput)}`, ...bindings], '\n')
     }
   }
@@ -205,35 +214,35 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
 export function effectToString (col: number, effect: L.SEffect, outputBindings: boolean = false, htmlOutput: boolean = false): string {
   switch (effect.tag) {
     case 'error': return effect.errors.map(err => detailsToCompleteString(err)).join('\n')
-    case 'binding': return outputBindings ? `[[${effect.name} bound]]` : ''
+    case 'binding': return outputBindings ? `[[${sanitize(effect.name, htmlOutput)} bound]]` : ''
     case 'testresult': {
       if (effect.passed) {
-        return `[[ Test "${effect.desc}" passed! ]]`
+        return `[[ Test "${sanitize(effect.desc, htmlOutput)}" passed! ]]`
       } else {
         const msg: string = effect.reason
           ? effect.reason
           : `  Expected: ${expToString(col, effect.expected!, htmlOutput)}\n  Actual: ${expToString(col, effect.actual!, htmlOutput)}`
-        return `[[ Test "${effect.desc}" failed!\n${msg}\n]]`
+        return `[[ Test "${sanitize(effect.desc, htmlOutput)}" failed!\n${msg}\n]]`
       }
     }
     case 'value': return valueToString(col, effect.value, htmlOutput)
-    case 'imported': return outputBindings ? `[[${effect.source} imported]]` : ''
+    case 'imported': return outputBindings ? `[[${sanitize(effect.source, htmlOutput)} imported]]` : ''
   }
 }
 
 export function stmtToString (col: number, stmt: L.Stmt, outputBindings: boolean = false, htmlOutput: boolean = false): string {
   switch (stmt.tag) {
     case 'define': {
-      const preamble = `(define ${stmt.name.value}`
+      const preamble = `(define ${sanitize(stmt.name.value, htmlOutput)}`
       return isSimpleExp(stmt.value)
         ? `${preamble} ${expToString(col, stmt.value, htmlOutput)})`
         : `${preamble}\n${indent(col + 2, expToString(col + 2, stmt.value, htmlOutput))})`
     }
-    case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
+    case 'struct': return `(struct ${sanitize(stmt.id.value, htmlOutput)} (${stmt.fields.map(f => f.value).join(' ')}))`
     case 'testcase':
       return `(test-case ${expToString(col, stmt.desc, htmlOutput)} ${expToString(col, stmt.comp, htmlOutput)}\n${indent(col + 2, expToString(col + 2, stmt.expected, htmlOutput))}\n${indent(col + 2, expToString(col + 2, stmt.actual, htmlOutput))})`
     case 'exp': return expToString(col, stmt.value, htmlOutput)
-    case 'import': return `(import ${stmt.source})`
+    case 'import': return `(import ${sanitize(stmt.source, htmlOutput)})`
     case 'error': return effectToString(col, stmt, outputBindings, htmlOutput)
     case 'binding': return effectToString(col, stmt, outputBindings, htmlOutput)
     case 'testresult': return effectToString(col, stmt, outputBindings, htmlOutput)

@@ -23,6 +23,7 @@ const templates: Messages = new Map([
   ['error-index-vector', (vs) => `${vs[0]} is not a valid index into vector "${vs[1]}"`],
   ['error-invalid-char-constant', (_) => 'Invalid character constant encountered'],
   ['error-invalid-string-literal', (_) => 'Invalid string literal encountered'],
+  ['error-js-obj-args', (_) => 'js-obj expects an even number of arguments'],
   ['error-match-no-branch-applies', (_) => 'No branch of the match expression applies to the scrutinee.'],
   ['error-runtime-parsing', (vs) => `${vs[0]} expects that its input string ${vs[1]} is a valid ${vs[2]} but it is not.`],
   ['error-precondition-not-met', (vs) => `${vs[0]} expects that argument ${vs[1]} obeys the following property: ${vs[2]}, but ${vs[3]} was given.`],
