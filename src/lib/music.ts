@@ -90,7 +90,7 @@ const pitchBendPrim: L.Prim = (_env, args, app) =>
 type Tempo = { _scamperTag: 'struct', kind: 'mod', type: 'tempo', fields: [Duration, number] }
 const tempo = (beat: Duration, bpm: number): Tempo => ({ _scamperTag: 'struct', kind: 'mod', type: 'tempo', fields: [beat, bpm] })
 const tempoPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('tempo', ['duration', 'number?'], undefined, args, app).andThen(_ => {
+  Promise.resolve(Utils.checkArgsResult('tempo', ['dur', 'number?'], undefined, args, app).andThen(_ => {
     const beat = args[0] as Duration
     const value = args[1] as number
     return value < 0
