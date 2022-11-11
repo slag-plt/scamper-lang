@@ -12,3 +12,5 @@ example
 (define str "  hello world!     ")
 
 (js-method str "trim")
+
+(js-eval "1+1")
