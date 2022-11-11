@@ -923,6 +923,22 @@ const vectorRangePrim: L.Prim = (_env, args, app) =>
     }
   }))
 
+const vectorAppendPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector-append', [], 'vector?', args, app).andThen(_ => {
+    if (args.length === 0) {
+      return ok([])
+    }
+    const vecs = args as L.Value[][]
+    const arr = new Array<L.Value>(vecs.map(v => v.length).reduce((a, b) => a + b))
+    let i = 0
+    for (let j = 0; j < vecs.length; j++) {
+      for (let k = 0; k < vecs[j].length; k++) {
+        arr[i++] = vecs[j][k]
+      }
+    }
+    return ok(arr)
+  }))
+
 const vectorPrimitives: [string, L.Prim, L.Doc][] = [
   ['vector?', vectorQPrim, Docs.vectorQ],
   ['vector', vectorPrim, Docs.vector],
@@ -1245,6 +1261,7 @@ const controlPrimitives: [string, L.Prim, L.Doc][] = [
   ['reduce-right', reduceRightPrim, Docs.reduceRight],
   ['vector-map', vectorMapPrim, Docs.vectorMap],
   ['vector-filter', vectorFilterPrim, Docs.vectorFilter],
+  ['vector-append', vectorAppendPrim, Docs.vectorAppend],
   ['error', errorPrim, Docs.error],
   ['??', qqPrim, Docs.qq],
   ['compose', composePrim, Docs.compose],

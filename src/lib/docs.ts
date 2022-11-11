@@ -992,6 +992,13 @@ export const vectorFilter: Doc = new Doc(
   'Returns a new vector containing the elements of `l` for which `f` returns `#t`.'
 )
 
+export const vectorAppend: Doc = new Doc(
+  '(vector-append v1 .. vk): vector?', [
+    'v: vector?'
+  ],
+  'Returns a new vector containing the elements of `v1`, ..., `vk` in order.'
+)
+
 export const error: Doc = new Doc(
   '(error msg): any', [
     'msg: string?'
