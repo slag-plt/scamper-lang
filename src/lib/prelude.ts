@@ -204,7 +204,7 @@ const stringNumberPrim: L.Prim = (_env, args, app) => {
   } else if (/^[+-]?(\d+|(\d*\.\d+)|(\d+\.\d*))([eE][+-]?\d+)?$/.test(s)) {
     return Promise.resolve(ok(parseFloat(s)))
   } else {
-    return Promise.resolve(runtimeError(msg('error-runtime-parsing', 'string->number', L.expToString(L.nlevalue(args[0])), 'number'), app))
+    return Promise.resolve(runtimeError(msg('error-runtime-parsing', 'string->number', Pretty.expToString(0, L.nlevalue(args[0])), 'number'), app))
   }
 }
 
@@ -507,7 +507,7 @@ const assocKeyPrim: L.Prim = (_env, args, app) =>
           return ok(true)
         }
       } else {
-        return runtimeError(msg('error-precondition-not-met', 'assoc-key?', 2, 'list of pairs', L.expToString(L.nlevalue(args[1])), app))
+        return runtimeError(msg('error-precondition-not-met', 'assoc-key?', 2, 'list of pairs', Pretty.expToString(0, L.nlevalue(args[1])), app))
       }
     }
     return ok(false)
@@ -524,10 +524,10 @@ const assocRefPrim: L.Prim = (_env, args, app) =>
           return ok(pair.snd)
         }
       } else {
-        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(L.nlevalue(args[1])), app))
+        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', Pretty.expToString(0, L.nlevalue(args[1])), app))
       }
     }
-    return runtimeError(msg('error-assoc-not-found', L.expToString(L.nlevalue(v)), L.expToString(L.nlevalue(args[1]))), app)
+    return runtimeError(msg('error-assoc-not-found', Pretty.expToString(0, L.nlevalue(v)), Pretty.expToString(0, L.nlevalue(args[1]))), app)
   }))
 
 const assocSetPrim: L.Prim = (_env, args, app) =>
@@ -545,7 +545,7 @@ const assocSetPrim: L.Prim = (_env, args, app) =>
           return ok(L.valueArrayToList(ret))
         }
       } else {
-        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', L.expToString(L.nlevalue(args[1])), app))
+        return runtimeError(msg('error-precondition-not-met', 'assoc-ref', 2, 'list of pairs', Pretty.expToString(0, L.nlevalue(args[1])), app))
       }
     }
     // Otherwise, we didn't find the key. Add it to our list.
@@ -873,9 +873,21 @@ const vectorQPrim: L.Prim = (_env, args, app) =>
 
 const vectorPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('vector', [], 'any', args, app).andThen(_ =>
-    // N.B., the arguments themselves are the vector of values! Cheeky, but
-    // once we have mutation, this won't fly at all!
-    ok(args)))
+    // N.B., make a shallow copy of the array so that mutation doesn't make things weird.
+    ok([...args])))
+
+const makeVectorPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('make-vector', ['integer?', 'any'], undefined, args, app).andThen(_ => {
+    const n = args[0] as number
+    if (n < 0) {
+      return runtimeError(msg('error-precondition-not-met', 'make-vector', '1', 'non-negative', n), app)
+    }
+    const ret = new Array<L.Value>(n)
+    for (let i = 0; i < n; i++) {
+      ret[i] = args[1]
+    }
+    return ok(ret)
+  }))
 
 const vectorLengthPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('vector-length', ['vector?'], undefined, args, app).andThen(_ =>
@@ -890,6 +902,28 @@ const vectorRefPrim: L.Prim = (_env, args, app) =>
     } else {
       return ok(vec[i])
     }
+  }))
+
+const vectorSetPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector-set!', ['vector?', 'integer?', 'any'], undefined, args, app).andThen(_ => {
+    const vec = args[0] as L.Value[]
+    const i = args[1] as number
+    if (i < 0 || i >= vec.length) {
+      return runtimeError(msg('error-index-vector', i, Pretty.valueToString(0, vec)), app)
+    } else {
+      vec[i] = args[2]
+      return ok(undefined)
+    }
+  }))
+
+const vectorFillPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector-fill!', ['vector?', 'any'], undefined, args, app).andThen(_ => {
+    const vec = args[0] as L.Value[]
+    const v = args[1]
+    for (let i = 0; i < vec.length; i++) {
+      vec[i] = v
+    }
+    return ok(undefined)
   }))
 
 const vectorListPrim: L.Prim = (_env, args, app) =>
@@ -942,8 +976,11 @@ const vectorAppendPrim: L.Prim = (_env, args, app) =>
 const vectorPrimitives: [string, L.Prim, L.Doc][] = [
   ['vector?', vectorQPrim, Docs.vectorQ],
   ['vector', vectorPrim, Docs.vector],
+  ['make-vector', makeVectorPrim, Docs.makeVector],
   ['vector-length', vectorLengthPrim, Docs.vectorLength],
   ['vector-ref', vectorRefPrim, Docs.vectorRef],
+  ['vector-set!', vectorSetPrim, Docs.vectorSet],
+  ['vector-fill!', vectorFillPrim, Docs.vectorFill],
   ['vector->list', vectorListPrim, Docs.vectorList],
   ['list->vector', listVectorPrim, Docs.listVector],
   ['vector-range', vectorRangePrim, Docs.vectorRange]
@@ -1090,7 +1127,7 @@ const reducePrim: L.Prim = async (env, args, app) =>
     const list = L.valueListToArray_(args[1])
 
     if (list.length === 0) {
-      return runtimeError(msg('error-precondition-not-met', 'reduce', '2', 'list is non-empty', L.expToString(L.nlevalue(args[1]))), app)
+      return runtimeError(msg('error-precondition-not-met', 'reduce', '2', 'list is non-empty', Pretty.expToString(0, L.nlevalue(args[1]))), app)
     } else {
       return evaluateExp(env,
         L.nlecall(L.nlevar('fold'), [L.nlevalue(fn), L.nlevalue(list[0]), L.nlevalue(L.valueArrayToList(list.slice(1)))]))
@@ -1120,7 +1157,7 @@ const reduceRightPrim: L.Prim = async (env, args, app) =>
     const fn = args[0]
     const list = L.valueListToArray_(args[1])
     if (list.length === 0) {
-      return runtimeError(msg('error-precondition-not-met', 'reduce-right', '2', 'list is non-empty', L.expToString(L.nlevalue(args[1]))), app)
+      return runtimeError(msg('error-precondition-not-met', 'reduce-right', '2', 'list is non-empty', Pretty.expToString(0, L.nlevalue(args[1]))), app)
     } else {
       return evaluateExp(env,
         L.nlecall(L.nlevar('fold-right'), asValues([
@@ -1189,6 +1226,9 @@ const vectorFilterPrim: L.Prim = (env, args, app) =>
   })
 
 // TODO: implement fold/reduce variants for vectors
+
+const voidQ: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('void?', ['any'], 'boolean', args, app).andThen(_ => ok(L.valueIsVoid(args[0]))))
 
 const errorPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('error', ['string?'], 'any', args, app).andThen(_ =>
@@ -1262,6 +1302,7 @@ const controlPrimitives: [string, L.Prim, L.Doc][] = [
   ['vector-map', vectorMapPrim, Docs.vectorMap],
   ['vector-filter', vectorFilterPrim, Docs.vectorFilter],
   ['vector-append', vectorAppendPrim, Docs.vectorAppend],
+  ['voidQ', voidQ, Docs.voidQ],
   ['error', errorPrim, Docs.error],
   ['??', qqPrim, Docs.qq],
   ['compose', composePrim, Docs.compose],
@@ -1291,6 +1332,10 @@ const controlPrimitives: [string, L.Prim, L.Doc][] = [
 
 const elseConst: L.EnvEntry = L.entry(true, 'prelude', undefined, Docs.elseV)
 
+const piConst: L.EnvEntry = L.entry(Math.PI, 'prelude', undefined, Docs.pi)
+
+const voidConst: L.EnvEntry = L.entry(undefined, 'prelude', undefined, Docs.voidV)
+
 export const preludeEnv = new L.Env([
   ...equivalencePrimitives,
   ...numericPrimitives,
@@ -1302,3 +1347,6 @@ export const preludeEnv = new L.Env([
   ...controlPrimitives
 ].map(v => [v[0], L.entry(L.vprim(v[1]), 'prelude', undefined, v[2])]))
   .append('else', elseConst)
+  .append('pi', piConst)
+  .append('π', piConst)
+  .append('void', voidConst)

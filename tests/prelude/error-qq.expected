@@ -3,4 +3,4 @@
     In program: (error "existing")
 :6:1: Runtime error:
     A hole was encountered!
-    In program: (??)
+    In program: {??}

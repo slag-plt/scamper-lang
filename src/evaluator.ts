@@ -1,4 +1,5 @@
 import * as L from './lang.js'
+import * as P from './pretty.js'
 import { msg } from './messages.js'
 import { runtimeError, tryMatch } from './runtime.js'
 import { Result, ok, join, errorDetails } from './result.js'
@@ -108,10 +109,20 @@ export async function evaluateExp (env: L.Env, e: L.Exp): Promise<Result<L.Value
         return runtimeError(msg('error-match-no-branch-applies'), e)
       })
     }
+    case 'begin': {
+      for (let i = 0; i < e.exps.length - 1; i++) {
+        const exp = e.exps[i]
+        const v = await evaluateExp(env, exp)
+        if (v.tag === 'error') {
+          return Promise.resolve(v)
+        }
+      }
+      return evaluateExp(env, e.exps[e.exps.length - 1])
+    }
   }
 }
 
-export async function evaluateStmt (env: L.Env, s: L.Stmt): Promise<L.Stmt> {
+export async function evaluateStmt (env: L.Env, s: L.Stmt, htmlOutput: boolean): Promise<L.Stmt> {
   switch (s.tag) {
     case 'error':
       return s
@@ -198,7 +209,7 @@ export async function evaluateStmt (env: L.Env, s: L.Stmt): Promise<L.Stmt> {
     case 'exp': {
       const v = await evaluateExp(env, s.value)
       if (v.tag === 'ok') {
-        return L.svalue(v.value)
+        return L.svalue(P.valueToString(0, v.value, htmlOutput))
       } else {
         return L.serror(v.details)
       }
@@ -218,11 +229,11 @@ export async function evaluateStmt (env: L.Env, s: L.Stmt): Promise<L.Stmt> {
   }
 }
 
-export async function evaluateProgram (prog: L.Program, initialEnv: L.Env = Libs.preludeEnv): Promise<L.SEffect[]> {
+export async function evaluateProgram (prog: L.Program, htmlOutput: boolean, initialEnv: L.Env = Libs.preludeEnv): Promise<L.SEffect[]> {
   const results: L.SEffect[] = []
   const env = new L.Env(initialEnv.entries)
   for (let i = 0; i < prog.length; i++) {
-    const result = await evaluateStmt(env, prog[i])
+    const result = await evaluateStmt(env, prog[i], htmlOutput)
     results.push(result as L.SEffect)
   }
   return results

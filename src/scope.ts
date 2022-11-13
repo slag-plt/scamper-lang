@@ -96,6 +96,11 @@ function checkExp (bvars: string[], e: Exp): ErrorDetails[] {
       })
       return errors
     }
+    case 'begin': {
+      let errors: ErrorDetails[] = []
+      e.exps.forEach(e => { errors = errors.concat(checkExp(bvars, e)) })
+      return errors
+    }
   }
 }
 

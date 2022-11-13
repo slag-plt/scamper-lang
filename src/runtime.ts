@@ -1,10 +1,11 @@
 import * as L from './lang.js'
+import * as P from './pretty.js'
 import { Result, error } from './result.js'
 import { msg } from './messages.js'
 
 export function runtimeError <T> (message: string, s?: L.Exp, hint?: string): Result<T> {
   return s
-    ? error(msg('phase-runtime'), message, s.range, L.expToString(s), hint)
+    ? error(msg('phase-runtime'), message, s.range, P.expToString(0, s), hint)
     : error(msg('phase-runtime'), message, undefined, undefined, hint)
 }
 

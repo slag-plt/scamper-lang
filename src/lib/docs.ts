@@ -835,6 +835,14 @@ export const vector: Doc = new Doc(
   'Returns a vector consisting of the values `v1`, `v2`, ...'
 )
 
+export const makeVector: Doc = new Doc(
+  '(make-vector k v): vector?', [
+    'k: integer?',
+    'v: any'
+  ],
+  'Returns a vector of length `k` with each element set to `v`.'
+)
+
 export const vectorLength: Doc = new Doc(
   '(vector-length v): integer?', [
     'v: vector?'
@@ -848,6 +856,23 @@ export const vectorRef: Doc = new Doc(
     'n: integer?, a valid index into v'
   ],
   'Returns the value at index `n` of vector `v`.'
+)
+
+export const vectorSet: Doc = new Doc(
+  '(vector-set! v n x): void?', [
+    'v: vector?',
+    'n: integer?, a valid index into v',
+    'x: any'
+  ],
+  'Sets the value at index `n` of vector `v` to `x`.'
+)
+
+export const vectorFill: Doc = new Doc(
+  '(vector-fill! v x): void?', [
+    'v: vector?',
+    'x: any'
+  ],
+  'Sets each element of vector `v` to `x`.'
 )
 
 export const vectorList: Doc = new Doc(
@@ -984,6 +1009,13 @@ export const vectorMap: Doc = new Doc(
   'Returns a new vector containing the results of applying `f` to each element of `v1`, ..., `vk` in a element-wise fashion.'
 )
 
+export const voidQ: Doc = new Doc(
+  '(void? v): boolean?', [
+    'v: any'
+  ],
+  'Returns `#t` if and only if `v` is the void value.'
+)
+
 export const vectorFilter: Doc = new Doc(
   '(vector-filter f l): list?', [
     'f: procedure?, a predicate',
@@ -1052,6 +1084,16 @@ export const random: Doc = new Doc(
 export const elseV: Doc = new Doc(
   'else: ?boolean', [],
   'A synonym for `#t` appropriate for use as the final guard of a `cond` expression.'
+)
+
+export const pi: Doc = new Doc(
+  'pi: number', [],
+  'The constant π.'
+)
+
+export const voidV: Doc = new Doc(
+  'void: void', [],
+  'The void value.'
 )
 
 /// // image ////////////////////////////////////////////////////////////////////
