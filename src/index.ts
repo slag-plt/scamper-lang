@@ -4,6 +4,7 @@ import { detailsToResult, ok, Result } from './result.js'
 import { scopeCheckExp, scopeCheckProgram } from './scope.js'
 
 export * from './evaluator.js'
+export * from './loc.js'
 export * from './pretty.js'
 export * from './result.js'
 export * from './stepper.js'

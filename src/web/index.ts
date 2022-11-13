@@ -54,22 +54,31 @@ async function replaceOutputWidgets () {
       }))
     if (result.tag === 'error') {
       element.innerHTML = sanitize(Scamper.errorToString(result))
-    } else {
+    } else if (outputProg) {
       element.innerHTML = ''
-      for (let i = 0; i < result.value.statements.length; i++) {
-        if (outputProg) {
+      const endLocs = result.value.statements.map(s => s.range.end)
+      const segments = Scamper.splitByLocs(endLocs, src)
+      result.value.statements.forEach((s, i) => {
+        const segment = segments[i]
+        const output = Scamper.effectToString(0, result.value.outputs[i], true, true)
+        if (output.length > 0) {
           element.innerHTML += [
-            `&gt; <code>${Scamper.stmtToString(0, result.value.statements[i], false, true)}</code>`,
-            `<code>${Scamper.stmtToString(0, result.value.outputs[i], true, true)}</code>`,
-            // N.B., extra spacing to make output pretty
-            '',
+            `<code>${segment}</code>`,
+            `&gt; <code>${output}</code>`,
+            // N.B., extra spacing to make output pretty,
             ''
           ].join('\n')
         } else {
-          const line = Scamper.stmtToString(0, result.value.outputs[i], false, true)
-          if (line.trim().length > 0) {
-            element.innerHTML += `<code>${line}</code>\n\n`
-          }
+          element.innerHTML += segment
+        }
+      })
+      renderRichWidgets(element)
+    } else {
+      element.innerHTML = ''
+      for (let i = 0; i < result.value.statements.length; i++) {
+        const line = Scamper.stmtToString(0, result.value.outputs[i], false, true)
+        if (line.trim().length > 0) {
+          element.innerHTML += `<code>${line}</code>\n\n`
         }
       }
       renderRichWidgets(element)

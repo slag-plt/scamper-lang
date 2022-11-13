@@ -44,7 +44,7 @@ function lexerError <T> (message: string, tok?: Token, hint?: string): Result<T>
 /**
  * The state of the lexer updated throughout the lexing process:
  * + `i` is the current position of the lexer in the source string.
- * +`pos` is the current position of the lexer in the source file.
+ * + `pos` is the current position of the lexer in the source file.
  * + `tok` is a mutable structure that keeps track of the current token we are
  *    building up, if we are building up one currently. When we are not
  *    building up a token, `text` is undefined.
@@ -434,7 +434,7 @@ function tokenize (src: string): Result<Token[]> {
   return ok(result)
 }
 
-function tokensToSListArgs (endBracket: string, toks: Token[]): Result<Sexp[]> {
+function tokensToSListArgs (endBracket: string, toks: Token[]): Result<[Sexp[], Loc]> {
   if (toks.length === 0) {
     return lexerError(msg('error-eof'))
   }
@@ -454,8 +454,8 @@ function tokensToSListArgs (endBracket: string, toks: Token[]): Result<Sexp[]> {
         ? mkRange(sexps[0].range.start, sexps[sexps.length - 1].range.end)
         : noRange())
   }
-  toks.shift() // N.B., pop the ')'
-  return ok(sexps)
+  const endParen = toks.shift()! // N.B., pop the ')'
+  return ok([sexps, endParen.range.end])
 }
 
 function tokensToSexp (toks: Token[]): Result<Sexp> {
@@ -465,20 +465,14 @@ function tokensToSexp (toks: Token[]): Result<Sexp> {
     const head = toks.shift()!
     switch (head.value) {
       case '(':
-        return tokensToSListArgs(')', toks).andThen((args) =>
-          args.length === 0
-            ? ok(slist(head.range, '(', args))
-            : ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '(', args)))
+        return tokensToSListArgs(')', toks).andThen(([args, endLoc]) =>
+          ok(slist(mkRange(head.range.start, endLoc), '(', args)))
       case '[':
-        return tokensToSListArgs(']', toks).andThen((args) =>
-          args.length === 0
-            ? ok(slist(head.range, '[', args))
-            : ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '[', args)))
+        return tokensToSListArgs(']', toks).andThen(([args, endLoc]) =>
+          ok(slist(mkRange(head.range.start, endLoc), '[', args)))
       case '{':
-        return tokensToSListArgs('}', toks).andThen((args) =>
-          args.length === 0
-            ? ok(slist(head.range, '{', args))
-            : ok(slist(mkRange(args[0].range.start, args[args.length - 1].range.end), '{', args)))
+        return tokensToSListArgs('}', toks).andThen(([args, endLoc]) =>
+          ok(slist(mkRange(head.range.start, endLoc), '{', args)))
       case ',':
         return tokensToSexp(toks)
       case ')':

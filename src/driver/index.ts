@@ -21,6 +21,7 @@ type CompilerOptions = {
   filename?: string,
   checkOnly: boolean,
   formatOnly: boolean,
+  emitProg: boolean,
   emitTokens: boolean,
   emitTrace: boolean,
   useStepper: boolean,
@@ -31,6 +32,7 @@ function makeDefaultOptions (): CompilerOptions {
     filename: undefined,
     checkOnly: false,
     formatOnly: false,
+    emitProg: false,
     emitTokens: false,
     emitTrace: false,
     useStepper: false
@@ -47,6 +49,7 @@ Options:
 -h, --help       Prints this help message.
 -c, --check      Checks the program for errors, but does not run the program.
 --format         Formats the program, printing the results to stdout.
+--emit-prog      Prints the output interspersed between the program's statements.
 --emit-tokens    Prints tokens emitted by the lexer.
 --emit-trace     Prints the step-by-step evaluation of the program (implies --use-stepper).
 --use-stepper    Uses the stepper instead of the evaluator.
@@ -64,6 +67,8 @@ function processArgs (args: string[]): CompilerOptions {
       opts.checkOnly = true
     } else if (arg === '--format') {
       opts.formatOnly = true
+    } else if (arg === '--emit-prog') {
+      opts.emitProg = true
     } else if (arg === '--emit-tokens') {
       opts.emitTokens = true
     } else if (arg === '--emit-trace') {
@@ -162,6 +167,23 @@ function main () {
       }
     } else if (opts.useStepper) {
       console.log((await new scamper.ProgramState(prog).evaluate()).toString())
+    } else if (opts.emitProg) {
+      const effects = await scamper.evaluateProgram(prog, false)
+      const endLocs = prog.map(s => s.range.end)
+      const segments = scamper.splitByLocs(endLocs, src)
+      const lines: string[] = []
+      prog.forEach((s, i) => {
+        const segment = segments[i]
+        const output = scamper.effectToString(0, effects[i], true)
+        if (output.length > 0) {
+          lines.push(`${segment}\n`)
+          lines.push(`> ${output}`)
+        } else {
+          lines.push(segment)
+        }
+      })
+      lines.push(segments[segments.length - 1])
+      console.log(lines.join(''))
     } else {
       const effects = await scamper.evaluateProgram(prog, false)
       console.log(effects.map(fx => scamper.effectToString(0, fx, false)).filter(s => s.length > 0).join('\n'))

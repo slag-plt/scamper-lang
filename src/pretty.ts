@@ -114,7 +114,9 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
       : `(cons ${valueToString(col, (v as L.PairType).fst, htmlOutput)} ${valueToString(col, (v as L.PairType).snd, htmlOutput)})`
   } else if (L.valueIsStruct(v)) {
     const s = v as L.StructType
-    return `(struct ${s.kind.toString()} ${s.fields.map(v => valueToString(col, v, htmlOutput)).join(' ')})`
+    return s.fields.length === 0
+      ? `(struct ${s.kind.toString()} ())`
+      : `(struct ${s.kind.toString()} ${s.fields.map(v => valueToString(col, v, htmlOutput)).join(' ')})`
   } else if (Array.isArray(v)) {
     return v.length === 0
       ? '(vector)'

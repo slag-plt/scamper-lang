@@ -15,3 +15,35 @@ export function inRange (loc: Loc, range: Range): boolean {
          (loc.line === range.start.line && loc.column >= range.start.column) ||
          (loc.line === range.end.line && loc.column < range.end.column)
 }
+
+function allLineStartingPos (src: string): number[] {
+  const result = [0]
+  // N.B., the last character doesn't matter because if it is a newline
+  // then it will not denote the start of a line.
+  for (let i = 0; i < src.length - 1; i++) {
+    if (src[i] === '\n') {
+      result.push(i + 1)
+    }
+  }
+  return result
+}
+
+export function locToIndex (lineIndices: number[], loc: Loc): number {
+  // N.B., locs are 0-based for both line and column.
+  return lineIndices[loc.line] + loc.column
+}
+
+export function splitByLocs (locs: Loc[], src: string): string[] {
+  if (locs.length === 0) {
+    return [src]
+  } else {
+    const lineIndices = allLineStartingPos(src)
+    // N.B., throughout, need to be inclusive on the end index of one line/
+    // the start index of the next.
+    const result = [src.substring(0, locToIndex(lineIndices, locs[0]) + 1)]
+    for (let i = 1; i < locs.length; i++) {
+      result.push(src.substring(locToIndex(lineIndices, locs[i - 1]) + 1, locToIndex(lineIndices, locs[i]) + 1))
+    }
+    return result
+  }
+}
