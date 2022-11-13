@@ -1,6 +1,6 @@
-:1:0: Runtime error:
+:0:0: Runtime error:
     A runtime error was encountered: existing 
     In program: (error "existing")
-:6:1: Runtime error:
+:5:1: Runtime error:
     A hole was encountered!
     In program: {??}
