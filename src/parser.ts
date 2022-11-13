@@ -1,10 +1,11 @@
-import { Exp, eand, ebool, ecall, echar, econd, eif, elam, elet, ematch, enil, enumber, eor, estr, evar, lbool, lchar, LetKind, lnum, lstr, Name, name, Pat, pctor, plit, pnull, Program, pvar, pwild, sdefine, sexp, simport, sstruct, stestcase, Stmt } from './lang.js'
+import { Exp, eand, ebool, ecall, echar, econd, eif, elam, elet, ematch, enil, enumber, eor, estr, evar, lbool, lchar, LetKind, lnum, lstr, Name, name, Pat, pctor, plit, pnull, Program, pvar, pwild, sdefine, sexp, simport, sstruct, stestcase, Stmt, ebegin } from './lang.js'
 import { error, join, ok, Result, rethrow } from './result.js'
 import { Atom, Sexp, sexpToString, stringToSexp, stringToSexps } from './sexp.js'
 import { msg } from './messages.js'
 
 const reservedWords = [
   'and',
+  'begin',
   'cond',
   'define',
   'if',
@@ -269,6 +270,8 @@ function sexpToExp (s: Sexp): Result<Exp> {
                   : sexpToExp(args[0]).andThen(scrutinee =>
                     join(args.slice(1).map(sexpToMatchBranch)).andThen(branches =>
                       ok(ematch(s.range, scrutinee, branches, s.bracket))))
+              case 'begin':
+                return join(args.map(sexpToExp)).andThen(exps => ok(ebegin(s.range, exps)))
               default:
                 // NOTE: applications whose head are not keywords are assumed to be applications.
                 return join(args.map(sexpToExp)).andThen(es => ok(ecall(s.range, evar(head.range, head.single), es, s.bracket)))

@@ -50,7 +50,7 @@ async function replaceOutputWidgets () {
     const result = await Scamper.compileProgram(src).asyncAndThen(async prog =>
       Scamper.ok({
         statements: prog,
-        outputs: await Scamper.evaluateProgram(prog)
+        outputs: await Scamper.evaluateProgram(prog, true)
       }))
     if (result.tag === 'error') {
       element.innerHTML = sanitize(Scamper.errorToString(result))

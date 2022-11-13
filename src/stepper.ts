@@ -54,6 +54,8 @@ function substitute (v: L.Value, x: string, e: L.Exp): L.Exp {
         substitute(v, x, e.scrutinee),
         e.branches.map(b => [b[0], substitute(v, x, b[1])]),
         e.bracket)
+    case 'begin':
+      return L.ebegin(e.range, e.exps.map(e => substitute(v, x, e)), e.bracket)
   }
 }
 
@@ -332,6 +334,8 @@ async function stepExp (env: L.Env, e: L.Exp): Promise<Result<L.Exp>> {
           return runtimeError(msg('error-match-no-branch-applies'), e)
         }
       }
+    case 'begin':
+      throw new ICE('stepExp', 'begin is not supported in the stepper')
   }
 }
 
@@ -453,12 +457,13 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
       }
     }
     // N.B., as a last step, substitute free variables away when they are values.
+    // TODO: probably should thread htmlOutput through here, but will be refactoring soon, anyways...
     case 'exp': {
       const result = L.isValue(s.value)
-        ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(L.svalue(L.unpackIfValue(vp)))))
+        ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(L.svalue(Pretty.valueToString(0, L.unpackIfValue(vp), true)))))
         : resultToStmt((await stepExp(env, s.value)).andThen(v =>
           L.isValue(v)
-            ? substituteIfFreeVar(env, v).andThen(vp => ok(L.svalue(L.unpackIfValue(vp))))
+            ? substituteIfFreeVar(env, v).andThen(vp => ok(L.svalue(Pretty.valueToString(0, L.unpackIfValue(vp), true))))
             : ok(L.sexp(v)) as Result<L.Stmt>))
       return [env, result]
     }

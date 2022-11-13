@@ -42,6 +42,7 @@ function isSimpleExp (e: L.Exp): boolean {
     case 'and': return true
     case 'or': return true
     case 'match': return false
+    case 'begin': return false
   }
 }
 
@@ -60,6 +61,7 @@ function nestingDepth (e: L.Exp): number {
     case 'and': return 0 // TODO
     case 'or': return 0 // TODO
     case 'match': return 0 // TODO
+    case 'begin': return 0 // TODO
   }
 }
 
@@ -119,6 +121,8 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
       : `(vector ${v.map(v => valueToString(col, v, htmlOutput)).join(' ')})`
   } else if (v === null) {
     return 'null'
+  } else if (v === undefined) {
+    return 'void'
   } else if (typeof v === 'object') {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'audio') {
@@ -208,6 +212,9 @@ export function expToString (col: number, e: L.Exp, htmlOutput: boolean = false)
       const bindings = e.branches.map(b => indent(col + 2, `[${patToString(b[0], htmlOutput)} ${expToString(col + 2, b[1], htmlOutput)}]`))
       return parens(e.bracket, [`match ${expToString(col, e.scrutinee, htmlOutput)}`, ...bindings], '\n')
     }
+    case 'begin': {
+      return parens(e.bracket, ['begin', ...e.exps.map(e => expToString(0, e, htmlOutput))])
+    }
   }
 }
 
@@ -225,7 +232,7 @@ export function effectToString (col: number, effect: L.SEffect, outputBindings: 
         return `[[ Test "${sanitize(effect.desc, htmlOutput)}" failed!\n${msg}\n]]`
       }
     }
-    case 'value': return valueToString(col, effect.value, htmlOutput)
+    case 'value': return effect.output ? effect.output : 'void'
     case 'imported': return outputBindings ? `[[${sanitize(effect.source, htmlOutput)} imported]]` : ''
   }
 }

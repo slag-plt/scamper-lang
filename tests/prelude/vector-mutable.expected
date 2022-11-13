@@ -1,0 +1,9 @@
+(vector "alpha" "beta" "gamma" "delta" "epsilon")
+void
+(vector "alpha" "beta" "zeta" "delta" "epsilon")
+void
+(vector "foo" "beta" "zeta" "delta" "epsilon")
+void
+(vector "foo" "beta" -38.72 "delta" "epsilon")
+void
+(vector "woot" "woot" "woot" "woot" "woot")

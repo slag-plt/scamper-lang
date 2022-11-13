@@ -24,7 +24,7 @@ export type PairType = { _scamperTag: 'pair', fst: Value, snd: Value, isList: bo
 export type StructType = { _scamperTag: 'struct', kind: string, fields: Value[] }
 
 /** In Scamper, a Value is, directly, a Javascript value. */
-export type Value = boolean | number | string | null | object | Value[] | TaggedObject
+export type Value = boolean | number | string | null | object | Value[] | TaggedObject | undefined
 
 /*
  * Scamper-Javascript value conversion:
@@ -39,6 +39,7 @@ export type Value = boolean | number | string | null | object | Value[] | Tagged
  * (struct? e) <==> typeof e === 'object': { _scamperTag: 'struct', 'kind': string, fields: Value[] }
  * (object? e) <==> typeof e === 'object': { ... } (no _scamperTag field)
  * (vector? e) <==> Array.isArray(e)
+ * (void? e) <==> e === undefined
  *
  * TODO: do we need to "uniquify" the fields so that, e.g., an object can't
  * mock-up a struct?
@@ -80,6 +81,7 @@ export const valueHasPropertyValue = (v: Value, p: string, x: any): boolean =>
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   valueHasProperty(v, p) && (v as any)[p] === x
 export const valueIsVector = (v: Value): boolean => Array.isArray(v)
+export const valueIsVoid = (v: Value): boolean => v === undefined
 
 export const valueGetChar_ = (v: Value): string => (v as CharType).value
 
@@ -104,7 +106,7 @@ export function valueListToArray_ (v: Value): Value[] {
       result.push((v as PairType).fst)
       v = (v as PairType).snd
     } else {
-      throw new ICE('valueListToArray', `valueListToArray: not a list: ${v.toString()}`)
+      throw new ICE('valueListToArray', `valueListToArray: not a list: ${v ? v.toString() : 'void'}`)
     }
   }
 }
@@ -349,7 +351,7 @@ type Exp
   | ECond
   | EAnd
   | EOr
-  // | EBegin   // TODO: implement me
+  | EBegin
 
   // Non-standard forms
   | EMatch // A pattern match expression
@@ -425,6 +427,11 @@ type EOr = { tag: 'or', range: Range, args: Exp[], bracket: BracketKind, isValue
 const eor = (range: Range, args: Exp[], bracket: BracketKind = '('): EOr => ({ tag: 'or', range, args, bracket, isValue: false, isList: false })
 const nleor = (args: Exp[]): EOr => eor(noRange(), args)
 
+type EBegin = { tag: 'begin', range: Range, exps: Exp[], bracket: BracketKind, isValue: boolean, isList: boolean }
+export const ebegin = (range: Range, exps: Exp[], bracket: BracketKind = '('): EBegin =>
+  ({ tag: 'begin', range, exps, bracket, isValue: false, isList: false })
+export const nlebegin = (exps: Exp[]): EBegin => ebegin(noRange(), exps)
+
 type EMatch = { tag: 'match', range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind, isValue: boolean, isList: boolean }
 const ematch = (range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: BracketKind): EMatch =>
   ({ tag: 'match', range, scrutinee, branches, bracket, isValue: false, isList: false })
@@ -433,9 +440,9 @@ const ematch = (range: Range, scrutinee: Exp, branches: [Pat, Exp][], bracket: B
 
 // #region Expression pretty-printing
 
-function parens (ss: String[]) {
-  return `(${ss.join(' ')})`
-}
+// function parens (ss: String[]) {
+//   return `(${ss.join(' ')})`
+// }
 
 function litToString (l: Lit): string {
   switch (l.tag) {
@@ -463,37 +470,37 @@ function unsafeListToArray (e:Exp): Exp[] {
   return ret
 }
 
-function expToString (e:Exp): string {
-  switch (e.tag) {
-    case 'value': return valueToString(e.value)
-    case 'var': return e.value
-    case 'lit': return litToString(e.value)
-    case 'call': return parens([e.head].concat(e.args).map(expToString))
-    case 'lam': return parens(['lambda', parens(e.args.map(n => n.value)), expToString(e.body)])
-    case 'if': return parens(['if', expToString(e.e1), expToString(e.e2), expToString(e.e3)])
-    case 'nil': return 'null'
-    case 'pair':
-      return e.isList
-        ? parens(['list'].concat(unsafeListToArray(e).map(expToString)))
-        : parens(['cons', expToString(e.e1), expToString(e.e2)])
-    case 'let': return parens(['let', parens(e.bindings.map(([x, e]) => `(${x.value} ${expToString(e)})`)), expToString(e.body)])
-    case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
-    case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
-    case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
-    case 'match':
-      return parens(['match', expToString(e.scrutinee)].concat(e.branches.map(b => parens([patToString(b[0]), expToString(b[1])]))))
-  }
-}
+// function expToString (e:Exp): string {
+//   switch (e.tag) {
+//     case 'value': return valueToString(e.value)
+//     case 'var': return e.value
+//     case 'lit': return litToString(e.value)
+//     case 'call': return parens([e.head].concat(e.args).map(expToString))
+//     case 'lam': return parens(['lambda', parens(e.args.map(n => n.value)), expToString(e.body)])
+//     case 'if': return parens(['if', expToString(e.e1), expToString(e.e2), expToString(e.e3)])
+//     case 'nil': return 'null'
+//     case 'pair':
+//       return e.isList
+//         ? parens(['list'].concat(unsafeListToArray(e).map(expToString)))
+//         : parens(['cons', expToString(e.e1), expToString(e.e2)])
+//     case 'let': return parens(['let', parens(e.bindings.map(([x, e]) => `(${x.value} ${expToString(e)})`)), expToString(e.body)])
+//     case 'cond': return parens(['cond'].concat(e.branches.map(b => parens([expToString(b[0]), expToString(b[1])])).join(' ')))
+//     case 'and': return parens(['and'].concat(parens(e.args.map(expToString))))
+//     case 'or': return parens(['and'].concat(parens(e.args.map(expToString))))
+//     case 'match':
+//       return parens(['match', expToString(e.scrutinee)].concat(e.branches.map(b => parens([patToString(b[0]), expToString(b[1])]))))
+//   }
+// }
 
-function patToString (p: Pat): string {
-  switch (p.tag) {
-    case 'var': return p.id
-    case 'wild': return '_'
-    case 'null': return 'null'
-    case 'lit': return litToString(p.lit)
-    case 'ctor': return parens([p.head, ...p.args.map(patToString)])
-  }
-}
+// function patToString (p: Pat): string {
+//   switch (p.tag) {
+//     case 'var': return p.id
+//     case 'wild': return '_'
+//     case 'null': return 'null'
+//     case 'lit': return litToString(p.lit)
+//     case 'ctor': return parens([p.head, ...p.args.map(patToString)])
+//   }
+// }
 
 // #endregion
 
@@ -619,8 +626,8 @@ type STestResult = {
 const stestresult = (desc: string, passed: boolean, reason?: string, expected?: Exp, actual?: Exp, range: Range = noRange()): STestResult =>
   ({ tag: 'testresult', range, desc, passed, reason, expected, actual })
 
-type SValue = { tag: 'value', range: Range, value: Value }
-const svalue = (value: Value, range: Range = noRange()): SValue => ({ tag: 'value', range, value })
+type SValue = { tag: 'value', range: Range, output?: string }
+const svalue = (output?: string, range: Range = noRange()): SValue => ({ tag: 'value', range, output })
 
 type Stmt = SImport | SDefine | SExp | SStruct | STestCase | SEffect
 
@@ -646,33 +653,33 @@ type Program = Stmt[]
 
 // #region Statement and program pretty-printing
 
-function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
-  switch (stmt.tag) {
-    case 'define': return `(define ${stmt.name.value} ${expToString(stmt.value)})`
-    case 'exp': return expToString(stmt.value)
-    case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
-    case 'testcase': return `(test-case ${expToString(stmt.desc)} ${expToString(stmt.comp)} ${expToString(stmt.expected)} ${expToString(stmt.actual)})`
-    case 'import': return `(import ${stmt.source})`
-    case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
-    case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
-    case 'testresult': {
-      if (stmt.passed) {
-        return `[[ Test "${stmt.desc}": passed! ]]`
-      } else {
-        const msg: string = stmt.reason
-          ? stmt.reason
-          : `Expected: ${expToString(stmt.expected!)}\nActual: ${expToString(stmt.actual!)}`
-        return `[[ Test "${stmt.desc}": failed!\n${msg}]]`
-      }
-    }
-    case 'value': return valueToString(stmt.value)
-    case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
-  }
-}
+// function stmtToString (stmt: Stmt, outputBindings: boolean = false): string {
+//   switch (stmt.tag) {
+//     case 'define': return `(define ${stmt.name.value} ${expToString(stmt.value)})`
+//     case 'exp': return expToString(stmt.value)
+//     case 'struct': return `(struct ${stmt.id.value} (${stmt.fields.map(f => f.value).join(' ')}))`
+//     case 'testcase': return `(test-case ${expToString(stmt.desc)} ${expToString(stmt.comp)} ${expToString(stmt.expected)} ${expToString(stmt.actual)})`
+//     case 'import': return `(import ${stmt.source})`
+//     case 'error': return stmt.errors.map(err => `[[error: ${err.message}]]`).join('\n')
+//     case 'binding': return outputBindings ? `[[${stmt.name} bound]]` : ''
+//     case 'testresult': {
+//       if (stmt.passed) {
+//         return `[[ Test "${stmt.desc}": passed! ]]`
+//       } else {
+//         const msg: string = stmt.reason
+//           ? stmt.reason
+//           : `Expected: ${expToString(stmt.expected!)}\nActual: ${expToString(stmt.actual!)}`
+//         return `[[ Test "${stmt.desc}": failed!\n${msg}]]`
+//       }
+//     }
+//     case 'value': return valueToString(stmt.value)
+//     case 'imported': return outputBindings ? `[[${stmt.source} imported]]` : ''
+//   }
+// }
 
-function progToString (prog: Program, outputBindings: boolean = false): string {
-  return `${prog.map(s => stmtToString(s, outputBindings)).filter(s => s.length > 0).join('\n\n')}`
-}
+// function progToString (prog: Program, outputBindings: boolean = false): string {
+//   return `${prog.map(s => stmtToString(s, outputBindings)).filter(s => s.length > 0).join('\n\n')}`
+// }
 
 // #endregion
 
@@ -705,8 +712,8 @@ export {
   evar, elit, ecall, elam, eif, elet, enil, epair, econd, eand, eor, ematch,
   nlebool, nlenumber, nlechar, nlestr,
   nlevar, nlecall, nlelam, nleif, nlelet, nlenil, nlepair, nlecond, nleand, nleor,
-  litToString, arrayToList, unsafeListToArray, expToString, litEquals, expEquals,
+  litToString, arrayToList, unsafeListToArray, litEquals, expEquals,
   isValue, Pat, PVar, PWild, PNull, PLit, PCtor, pvar, pwild, pnull, plit, pctor, fvarsOfPat,
-  Stmt, serror, sbinding, svalue, simported, sdefine, stestresult, sstruct, stestcase, sexp, isOutputEffect, isStmtDone, stmtToString, simport,
-  Program, indexOfCurrentStmt, progToString
+  Stmt, serror, sbinding, svalue, simported, sdefine, stestresult, sstruct, stestcase, sexp, isOutputEffect, isStmtDone, simport,
+  Program, indexOfCurrentStmt
 }
