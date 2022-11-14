@@ -1289,6 +1289,21 @@ const randomPrim: L.Prim = async (_env, args, app) =>
       : ok(Math.floor(Math.random() * n))
   }))
 
+const withHandlerPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('with-handler', ['procedure?', 'procedure?'], 'any', args, app).asyncAndThen(async _ => {
+    const handler = args[0] as L.FunctionType
+    const fn = args[1] as L.FunctionType
+    const fnArgs = args.slice(2)
+    const result = await evaluateExp(env, L.nlecall(L.nlevalue(fn), fnArgs.map(v => L.nlevalue(v))))
+    if (result.tag === 'error') {
+      // N.B., somewhere a space is being introduced... need to get rid of it somewhere else!
+      const err = result.details[0].message.trim()
+      return await evaluateExp(env, L.nlecall(L.nlevalue(handler), [L.nlevalue(err as L.Value)]))
+    } else {
+      return ok(result.value)
+    }
+  })
+
 const controlPrimitives: [string, L.Prim, L.Doc][] = [
   ['procedure?', procedurePrim, Docs.procedure],
   ['apply', applyPrim, Docs.apply],
@@ -1309,7 +1324,8 @@ const controlPrimitives: [string, L.Prim, L.Doc][] = [
   ['o', composePrim, Docs.o],
   ['|>', pipePrim, Docs.pipe],
   ['range', rangePrim, Docs.range],
-  ['random', randomPrim, Docs.random]
+  ['random', randomPrim, Docs.random],
+  ['with-handler', withHandlerPrim, Docs.withHandler]
 ]
 
 // Exceptions (6.11)

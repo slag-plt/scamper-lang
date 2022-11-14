@@ -1081,6 +1081,15 @@ export const random: Doc = new Doc(
   'Returns a random number in the range 0 to n (exclusive).'
 )
 
+export const withHandler: Doc = new Doc(
+  '(with-handler h f v1 .. vk): any', [
+    'h: procedure?, a handler',
+    'f: procedure?, a function',
+    'v: any'
+  ],
+  'Calls `(f v1 .. vk)` and if an error is occurred, calls `(h err)` where `err` is the string associated with the raised error.'
+)
+
 export const elseV: Doc = new Doc(
   'else: ?boolean', [],
   'A synonym for `#t` appropriate for use as the final guard of a `cond` expression.'
