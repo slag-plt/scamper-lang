@@ -171,7 +171,7 @@ const numeratorPrim: L.Prim = (_env, args, app) =>
 
 const denominatorPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('denominator', ['dur'], undefined, args, app).andThen(_ =>
-    ok((args[1] as Duration).fields[0])))
+    ok((args[0] as Duration).fields[1])))
 
 const musicEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'music', undefined, docs)
 
