@@ -45,3 +45,6 @@ jspm_packages/
 run-tests.sh
 tests/
 tools/
+*.html
+*.scm
+.github/
