@@ -41,5 +41,7 @@ jspm_packages/
 # Project-specific files that shouldn't be distributed
 .devcontainer
 .gitignore
+.eslintrc.cjs
 run-tests.sh
 tests/
+tools/
