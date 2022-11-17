@@ -189,7 +189,7 @@ const beside = (align: string, drawings: Drawing[]): Beside => ({
 })
 
 const besidePrim: L.Prim = (_env, args, app) => {
-  const argErr = Utils.checkArgs('beside', [], 'Drawing', args, app)
+  const argErr = Utils.checkArgs('beside', [], 'drawing', args, app)
   if (argErr) { return Promise.resolve(argErr) }
   return Promise.resolve(ok(beside('center', args as Drawing[])))
 }
@@ -302,7 +302,7 @@ const overlayOffset = (dx: number, dy: number, d1: Drawing, d2: Drawing) => {
 }
 
 const overlayOffsetPrim: L.Prim = (_env, args, app) => {
-  const argErr = Utils.checkArgs('overlay-offset', ['Drawing', 'number?', 'number?', 'Drawing'], undefined, args, app)
+  const argErr = Utils.checkArgs('overlay-offset', ['drawing', 'number?', 'number?', 'drawing'], undefined, args, app)
   if (argErr) { return Promise.resolve(argErr) }
   const dx = args[1] as number
   const dy = args[2] as number
