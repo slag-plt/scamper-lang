@@ -40,6 +40,7 @@ async function emitCanvasWidget (node: Element) {
   const renderer = Scamper.store.get(id)!
   const result = await Scamper.evaluateExp(Scamper.preludeEnv, Scamper.Lang.nlecall(Scamper.Lang.nlevalue(renderer), [Scamper.Lang.nlevalue(ctx)]))
   if (result.tag === 'error') {
+    console.log('error encountered!')
     node.replaceWith(new Text(Scamper.errorToString(result)))
   }
   return undefined

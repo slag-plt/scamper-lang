@@ -1,5 +1,5 @@
 import { msg } from '../messages.js'
-import { ok } from '../result.js'
+import { errorToString, ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
 import * as E from '../evaluator.js'
 import * as L from '../lang.js'
@@ -109,6 +109,44 @@ const ellipsePrim: L.Prim = (_env, args, app) =>
     return ok(undefined)
   }))
 
+const circleDoc = new L.Doc(
+  '(circle ctx x y radius mode color) -> void?', [
+    'ctx: context?',
+    'x: number?',
+    'y: number?',
+    'radius: number?, non-negative',
+    'mode: string?, either `"solid"` or `"outline"`',
+    'color: string?'
+  ],
+  'Renders a circle whose center is at `(x, y)` and radius `radius`.'
+)
+
+const circlePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('circle', ['any', 'number?', 'number?', 'number?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const ctx: CanvasRenderingContext2D = args[0] as any
+    const mode = args[4] as string
+    const color = args[5] as string
+    ctx.fillStyle = color
+    ctx.strokeStyle = color
+    ctx.beginPath()
+    ctx.arc(
+      args[1] as number, // x
+      args[2] as number, // y
+      args[3] as number, // radius
+      0, // startAngle
+      2 * Math.PI // endAngle
+    )
+    if (mode === 'solid') {
+      ctx.fill()
+    } else if (mode === 'outline') {
+      ctx.stroke()
+    } else {
+      return runtimeError(msg('error-precondition-not-met', 'circle', '5', '"solid" or "outline"', mode), app)
+    }
+    return ok(undefined)
+  }))
+
 const textDoc: L.Doc = new L.Doc(
   '(text ctx text x y mode color font) -> void?', [
     'ctx: context?',
@@ -149,12 +187,55 @@ const animateWithDoc: L.Doc = new L.Doc(
   'Calls renderer repeatedly, allowing for animation-style behavior,'
 )
 
+const imageDoc: L.Doc = new L.Doc(
+  '(image path) -> void?', [
+    'path: string?, the path to the image'
+  ],
+  'Constructs an image value from the given path.'
+)
+
+const imagePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('image', ['string?'], undefined, args, app).asyncAndThen(async _ => {
+    const image = new Image()
+    await new Promise(resolve => {
+      console.log('...')
+      image.onload = resolve
+      image.src = args[0] as string
+    })
+    console.log(`image.src = ${image.src}`)
+    return ok(image)
+  })
+
+const drawImageDoc: L.Doc = new L.Doc(
+  '(draw-image ctx image x y) -> void?', [
+    'ctx: context?',
+    'image: image?',
+    'x: integer?',
+    'y: integer?'
+  ],
+  'Draws the given image at the given coordinates.'
+)
+
+const drawImagePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('draw-image', ['any', 'any', 'number?', 'number?'], undefined, args, app).andThen(_ => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const ctx: CanvasRenderingContext2D = args[0] as any
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const image: HTMLImageElement = args[1] as any
+    ctx.drawImage(image, args[2] as number, args[3] as number)
+    return ok(undefined)
+  }))
+
 const animateWithPrim: L.Prim = (env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('animate-with', ['procedure?'], undefined, args, app).andThen(_ => {
     async function callback (time: number) {
-      await E.evaluateExp(env, L.nlecall(L.nlevalue(args[0]), [L.nlevalue(time)]))
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      window.requestAnimationFrame(callback)
+      const result = await E.evaluateExp(env, L.nlecall(L.nlevalue(args[0]), [L.nlevalue(time)]))
+      if (result.tag !== 'error') {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        window.requestAnimationFrame(callback)
+      } else {
+        console.log(errorToString(result))
+      }
     }
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     window.requestAnimationFrame(callback)
@@ -167,6 +248,9 @@ export const canvasLib: L.Env = new L.Env([
   ['with-canvas', canvasEntry(withCanvasPrim, withCanvasDoc)],
   ['rectangle', canvasEntry(rectanglePrim, rectangleDoc)],
   ['ellipse', canvasEntry(ellipsePrim, ellipseDoc)],
+  ['circle', canvasEntry(circlePrim, circleDoc)],
   ['text', canvasEntry(textPrim, textDoc)],
+  ['image', canvasEntry(imagePrim, imageDoc)],
+  ['draw-image', canvasEntry(drawImagePrim, drawImageDoc)],
   ['animate-with', canvasEntry(animateWithPrim, animateWithDoc)]
 ])
