@@ -35,6 +35,7 @@ function specToPred (spec: ArgSpec): (arg: L.Value) => boolean {
       return L.valueIsStruct
     case 'drawing':
     case 'composition':
+    case 'canvas':
       // HACK: to quickly enable checking for our two special objects, drawing and composition,
       // which are raw JS objects rather than structs.
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

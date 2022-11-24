@@ -143,6 +143,16 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
       return htmlOutput
         ? `</code><span class="composition">${sanitize(JSON.stringify(v), htmlOutput)}</span><code>`
         : '[object Composition]'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'canvas') {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const canvas = v as any
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+      const tag = Runtime.store.add((v as any).renderer)
+      return htmlOutput
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+        ? `</code><canvas class="canvas" id="${tag}" width="${canvas.width}" height="${canvas.height}"></canvas><code>`
+        : '[object Canvas]'
     } else {
       return '[object Object]'
     }
