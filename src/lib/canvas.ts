@@ -5,28 +5,25 @@ import * as E from '../evaluator.js'
 import * as L from '../lang.js'
 import * as Utils from './utils.js'
 
-const withCanvasDoc: L.Doc = new L.Doc(
-  '(with-canvas width height renderer) -> canvas?', [
-    'width: integer?, non-negative',
-    'height: integer?, non-negative',
-    'renderer: procedure?'
+const canvasDoc: L.Doc = new L.Doc(
+  '(canvas width height) -> canvas?', [
+    'width: integer?, positive',
+    'height: integer?, positive'
   ],
-  'Renders a canvas of the given dimensions to the screen, using the renderer function to draw its contents. Renderer takes a context as input and calls various rendering functions on that context.'
+  'Creates a canvas with the given width and height.'
 )
 
-const withCanvasPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('with-canvas', ['integer?', 'integer?', 'procedure?'], undefined, args, app).andThen(_ =>
-    ok({
-      renderAs: 'canvas',
-      width: args[0],
-      height: args[1],
-      renderer: args[2]
-    })
-  ))
+const canvasPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('canvas', ['integer?', 'integer?'], undefined, args, app).andThen(_ => {
+    const canvas = document.createElement('canvas')
+    canvas.width = args[0] as number
+    canvas.height = args[1] as number
+    return ok(canvas)
+  }))
 
 const rectangleDoc: L.Doc = new L.Doc(
-  '(rectangle ctx x y width height) -> void?', [
-    'ctx: context?',
+  '(rectangle canvas x y width height) -> void?', [
+    'canvas: canvas?',
     'x: integer?',
     'y: integer?',
     'width: integer?, non-negative',
@@ -40,7 +37,7 @@ const rectangleDoc: L.Doc = new L.Doc(
 const rectanglePrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('rectangle', ['any', 'integer?', 'integer?', 'integer?', 'integer?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const ctx: CanvasRenderingContext2D = args[0] as any
+    const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     const mode = args[5] as string
     const color = args[6] as string
     ctx.fillStyle = color
@@ -66,8 +63,8 @@ const rectanglePrim: L.Prim = (_env, args, app) =>
   }))
 
 const ellipseDoc = new L.Doc(
-  '(ellipse ctx x y radiusX radiusY rotation startAngle endAngle mode color) -> void?', [
-    'ctx: context?',
+  '(ellipse canvas x y radiusX radiusY rotation startAngle endAngle mode color) -> void?', [
+    'canvas: canvas?',
     'x: number?',
     'y: number?',
     'radiusX: number?, non-negative',
@@ -84,7 +81,7 @@ const ellipseDoc = new L.Doc(
 const ellipsePrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('ellipse', ['any', 'number?', 'number?', 'number?', 'number?', 'number?', 'number?', 'number?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const ctx: CanvasRenderingContext2D = args[0] as any
+    const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     const mode = args[8] as string
     const color = args[9] as string
     ctx.fillStyle = color
@@ -110,8 +107,8 @@ const ellipsePrim: L.Prim = (_env, args, app) =>
   }))
 
 const circleDoc = new L.Doc(
-  '(circle ctx x y radius mode color) -> void?', [
-    'ctx: context?',
+  '(circle canvas x y radius mode color) -> void?', [
+    'canvas: canvas?',
     'x: number?',
     'y: number?',
     'radius: number?, non-negative',
@@ -124,7 +121,7 @@ const circleDoc = new L.Doc(
 const circlePrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('circle', ['any', 'number?', 'number?', 'number?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const ctx: CanvasRenderingContext2D = args[0] as any
+    const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     const mode = args[4] as string
     const color = args[5] as string
     ctx.fillStyle = color
@@ -148,8 +145,8 @@ const circlePrim: L.Prim = (_env, args, app) =>
   }))
 
 const textDoc: L.Doc = new L.Doc(
-  '(text ctx text x y mode color font) -> void?', [
-    'ctx: context?',
+  '(text canvas text x y mode color font) -> void?', [
+    'canvas: canvas?',
     'text: string?',
     'x: integer?',
     'y: integer?',
@@ -163,7 +160,7 @@ const textDoc: L.Doc = new L.Doc(
 const textPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('text', ['any', 'string?', 'integer?', 'integer?', 'string?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const ctx: CanvasRenderingContext2D = args[0] as any
+    const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     const mode = args[4] as string
     const color = args[5] as string
     const font = args[6] as string
@@ -179,13 +176,6 @@ const textPrim: L.Prim = (_env, args, app) =>
     }
     return ok(undefined)
   }))
-
-const animateWithDoc: L.Doc = new L.Doc(
-  '(animate-with renderer) -> void?', [
-    'renderer: procedure?, takes a single argument, the current time in milliseconds.'
-  ],
-  'Calls renderer repeatedly, allowing for animation-style behavior,'
-)
 
 const imageDoc: L.Doc = new L.Doc(
   '(image path) -> void?', [
@@ -207,8 +197,8 @@ const imagePrim: L.Prim = (_env, args, app) =>
   })
 
 const drawImageDoc: L.Doc = new L.Doc(
-  '(draw-image ctx image x y) -> void?', [
-    'ctx: context?',
+  '(draw-image canvas image x y) -> void?', [
+    'canvas: canvas?',
     'image: image?',
     'x: integer?',
     'y: integer?'
@@ -219,12 +209,19 @@ const drawImageDoc: L.Doc = new L.Doc(
 const drawImagePrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('draw-image', ['any', 'any', 'number?', 'number?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const ctx: CanvasRenderingContext2D = args[0] as any
+    const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const image: HTMLImageElement = args[1] as any
     ctx.drawImage(image, args[2] as number, args[3] as number)
     return ok(undefined)
   }))
+
+const animateWithDoc: L.Doc = new L.Doc(
+  '(animate-with proc) -> void?', [
+    'proc: procedure?, a procedure that takes the current time in milliseconds as input.'
+  ],
+  'Repeatedly calls `proc` approximately once every 60 seconds, creating the effect of animation.'
+)
 
 const animateWithPrim: L.Prim = (env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('animate-with', ['procedure?'], undefined, args, app).andThen(_ => {
@@ -245,7 +242,7 @@ const animateWithPrim: L.Prim = (env, args, app) =>
 const canvasEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'canvas', undefined, docs)
 
 export const canvasLib: L.Env = new L.Env([
-  ['with-canvas', canvasEntry(withCanvasPrim, withCanvasDoc)],
+  ['canvas', canvasEntry(canvasPrim, canvasDoc)],
   ['rectangle', canvasEntry(rectanglePrim, rectangleDoc)],
   ['ellipse', canvasEntry(ellipsePrim, ellipseDoc)],
   ['circle', canvasEntry(circlePrim, circleDoc)],

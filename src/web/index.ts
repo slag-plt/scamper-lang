@@ -46,6 +46,14 @@ async function emitCanvasWidget (node: Element) {
   return undefined
 }
 
+function emitElementWidget (node: Element) {
+  const id = parseInt(node.id)
+  const elt = Scamper.store.get(id)! as Element
+  node.textContent = ''
+  node.appendChild(elt)
+  return Promise.resolve(undefined)
+}
+
 function emitAudioPipelineWidget (node: Element): Promise<void> {
   const id = parseInt(node.id)
   const blob: any = Scamper.store.get(id)!
@@ -89,7 +97,8 @@ async function renderRichWidgets (root: Element | Document) {
   for (const canvas of canvases) {
     await emitCanvasWidget(canvas)
   }
-  await forEachByClass(root, 'canvas', emitCanvasWidget)
+  await forEachByClass(root, 'element', emitElementWidget)
+  // await forEachByClass(root, 'canvas', emitCanvasWidget)
   await forEachByClass(root, 'audio-pipeline', emitAudioPipelineWidget)
   await forEachByClass(root, 'drawing', e => Promise.resolve(Image.emitDrawingWidget(e)))
   await forEachByClass(root, 'composition', e => Promise.resolve(Music.emitCompositionWidget(SYNTH, e)))
