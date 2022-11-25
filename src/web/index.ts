@@ -57,8 +57,8 @@ function emitAudioPipelineWidget (node: Element): Promise<void> {
   playButton.textContent = '▶'
   const stopButton = document.createElement('button')
   stopButton.textContent = '■'
-  const startable = typeof pipeline.start !== 'undefined'
-  console.log(startable)
+  const startable = typeof (pipeline as any).start !== 'undefined'
+  const sourceIsFile = typeof (pipeline as any).mediaElement !== 'undefined' && typeof (pipeline as any).mediaElement.play !== 'undefined'
   let started = false
   onOffNode.gain.value = 0
   playButton.onclick = _ => {
@@ -66,10 +66,18 @@ function emitAudioPipelineWidget (node: Element): Promise<void> {
     if (startable && !started) {
       pipeline.start()
       started = true
+    } else if (sourceIsFile) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      (pipeline as any).mediaElement.play()
+      started = true
     }
   }
   stopButton.onclick = _ => {
     onOffNode.gain.value = 0
+    if (sourceIsFile) {
+      (pipeline as any).mediaElement.load()
+      started = false
+    }
   }
   node.appendChild(playButton)
   node.appendChild(stopButton)

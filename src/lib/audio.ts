@@ -102,6 +102,24 @@ const microphoneNodePrim: L.Prim = (_env, args, app) =>
     return ok(source)
   })
 
+const audioFileNodeDoc: L.Doc = new L.Doc(
+  '(audio-file-node ctx path) -> node?', [
+    'ctx: context?',
+    'path: string?'
+  ],
+  'Creates an audio source node connected to the audio file at the given path.'
+)
+
+const audioFileNodePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('audio-file-node', ['any', 'string?'], undefined, args, app).andThen(_ => {
+    const ctx = args[0] as AudioContext
+    const filename = args[1] as string
+    const mediaElement = document.createElement('audio')
+    mediaElement.src = filename
+    const source = new MediaElementAudioSourceNode(ctx, { mediaElement })
+    return ok(source)
+  }))
+
 const delayNodeDoc: L.Doc = new L.Doc(
   '(delay-node ctx delay) -> node?', [
     'ctx: context?',
@@ -126,5 +144,6 @@ export const audioLib: L.Env = new L.Env([
   ['audio-pipeline', audioEnvEntry(audioPipelinePrim, audioPipelineDoc)],
   ['oscillator-node', audioEnvEntry(oscillatorNodePrim, oscillatorNodeDoc)],
   ['microphone-node', audioEnvEntry(microphoneNodePrim, microphoneNodeDoc)],
+  ['audio-file-node', audioEnvEntry(audioFileNodePrim, audioFileNodeDoc)],
   ['delay-node', audioEnvEntry(delayNodePrim, delayNodeDoc)]
 ])
