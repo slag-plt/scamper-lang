@@ -153,6 +153,14 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
         ? `</code><canvas class="canvas" id="${tag}" width="${canvas.width}" height="${canvas.height}"></canvas><code>`
         : '[object Canvas]'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'audio-pipeline') {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const tag = Runtime.store.add(v)
+      return htmlOutput
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+        ? `</code><span class="audio-pipeline" id="${tag}"></span>`
+        : '[object AudioPipeline]'
     } else {
       return '[object Object]'
     }

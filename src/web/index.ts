@@ -46,12 +46,43 @@ async function emitCanvasWidget (node: Element) {
   return undefined
 }
 
+function emitAudioPipelineWidget (node: Element): Promise<void> {
+  const id = parseInt(node.id)
+  const blob: any = Scamper.store.get(id)!
+  // const ctx: AudioContext = blob.ctx
+  const pipeline: AudioScheduledSourceNode = blob.pipeline
+  const onOffNode: GainNode = blob.onOffNode
+  node.textContent = ''
+  const playButton = document.createElement('button')
+  playButton.textContent = '▶'
+  const stopButton = document.createElement('button')
+  stopButton.textContent = '■'
+  const startable = typeof pipeline.start !== 'undefined'
+  console.log(startable)
+  let started = false
+  onOffNode.gain.value = 0
+  playButton.onclick = _ => {
+    onOffNode.gain.value = 1
+    if (startable && !started) {
+      pipeline.start()
+      started = true
+    }
+  }
+  stopButton.onclick = _ => {
+    onOffNode.gain.value = 0
+  }
+  node.appendChild(playButton)
+  node.appendChild(stopButton)
+  return Promise.resolve(undefined)
+}
+
 async function renderRichWidgets (root: Element | Document) {
   const canvases = Array.from(root.getElementsByClassName('canvas'))
   for (const canvas of canvases) {
     await emitCanvasWidget(canvas)
   }
   await forEachByClass(root, 'canvas', emitCanvasWidget)
+  await forEachByClass(root, 'audio-pipeline', emitAudioPipelineWidget)
   await forEachByClass(root, 'drawing', e => Promise.resolve(Image.emitDrawingWidget(e)))
   await forEachByClass(root, 'composition', e => Promise.resolve(Music.emitCompositionWidget(SYNTH, e)))
   await forEachByClass(root, 'audio', e => Promise.resolve(Audio.emitAudioWidget(Scamper.store, audioContext, e)))
