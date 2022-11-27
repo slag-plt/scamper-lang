@@ -31,11 +31,34 @@ export const specialCharMap: Map<string, string> = new Map([
   ['.', 'DOT']
 ])
 
+// When the compiler mangles a name, we use this prefix to avoid collisions with
+// other generated names. Note that because of Scheme's permissive identifier
+// syntax, it is difficult to guarantee that some mangled name does not conflict
+// with a user-defined name. Therefore, we pick an "obvious" prefix as our
+// mangle strategy, relying on the user to avoid naming conflicts when possible.
+const manglePrefix: string = '__'
+
 function compileIdentifier (s: string): string {
-  // TODO: javascript identifiers:
-  //   + cannot start with a number,
-  //   + can only contain unicode letters, numbers, underscore, and dollar signs
-  return s
+  // Immediately, mangle reserved words.
+  if (reservedWords.includes(s)) {
+    return `${manglePrefix}${s}`
+  }
+  // Otherwise, build up a valid Javascript identifier character-by-character.
+  let result = ''
+
+  // If an identifier starts with a number, mangle it to make it valid.
+  let mangled = s.match(/^\d/) !== null
+  for (let i = 0; i < s.length; i++) {
+    // TODO: should make sure ch is a valid unicode letter or number.
+    const ch = s.at(i)!
+    if (specialCharMap.has(ch)) {
+      mangled = true
+      result += specialCharMap.get(ch)!
+    } else {
+      result += ch
+    }
+  }
+  return mangled ? `${manglePrefix}result` : result
 }
 
 function compileLit (l: L.Lit): string {
@@ -98,7 +121,10 @@ function compileExp (e: L.Exp): string {
 export function compileStmt (s: L.Stmt): string {
   switch (s.tag) {
     case 'import':
-      throw new ICE('compileStmt', 'import statement not yet supported')
+      return [
+        `import * as _${s.source}_MODULE from "./${s.source}.js"`,
+        `Object.entries(_${s.source}_MODULE).forEach(([n, v]) => global[n] = v);`
+      ].join('\n')
     case 'define':
       return `const ${s.name.value} = ${compileExp(s.value)}`
     case 'exp':
