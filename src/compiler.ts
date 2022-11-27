@@ -2,7 +2,41 @@ import * as L from './lang.js'
 import * as P from './pretty.js'
 import { ICE } from './result.js'
 
-// function compileIdentifier()
+export const reservedWords: string[] = [
+  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
+  'default', 'delete', 'do', 'else', 'export', 'extends', 'false', 'finally',
+  'for', 'function', 'if', 'import', 'in', 'instanceof', 'new', 'null',
+  'return', 'super', 'switch', 'this', 'throw', 'true', 'try',
+  'typeof', 'var', 'void', 'while', 'with'
+]
+
+export const specialCharMap: Map<string, string> = new Map([
+  ['!', 'BANG'],
+  ['@', 'AT'],
+  ['#', 'HASH'],
+  ['%', 'PERCENT'],
+  ['^', 'CARET'],
+  ['&', 'AMPERSAND'],
+  ['*', 'STAR'],
+  ['-', 'DASH'],
+  ['=', 'EQUALS'],
+  ['+', 'PLUS'],
+  ['|', 'PIPE'],
+  ['\\', 'BSLASH'],
+  [':', 'COLON'],
+  [';', 'SEMICOLON'],
+  ['?', 'QUESTION'],
+  ['/', 'FSLASH'],
+  [',', 'COMMA'],
+  ['.', 'DOT']
+])
+
+function compileIdentifier (s: string): string {
+  // TODO: javascript identifiers:
+  //   + cannot start with a number,
+  //   + can only contain unicode letters, numbers, underscore, and dollar signs
+  return s
+}
 
 function compileLit (l: L.Lit): string {
   switch (l.tag) {
@@ -23,14 +57,13 @@ function compileExp (e: L.Exp): string {
     case 'value':
       throw new ICE('compileExp', `values cannot be compiled: ${P.expToString(0, e, false)}`)
     case 'var':
-      // TODO: need to "escape" these identifiers
-      return e.value
+      return compileIdentifier(e.value)
     case 'lit':
       return compileLit(e.value)
     case 'call':
       return `(${compileExp(e.head)})(${e.args.map(compileExp).join(', ')})`
     case 'lam':
-      return `(${e.args.join(', ')}) => (${compileExp(e.body)})`
+      return `(${e.args.map(n => compileIdentifier(n.value)).join(', ')}) => (${compileExp(e.body)})`
     case 'if':
       return `(${compileExp(e.e1)}) ? (${compileExp(e.e2)}) : (${compileExp(e.e3)})`
     case 'nil':
@@ -40,7 +73,7 @@ function compileExp (e: L.Exp): string {
     case 'let': {
       let result = compileExp(e.body)
       for (let i = e.bindings.length - 1; i >= 0; i--) {
-        result = `(${(e.bindings[i][0].value)} => (${result}))(${compileExp(e.bindings[i][1])})`
+        result = `(${(compileIdentifier(e.bindings[i][0].value))} => (${result}))(${compileExp(e.bindings[i][1])})`
       }
       return result
     }
@@ -77,4 +110,8 @@ export function compileStmt (s: L.Stmt): string {
     default:
       throw new ICE('compileStmt', 'effects cannot be compiled')
   }
+}
+
+export function compileProgram (s: L.Program): string {
+  return s.map(compileStmt).join('\n\n')
 }

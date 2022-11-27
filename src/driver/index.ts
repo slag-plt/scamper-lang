@@ -24,6 +24,7 @@ type CompilerOptions = {
   emitProg: boolean,
   emitTokens: boolean,
   emitTrace: boolean,
+  emitJs: boolean,
   useStepper: boolean,
 }
 
@@ -35,6 +36,7 @@ function makeDefaultOptions (): CompilerOptions {
     emitProg: false,
     emitTokens: false,
     emitTrace: false,
+    emitJs: false,
     useStepper: false
   }
 }
@@ -52,6 +54,7 @@ Options:
 --emit-prog      Prints the output interspersed between the program's statements.
 --emit-tokens    Prints tokens emitted by the lexer.
 --emit-trace     Prints the step-by-step evaluation of the program (implies --use-stepper).
+--emit-js        Compiles to Javascript, emitted to stdout.
 --use-stepper    Uses the stepper instead of the evaluator.
   `.trim())
 }
@@ -73,6 +76,8 @@ function processArgs (args: string[]): CompilerOptions {
       opts.emitTokens = true
     } else if (arg === '--emit-trace') {
       opts.emitTrace = true
+    } else if (arg === '--emit-js') {
+      opts.emitJs = true
     } else if (arg === '--use-stepper') {
       opts.useStepper = true
     } else if (arg.startsWith('-') || arg.startsWith('--')) {
@@ -155,7 +160,9 @@ function main () {
     if (opts.checkOnly) { process.exit(0) }
 
     // Phase 3: Output
-    if (opts.emitTrace) {
+    if (opts.emitJs) {
+      console.log(scamper.Compiler.compileProgram(prog))
+    } else if (opts.emitTrace) {
       let state = new scamper.ProgramState(prog)
       let step = 1
       console.log('===== Initial Program =====')
