@@ -162,7 +162,7 @@ const seqPrim: L.Prim = (_env, args, app) =>
     ok(seq(args as Composition[]))))
 
 const pickupPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('pickup', ['chmposition', 'composition'], undefined, args, app).andThen(_ =>
+  Promise.resolve(Utils.checkArgsResult('pickup', ['composition', 'composition'], undefined, args, app).andThen(_ =>
     ok(pickup(args[0] as Composition, args[1] as Composition))))
 
 const numeratorPrim: L.Prim = (_env, args, app) =>
