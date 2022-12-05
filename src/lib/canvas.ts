@@ -216,6 +216,44 @@ const drawImagePrim: L.Prim = (_env, args, app) =>
     return ok(undefined)
   }))
 
+const pathDoc: L.Doc = new L.Doc(
+  '(path canvas pairs mode color) -> void?', [
+    'canvas: canvas?',
+    'pairs: list?, a list of pairs of numbers',
+    'mode: string?, either `"solid"` or `"outline"`',
+    'color: string?'
+  ],
+  'Renders a path from the given list of pairs of numbers.'
+)
+
+const pathPrim: L.Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('path', ['any', 'list?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return Promise.resolve(argErr) }
+  const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
+  const pairs = args[1] as [number, number][]
+  const mode = args[2] as string
+  const color = args[3] as string
+  if (mode !== 'solid' && mode !== 'outline') {
+    return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'path', '3', '"solid" or "outline"', mode), app))
+  }
+  if (pairs.length === 0) {
+    return Promise.resolve(ok(undefined))
+  }
+  ctx.fillStyle = color
+  ctx.strokeStyle = color
+  ctx.beginPath()
+  ctx.moveTo(pairs[0][0], pairs[0][1])
+  for (let i = 1; i < pairs.length; i++) {
+    ctx.lineTo(pairs[i][0], pairs[i][1])
+  }
+  if (mode === 'solid') {
+    ctx.fill()
+  } else {
+    ctx.stroke()
+  }
+  return Promise.resolve(ok(undefined))
+}
+
 const animateWithDoc: L.Doc = new L.Doc(
   '(animate-with proc) -> void?', [
     'proc: procedure?, a procedure that takes the current time in milliseconds as input.'
@@ -267,6 +305,7 @@ export const canvasLib: L.Env = new L.Env([
   ['text', canvasEntry(textPrim, textDoc)],
   ['image', canvasEntry(imagePrim, imageDoc)],
   ['draw-image', canvasEntry(drawImagePrim, drawImageDoc)],
+  ['path', canvasEntry(pathPrim, pathDoc)],
   ['animate-with', canvasEntry(animateWithPrim, animateWithDoc)],
   ['canvas-onclick', canvasEntry(canvasOnclickPrim, canvasOnclickDoc)]
 ])
