@@ -199,7 +199,8 @@ function playback (synth: Synth, composition: Composition): number {
 }
 
 export function emitCompositionWidget (synth: any, node: Element) {
-  const composition = JSON.parse(node.textContent!) as Composition
+  const id = parseInt(node.id)
+  const composition: Composition = Scamper.store.get(id)! as Composition
   node.textContent = '' // N.B., clear the contents of the node for the buttons
   const playButton = document.createElement('button')
   playButton.textContent = '▶'

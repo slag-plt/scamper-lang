@@ -140,8 +140,9 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
         : '[object Drawing]'
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'composition') {
+      const tag = Runtime.store.add(v)
       return htmlOutput
-        ? `</code><span class="composition">${sanitize(JSON.stringify(v), htmlOutput)}</span><code>`
+        ? `</code><span class="composition" id="${tag}"></span></code>`
         : '[object Composition]'
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     } else if ('tagName' in v) {
