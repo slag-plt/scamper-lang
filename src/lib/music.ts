@@ -60,6 +60,12 @@ const empty = (): Empty => ({ renderAs: 'composition', tag: 'empty' })
 type Rest = { renderAs: 'composition', tag: 'rest', duration: Duration }
 const rest = (duration: Duration): Rest => ({ renderAs: 'composition', tag: 'rest', duration })
 
+type Trigger = { renderAs: 'composition', tag: 'trigger', fn: L.FunctionType }
+const trigger = (fn: L.FunctionType): Trigger => {
+  console.log(fn)
+  return ({ renderAs: 'composition', tag: 'trigger', fn })
+}
+
 type Par = { renderAs: 'composition', tag: 'par', notes: Composition[] }
 const par = (notes: Composition[]): Par => ({ renderAs: 'composition', tag: 'par', notes })
 
@@ -70,7 +76,7 @@ type Pickup = { renderAs: 'composition', tag: 'pickup', pickup: Composition, not
 const pickup = (pickup: Composition, notes: Composition): Composition =>
   ({ renderAs: 'composition', tag: 'pickup', pickup, notes })
 
-type ModKind = Percussion | PitchBend | Tempo | Dynamics
+type ModKind = Percussion | PitchBend | Tempo | Dynamics | Instrument
 type Percussion = { _scamperTag: 'struct', kind: 'mod', type: 'percussion', fields: []}
 const percussion = (): Percussion => ({ _scamperTag: 'struct', kind: 'mod', type: 'percussion', fields: [] })
 
@@ -110,13 +116,26 @@ const dynamicsPrim: L.Prim = (_env, args, app) =>
     }
   }))
 
+type Instrument = { _scamperTag: 'struct', kind: 'mod', type: 'instrument', fields: [number] }
+const instrument = (program: number): Instrument =>
+  ({ _scamperTag: 'struct', kind: 'mod', type: 'instrument', fields: [program] })
+const instrumentPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('instrment', ['number?'], undefined, args, app).andThen(_ => {
+    const amount = args[0] as number
+    if (amount < 0 || amount > 127) {
+      return runtimeError(msg('error-precondition-not-met', 'instrment', 1, '0 <= amount <= 127', Pretty.expToString(0, L.nlevalue(args[0]))), app)
+    } else {
+      return ok(instrument(amount))
+    }
+  }))
+
 export type Mod = { renderAs: 'composition', tag: 'mod', note: Composition, mod: ModKind }
 export const mod = (mod: ModKind, note: Composition): Mod => ({ renderAs: 'composition', tag: 'mod', note, mod })
 export const modPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('mod', ['mod', 'composition'], undefined, args, app)
     .andThen(_ => ok(mod(args[0] as ModKind, args[1] as Composition))))
 
-export type Composition = Empty | Note | Rest | Par | Seq | Pickup | Mod
+export type Composition = Empty | Note | Rest | Trigger | Par | Seq | Pickup | Mod
 
 const pitchQPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>
@@ -152,6 +171,12 @@ const restPrim: L.Prim = (_env, args, app) => {
   const dur = args[0] as Duration
   return Promise.resolve(ok(rest(dur)))
 }
+
+const triggerPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('trigger', ['procedure?'], undefined, args, app).andThen(_ => {
+    const proc = args[0] as L.FunctionType
+    return ok(trigger(proc))
+  }))
 
 const parPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('par', [], 'composition', args, app).andThen(_ =>
@@ -193,6 +218,8 @@ export const musicLib: L.Env = new L.Env([
   ['bend', musicEntry(pitchBendPrim, Docs.bend)],
   ['tempo', musicEntry(tempoPrim, Docs.tempo)],
   ['dynamics', musicEntry(dynamicsPrim, Docs.dynamics)],
+  ['instrument', musicEntry(instrumentPrim, Docs.instrument)],
+  ['trigger', musicEntry(triggerPrim, Docs.trigger)],
   ['repeat', musicEntry(repeatPrim, Docs.repeat)],
   ['wn', L.entry(dur(1, 1), 'music', undefined, Docs.wn)],
   ['hn', L.entry(dur(1, 2), 'music', undefined, Docs.hn)],

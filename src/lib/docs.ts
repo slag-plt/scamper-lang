@@ -928,6 +928,14 @@ export const stringSplit: Doc = new Doc(
   'Returns a list of strings obtained by splitting `s` at occurrences of `sep`.'
 )
 
+export const stringSplitVector: Doc = new Doc(
+  '(string-split-vector s sep): list?', [
+    's: string?',
+    'sep: string?'
+  ],
+  'Returns a vector of strings obtained by splitting `s` at occurrences of `sep`.'
+)
+
 export const procedure: Doc = new Doc(
   '(procedure? v): boolean?', [
     'v: any'
@@ -1356,10 +1364,24 @@ export const band: Doc = new Doc(
 )
 
 export const instrument: Doc = new Doc(
-  '(instrument ch): composition?', [
-    'ch: integer?, a valid MIDI channel number (0--9)'
+  '(instrument prog): composition?', [
+    'prog: integer?, a valid MIDI program number (0--127)'
   ],
-  'Creates a new composition that plays composition `comp` played through MIDI channel `ch`. The instruments voiced in each channel ber set with the `band` mod. Channel 9 is reserved for percussion sounds.'
+  'Creates a new composition that plays composition `comp` played with MIDI sound or program `prog`. See the Generam MIDI Wikipedia for a complete list of MIDI program numbers to sound mappings.'
+)
+
+export const trigger: Doc = new Doc(
+  '(trigger proc): composition?', [
+    'proc: procedure?, a procedure that takes no arguments'
+  ],
+  'Creates a new composition that calls the function `proc` when played.'
+)
+
+export const onnote: Doc = new Doc(
+  '(onnote fn): composition?', [
+    'fn: function?, a function of zero arguments that returns void.'
+  ],
+  '`fn` is called when the modded composition begins to play.'
 )
 
 export const percussion: Doc = new Doc(
