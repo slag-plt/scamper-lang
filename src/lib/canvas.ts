@@ -230,7 +230,7 @@ const pathPrim: L.Prim = (_env, args, app) => {
   const argErr = Utils.checkArgs('path', ['any', 'list?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return Promise.resolve(argErr) }
   const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
-  const pairs = args[1] as [number, number][]
+  const pairs = L.valueListToArray_(args[1])
   const mode = args[2] as string
   const color = args[3] as string
   if (mode !== 'solid' && mode !== 'outline') {
@@ -242,9 +242,11 @@ const pathPrim: L.Prim = (_env, args, app) => {
   ctx.fillStyle = color
   ctx.strokeStyle = color
   ctx.beginPath()
-  ctx.moveTo(pairs[0][0], pairs[0][1])
+  let p: L.PairType = pairs[0] as L.PairType
+  ctx.moveTo(p.fst as number, p.snd as number)
   for (let i = 1; i < pairs.length; i++) {
-    ctx.lineTo(pairs[i][0], pairs[i][1])
+    p = pairs[i] as L.PairType
+    ctx.lineTo(p.fst as number, p.snd as number)
   }
   if (mode === 'solid') {
     ctx.fill()
