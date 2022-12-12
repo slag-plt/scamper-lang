@@ -5,7 +5,6 @@ import * as Scamper from '../index.js'
 import * as Audio from './audio.js'
 import * as Image from './image.js'
 import * as Music from './music.js'
-import * as JZZ from './jzz/jzz-combined.cjs'
 
 import 'prismjs'
 
@@ -16,9 +15,6 @@ const global = window as any
 
 // The Prism instance
 declare let Prism: any
-
-// The singleton instance of the JZZ.Tiny synth
-const SYNTH = JZZ.synth.Tiny()
 
 // The singleton audio context
 const audioContext = new AudioContext({ sampleRate: 16000 }) // TODO: need to parameterize this!
@@ -101,7 +97,7 @@ async function renderRichWidgets (root: Element | Document) {
   // await forEachByClass(root, 'canvas', emitCanvasWidget)
   await forEachByClass(root, 'audio-pipeline', emitAudioPipelineWidget)
   await forEachByClass(root, 'drawing', e => Promise.resolve(Image.emitDrawingWidget(e)))
-  await forEachByClass(root, 'composition', e => Promise.resolve(Music.emitCompositionWidget(SYNTH, e)))
+  await forEachByClass(root, 'composition', e => Promise.resolve(Music.emitCompositionWidget(e)))
   await forEachByClass(root, 'audio', e => Promise.resolve(Audio.emitAudioWidget(Scamper.store, audioContext, e)))
   Prism.highlightAll()
 }

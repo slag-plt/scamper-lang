@@ -1444,6 +1444,13 @@ export const tn: Doc = new Doc(
   'tn: dur?', [], 'A thirty-secondth note duration (1/32).'
 )
 
+export const playComposition: Doc = new Doc(
+  '(play-composition comp): void', [
+    'comp: composition?'
+  ],
+  'Plays the given composition. Note that this function must be triggered from some user action on the screen, _e.g._, a button click. Otherwise, the browser will silently block audio playback.'
+)
+
 /// // audio ///////////////////////////////////////////////////////////////////
 
 export const sampleNode: Doc = new Doc(
