@@ -1,7 +1,12 @@
 /* eslint-disable no-use-before-define */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import * as JZZ from './jzz/jzz-combined.cjs'
 import * as L from '../lang.js'
 import { msg } from '../messages.js'
-import { ok } from '../result.js'
+import { ICE, ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
 import { evaluateExp } from '../evaluator.js'
 import * as Docs from './docs.js'
@@ -60,6 +65,12 @@ const empty = (): Empty => ({ renderAs: 'composition', tag: 'empty' })
 type Rest = { renderAs: 'composition', tag: 'rest', duration: Duration }
 const rest = (duration: Duration): Rest => ({ renderAs: 'composition', tag: 'rest', duration })
 
+type Trigger = { renderAs: 'composition', tag: 'trigger', fn: L.FunctionType }
+const trigger = (fn: L.FunctionType): Trigger => {
+  console.log(fn)
+  return ({ renderAs: 'composition', tag: 'trigger', fn })
+}
+
 type Par = { renderAs: 'composition', tag: 'par', notes: Composition[] }
 const par = (notes: Composition[]): Par => ({ renderAs: 'composition', tag: 'par', notes })
 
@@ -70,7 +81,7 @@ type Pickup = { renderAs: 'composition', tag: 'pickup', pickup: Composition, not
 const pickup = (pickup: Composition, notes: Composition): Composition =>
   ({ renderAs: 'composition', tag: 'pickup', pickup, notes })
 
-type ModKind = Percussion | PitchBend | Tempo | Dynamics
+type ModKind = Percussion | PitchBend | Tempo | Dynamics | Instrument
 type Percussion = { _scamperTag: 'struct', kind: 'mod', type: 'percussion', fields: []}
 const percussion = (): Percussion => ({ _scamperTag: 'struct', kind: 'mod', type: 'percussion', fields: [] })
 
@@ -110,13 +121,26 @@ const dynamicsPrim: L.Prim = (_env, args, app) =>
     }
   }))
 
+type Instrument = { _scamperTag: 'struct', kind: 'mod', type: 'instrument', fields: [number] }
+const instrument = (program: number): Instrument =>
+  ({ _scamperTag: 'struct', kind: 'mod', type: 'instrument', fields: [program] })
+const instrumentPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('instrment', ['number?'], undefined, args, app).andThen(_ => {
+    const amount = args[0] as number
+    if (amount < 0 || amount > 127) {
+      return runtimeError(msg('error-precondition-not-met', 'instrment', 1, '0 <= amount <= 127', Pretty.expToString(0, L.nlevalue(args[0]))), app)
+    } else {
+      return ok(instrument(amount))
+    }
+  }))
+
 export type Mod = { renderAs: 'composition', tag: 'mod', note: Composition, mod: ModKind }
 export const mod = (mod: ModKind, note: Composition): Mod => ({ renderAs: 'composition', tag: 'mod', note, mod })
 export const modPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('mod', ['mod', 'composition'], undefined, args, app)
     .andThen(_ => ok(mod(args[0] as ModKind, args[1] as Composition))))
 
-export type Composition = Empty | Note | Rest | Par | Seq | Pickup | Mod
+export type Composition = Empty | Note | Rest | Trigger | Par | Seq | Pickup | Mod
 
 const pitchQPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>
@@ -153,6 +177,12 @@ const restPrim: L.Prim = (_env, args, app) => {
   return Promise.resolve(ok(rest(dur)))
 }
 
+const triggerPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('trigger', ['procedure?'], undefined, args, app).andThen(_ => {
+    const proc = args[0] as L.FunctionType
+    return ok(trigger(proc))
+  }))
+
 const parPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('par', [], 'composition', args, app).andThen(_ =>
     ok(par(args as Composition[]))))
@@ -162,7 +192,7 @@ const seqPrim: L.Prim = (_env, args, app) =>
     ok(seq(args as Composition[]))))
 
 const pickupPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('pickup', ['chmposition', 'composition'], undefined, args, app).andThen(_ =>
+  Promise.resolve(Utils.checkArgsResult('pickup', ['composition', 'composition'], undefined, args, app).andThen(_ =>
     ok(pickup(args[0] as Composition, args[1] as Composition))))
 
 const numeratorPrim: L.Prim = (_env, args, app) =>
@@ -172,6 +202,12 @@ const numeratorPrim: L.Prim = (_env, args, app) =>
 const denominatorPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('denominator', ['dur'], undefined, args, app).andThen(_ =>
     ok((args[0] as Duration).fields[1])))
+
+const playCompositionPrim: L.Prim = (env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('play-composition', ['composition'], undefined, args, app).andThen(_ => {
+    playComposition(env, args[0] as Composition)
+    return ok(undefined)
+  }))
 
 const musicEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'music', undefined, docs)
 
@@ -193,11 +229,203 @@ export const musicLib: L.Env = new L.Env([
   ['bend', musicEntry(pitchBendPrim, Docs.bend)],
   ['tempo', musicEntry(tempoPrim, Docs.tempo)],
   ['dynamics', musicEntry(dynamicsPrim, Docs.dynamics)],
+  ['instrument', musicEntry(instrumentPrim, Docs.instrument)],
+  ['trigger', musicEntry(triggerPrim, Docs.trigger)],
   ['repeat', musicEntry(repeatPrim, Docs.repeat)],
   ['wn', L.entry(dur(1, 1), 'music', undefined, Docs.wn)],
   ['hn', L.entry(dur(1, 2), 'music', undefined, Docs.hn)],
   ['qn', L.entry(dur(1, 4), 'music', undefined, Docs.qn)],
   ['en', L.entry(dur(1, 8), 'music', undefined, Docs.en)],
   ['sn', L.entry(dur(1, 16), 'music', undefined, Docs.sn)],
-  ['tn', L.entry(dur(1, 32), 'music', undefined, Docs.tn)]
+  ['tn', L.entry(dur(1, 32), 'music', undefined, Docs.tn)],
+  ['play-composition', musicEntry(playCompositionPrim, Docs.playComposition)]
 ])
+
+type MIDI = any // TODO: ugh, how do I specify this type!?
+type Synth = any // TODO: ...this one, too!
+
+type MidiMsg = {
+  tag: 'midi',
+  time: number,
+  data: MIDI,
+}
+
+type TriggerMsg = {
+  tag: 'trigger',
+  time: number,
+  callback: L.FunctionType
+}
+
+const testProgramMap = [
+  56, // piano
+  5, // electric piano
+  19, // rock organ
+  26, // jazz guitar
+  31, // distorted gutiar
+  33, // electric bass
+  40, // violin
+  56, // trumpet
+  65 // alto sax
+]
+
+type Msg = MidiMsg | TriggerMsg
+
+const midiMsg = (time: number, data: MIDI): Msg =>
+  ({ tag: 'midi', time, data })
+
+const triggerMsg = (time: number, callback: L.FunctionType): Msg =>
+  ({ tag: 'trigger', time, callback })
+
+function ratioToDouble (ratio: Duration) {
+  return ratio.fields[0] / ratio.fields[1]
+}
+
+function durationToTimeMs (beat: Duration, bpm: number, dur: Duration) {
+  return ratioToDouble(dur) / (ratioToDouble(beat) * bpm) * 60 * 1000
+}
+
+function compositionToMsgs (
+  beat: Duration, bpm: number, velocity: number, startTime: number,
+  program: number, composition: Composition): { endTime: number, msgs: Msg[] } {
+  switch (composition.tag) {
+    case 'empty':
+      return { endTime: startTime, msgs: [] }
+    case 'note': {
+      const endTime = startTime + durationToTimeMs(beat, bpm, composition.duration)
+      return {
+        endTime,
+        msgs: [
+          midiMsg(
+            startTime,
+            JZZ.MIDI.noteOn(program, composition.note, velocity)
+          ),
+          midiMsg(
+            endTime,
+            JZZ.MIDI.noteOff(program, composition.note, velocity)
+          )
+        ]
+      }
+    }
+    case 'rest':
+      return {
+        endTime: startTime + durationToTimeMs(beat, bpm, composition.duration),
+        msgs: []
+      }
+    case 'trigger': {
+      return {
+        endTime: startTime,
+        msgs: [triggerMsg(startTime, composition.fn)]
+      }
+    }
+
+    case 'par': {
+      const msgs: Msg[] = []
+      let endTime = 0
+      composition.notes.forEach(note => {
+        const result = compositionToMsgs(beat, bpm, velocity, startTime, program, note)
+        msgs.push(...result.msgs)
+        endTime = Math.max(result.endTime, endTime)
+      })
+      msgs.sort((c1, c2) => c1.time - c2.time)
+      return { endTime, msgs }
+    }
+
+    case 'seq': {
+      const msgs: Msg[] = []
+      let time = startTime
+      composition.notes.forEach(note => {
+        const result = compositionToMsgs(beat, bpm, velocity, time, program, note)
+        msgs.push(...result.msgs)
+        time = result.endTime
+      })
+      msgs.sort((c1, c2) => c1.time - c2.time)
+      return { endTime: time, msgs }
+    }
+
+    case 'pickup': {
+      const pickup = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.pickup)
+      const pickupDuration = pickup.endTime - startTime
+      let notes: { endTime: number, msgs: Msg[] } | undefined
+      // If the pickup would start in negative time, then rebase the composition to start
+      // with the pickup instead.
+      if (startTime - pickupDuration < 0) {
+        pickup.msgs.forEach(msg => {
+          msg.time += pickupDuration
+        })
+        notes = compositionToMsgs(beat, bpm, velocity, pickupDuration, program, composition.notes)
+
+      // Otherwise, rebase pickup to start before the composition.
+      } else {
+        pickup.msgs.forEach(msg => {
+          msg.time -= pickupDuration
+        })
+        notes = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.notes)
+      }
+      const msgs: Msg[] = []
+      msgs.push(...pickup.msgs)
+      msgs.push(...notes.msgs)
+      return { endTime: notes.endTime, msgs }
+    }
+
+    case 'mod': {
+      if (composition.mod.type === 'percussion') {
+        return compositionToMsgs(beat, bpm, velocity, startTime, 9, composition.note)
+      } else if (composition.mod.type === 'pitchBend') {
+        const msgs = []
+        const data = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.note)
+        msgs.push(midiMsg(startTime, JZZ.MIDI.pitchBendF(0, composition.mod.fields[0])))
+        msgs.push(...data.msgs)
+        msgs.push(midiMsg(data.endTime, JZZ.MIDI.pitchBendF(0, 0)))
+        return { msgs, endTime: data.endTime }
+      } else if (composition.mod.type === 'tempo') {
+        return compositionToMsgs(composition.mod.fields[0], composition.mod.fields[1], velocity, startTime, program, composition.note)
+      } else if (composition.mod.type === 'dynamics') {
+        return compositionToMsgs(beat, bpm, composition.mod.fields[0], startTime, program, composition.note)
+      } else if (composition.mod.type === 'instrument') {
+        // TODO: need to add an additional argument to compositionToMsgs
+        // to pass the "current" voice. Or do we need to add infrastructure to
+        // map one new voice to each channel? Need to check if channels 0-8 are
+        // actually available for playback...
+        console.log(composition.mod.fields[0])
+        return compositionToMsgs(beat, bpm, velocity, startTime, composition.mod.fields[0], composition.note)
+      } else {
+        throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod}`)
+      }
+    }
+  }
+}
+
+export function playComposition (env: L.Env, composition: Composition): number {
+  const synth: Synth = JZZ.synth.Tiny()
+  const startTime = window.performance.now()
+  const msgs = compositionToMsgs(dur(1, 4), 120, 64, 0, 0, composition).msgs
+  let i = 0
+  // NOT WORKING, I WONDER WHY!?
+  for (let i = 0; i < testProgramMap.length; i++) {
+    console.log(`Setting ${i} to ${testProgramMap[i]}`)
+    JZZ.MIDI.program(i, testProgramMap[i])
+  }
+  // JZZ.synth.Tiny.setSynth(0, 50)
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  const id = window.setInterval(async () => {
+    const now = window.performance.now()
+    while (i < msgs.length) {
+      const msg = msgs[i]
+      if (msg.time + startTime <= now) {
+        if (msg.tag === 'midi') {
+          synth.send(msg.data)
+        } else if (msg.tag === 'trigger') {
+          const result = await evaluateExp(env, L.nlecall(L.nlevalue(msg.callback), []))
+          console.log(result)
+        }
+        i += 1
+        continue // N.B., try to process the next message
+      } else {
+        return Promise.resolve(undefined) // N.B., wait for the next interval to process msgs again
+      }
+    }
+    clearInterval(id)
+    return Promise.resolve(undefined)
+  })
+  return id
+}

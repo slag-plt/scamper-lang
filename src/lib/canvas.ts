@@ -216,6 +216,46 @@ const drawImagePrim: L.Prim = (_env, args, app) =>
     return ok(undefined)
   }))
 
+const pathDoc: L.Doc = new L.Doc(
+  '(path canvas pairs mode color) -> void?', [
+    'canvas: canvas?',
+    'pairs: list?, a list of pairs of numbers',
+    'mode: string?, either `"solid"` or `"outline"`',
+    'color: string?'
+  ],
+  'Renders a path from the given list of pairs of numbers.'
+)
+
+const pathPrim: L.Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('path', ['any', 'list?', 'string?', 'string?'], undefined, args, app)
+  if (argErr) { return Promise.resolve(argErr) }
+  const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
+  const pairs = L.valueListToArray_(args[1])
+  const mode = args[2] as string
+  const color = args[3] as string
+  if (mode !== 'solid' && mode !== 'outline') {
+    return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'path', '3', '"solid" or "outline"', mode), app))
+  }
+  if (pairs.length === 0) {
+    return Promise.resolve(ok(undefined))
+  }
+  ctx.fillStyle = color
+  ctx.strokeStyle = color
+  ctx.beginPath()
+  let p: L.PairType = pairs[0] as L.PairType
+  ctx.moveTo(p.fst as number, p.snd as number)
+  for (let i = 1; i < pairs.length; i++) {
+    p = pairs[i] as L.PairType
+    ctx.lineTo(p.fst as number, p.snd as number)
+  }
+  if (mode === 'solid') {
+    ctx.fill()
+  } else {
+    ctx.stroke()
+  }
+  return Promise.resolve(ok(undefined))
+}
+
 const animateWithDoc: L.Doc = new L.Doc(
   '(animate-with proc) -> void?', [
     'proc: procedure?, a procedure that takes the current time in milliseconds as input.'
@@ -239,6 +279,24 @@ const animateWithPrim: L.Prim = (env, args, app) =>
     return ok(undefined)
   }))
 
+const canvasOnclickDoc: L.Doc = new L.Doc(
+  '(canvas-onclick canvas proc) -> void?', [
+    'canvas: canvas?',
+    'proc: procedure?, a procedure that takes two arguments: numbers representing the x and y coordinate of the mouse click on the canvas.'
+  ],
+  'Sets the given procedure to be called when the canvas is clicked by the user.'
+)
+
+const canvasOnclickPrim: L.Prim = (env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('canvas-onclick', ['any', 'procedure?'], undefined, args, app).andThen(_ => {
+    const canvas = args[0] as HTMLCanvasElement
+    const fn = args[1] as L.FunctionType
+    canvas.onclick = async function (ev: MouseEvent) {
+      await E.evaluateExp(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(ev.x), L.nlevalue(ev.y)]))
+    }
+    return ok(undefined)
+  }))
+
 const canvasEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'canvas', undefined, docs)
 
 export const canvasLib: L.Env = new L.Env([
@@ -249,5 +307,7 @@ export const canvasLib: L.Env = new L.Env([
   ['text', canvasEntry(textPrim, textDoc)],
   ['image', canvasEntry(imagePrim, imageDoc)],
   ['draw-image', canvasEntry(drawImagePrim, drawImageDoc)],
-  ['animate-with', canvasEntry(animateWithPrim, animateWithDoc)]
+  ['path', canvasEntry(pathPrim, pathDoc)],
+  ['animate-with', canvasEntry(animateWithPrim, animateWithDoc)],
+  ['canvas-onclick', canvasEntry(canvasOnclickPrim, canvasOnclickDoc)]
 ])

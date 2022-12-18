@@ -265,6 +265,7 @@ const numericPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['+', plusPrim, Docs.plus],
   ['-', minusPrim, Docs.minus],
   ['*', timesPrim, Docs.times],
+  ['⋅', timesPrim, Docs.times],
   ['/', divPrim, Docs.div],
   ['abs', absPrim, Docs.abs],
   ['quotient', quotientPrim, Docs.quotient],
@@ -802,6 +803,10 @@ const stringSplitPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
     ok(L.valueArrayToList((args[0] as string).split(args[1] as string)))))
 
+const stringSplitVectorPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
+    ok((args[0] as string).split(args[1] as string))))
+
 const fileStringPrim: L.Prim = (_env, args, app) =>
   Utils.checkArgsResult('file->string', ['string?'], undefined, args, app).asyncAndThen(async _ =>
     (await fs.read(args[0] as string)).asyncAndThen(s =>
@@ -860,6 +865,7 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['list->string', listStringPrim, Docs.listString],
   ['string-contains', stringContainsPrim, Docs.stringContains],
   ['string-split', stringSplitPrim, Docs.stringSplit],
+  ['string-split-vector', stringSplitVectorPrim, Docs.stringSplitVector],
   ['string-append', stringAppendPrim, Docs.stringAppend],
   ['file->string', fileStringPrim, Docs.fileString],
   ['file->lines', fileLinesPrim, Docs.fileLines]

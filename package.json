@@ -1,6 +1,6 @@
 {
   "name": "scamper-lang",
-  "version": "1.5.15",
+  "version": "1.5.21",
   "repository": {
     "type": "git",
     "url": "https://github.com/slag-plt/scamper-lang.git"
@@ -13,7 +13,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "build": "mkdir -p dist/web/jzz && cp src/web/jzz/jzz-combined.cjs dist/web/jzz/jzz-combined.cjs && tsc && chmod u+x dist/driver/index.js",
+    "build": "mkdir -p dist/lib/jzz && cp src/lib/jzz/jzz-combined.cjs dist/lib/jzz/jzz-combined.cjs && tsc && chmod u+x dist/driver/index.js",
     "clean": "rm -rf dist",
     "lint": "eslint --fix src/",
     "prepare": "npm run build && npm run bundle",

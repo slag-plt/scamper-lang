@@ -5,6 +5,7 @@ import { jsLib } from './js.js'
 import { musicLib } from './music.js'
 import { audioLib } from './audio.js'
 import { canvasLib } from './canvas.js'
+import { htmlLib } from './html.js'
 
 export { preludeEnv } from './prelude.js'
 
@@ -14,5 +15,6 @@ export const internalLibs: Map<string, L.Env> = new Map([
   ['canvas', canvasLib],
   ['image', imageLib],
   ['js', jsLib],
-  ['music', musicLib]
+  ['music', musicLib],
+  ['html', htmlLib]
 ])
