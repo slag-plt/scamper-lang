@@ -127,8 +127,8 @@ async function replaceOutputWidgets () {
         const output = Scamper.effectToString(0, result.value.outputs[i], true, true)
         if (output.length > 0) {
           element.innerHTML += [
-            `<code>${segment}</code>`,
-            `&gt; <code>${output}</code>`,
+            `<code>${sanitize(segment)}</code>`,
+            `&gt; <code>${sanitize(output)}</code>`,
             // N.B., extra spacing to make output pretty,
             ''
           ].join('\n')
@@ -142,7 +142,7 @@ async function replaceOutputWidgets () {
       for (let i = 0; i < result.value.statements.length; i++) {
         const line = Scamper.stmtToString(0, result.value.outputs[i], false, true)
         if (line.trim().length > 0) {
-          element.innerHTML += `<code>${line}</code>\n\n`
+          element.innerHTML += `<code>${sanitize(line)}</code>\n\n`
         }
       }
       await renderRichWidgets(element)
