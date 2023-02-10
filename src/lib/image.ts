@@ -201,7 +201,7 @@ const besideAlignPrim: L.Prim = (_env, args, app) => {
   if (align !== 'top' && align !== 'center' && align !== 'bottom') {
     return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'beside-align', '1', '"top", "center", or "bottom"', align), app))
   } else {
-    return Promise.resolve(ok(beside(align, args as Drawing[])))
+    return Promise.resolve(ok(beside(align, args.slice(1) as Drawing[])))
   }
 }
 
