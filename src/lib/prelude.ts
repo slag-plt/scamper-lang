@@ -96,11 +96,11 @@ const negativePrim : L.Prim = (_env, args, app) =>
     ok(args[0] as number < 0)))
 
 const oddPrim : L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('odd?', ['number?'], undefined, args, app).andThen(_ =>
+  Promise.resolve(Utils.checkArgsResult('odd?', ['integer?'], undefined, args, app).andThen(_ =>
     ok(((args[0] as number) & 1) === 1)))
 
 const evenPrim : L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('even?', ['number?'], undefined, args, app).andThen(_ =>
+  Promise.resolve(Utils.checkArgsResult('even?', ['integer?'], undefined, args, app).andThen(_ =>
     ok(((args[0] as number) & 1) !== 1)))
 
 function numericUOp (symbol: string, op: (x: number) => number, args: L.Value[], app: L.Exp): Promise<Result<L.Value>> {
