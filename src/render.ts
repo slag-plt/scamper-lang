@@ -30,6 +30,19 @@ export function renderValue (v: L.Value): HTMLElement {
     return createSpan('char', `#\\${printed}`)
   } else if (L.valueIsLambda(v) || L.valueIsPrim(v)) {
     return createSpan(undefined, '[object Function]')
+  } else if (L.valueIsPair(v)) {
+    const ret = createSpan(undefined)
+    if (L.valueIsList(v)) {
+      ret.appendChild(document.createTextNode('(list '))
+      const children = L.valueListToArray_(v).map(v => renderValue(v))
+      children.forEach(e => ret.appendChild(e))
+    } else {
+      ret.appendChild(document.createTextNode('(cons '))
+      ret.appendChild(renderValue((v as L.PairType).fst))
+      ret.appendChild(renderValue((v as L.PairType).snd))
+    }
+    ret.appendChild(document.createTextNode(')'))
+    return ret
   } else {
     throw new Error('unimplemented!')
   }
