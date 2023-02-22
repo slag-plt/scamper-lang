@@ -1,0 +1,8 @@
+:5:0: Runtime error:
+    A runtime error was encountered: hello 
+    In program: (error "hello")
+#f
+:4:6: Runtime error:
+    A runtime error was encountered: hello 
+    In program: (error "hello")
+#t
