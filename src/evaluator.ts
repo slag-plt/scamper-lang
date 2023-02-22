@@ -85,6 +85,8 @@ export async function evaluateExp (env: L.Env, e: L.Exp): Promise<Result<L.Value
         const v = await evaluateExp(env, e.args[i])
         if (v.tag === 'ok' && L.valueIsBoolean(v.value) && (v.value as boolean) === false) {
           return ok(false)
+        } else if (v.tag === 'error') {
+          return v
         }
       }
       return ok(true)
@@ -93,6 +95,8 @@ export async function evaluateExp (env: L.Env, e: L.Exp): Promise<Result<L.Value
         const v = await evaluateExp(env, e.args[i])
         if (v.tag === 'ok' && L.valueIsBoolean(v.value) && (v.value as boolean) === true) {
           return ok(true)
+        } else if (v.tag === 'error') {
+          return v
         }
       }
       return ok(false)
