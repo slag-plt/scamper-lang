@@ -75,7 +75,7 @@ export const valueIsStructKind = (v: Value, kind: string): boolean =>
   valueIsStruct(v) && (v as StructType).kind === kind
 export const valueIsAnyStructKind = (v: Value, kinds: string[]): boolean =>
   valueIsStruct(v) && kinds.includes((v as StructType).kind)
-export const valueIsObject = (v: Value): boolean => typeof v === 'object' && !Object.hasOwn(v as object, '_scamperTag')
+export const valueIsObject = (v: Value): boolean => typeof v === 'object' && v !== null && !Object.hasOwn(v as object, '_scamperTag')
 export const valueHasProperty = (v: Value, p: string): boolean => valueIsObject(v) && Object.hasOwn(v as object, p)
 export const valueHasPropertyValue = (v: Value, p: string, x: any): boolean =>
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
