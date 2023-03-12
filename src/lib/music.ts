@@ -3,7 +3,9 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import * as JZZ from './jzz/jzz-combined.cjs'
+import * as JZZ from 'jzz'
+import JZZSynthTiny from 'jzz-synth-tiny'
+
 import * as L from '../lang.js'
 import { msg } from '../messages.js'
 import { ICE, ok } from '../result.js'
@@ -12,6 +14,8 @@ import { evaluateExp } from '../evaluator.js'
 import * as Docs from './docs.js'
 import * as Pretty from '../pretty.js'
 import * as Utils from './utils.js'
+
+JZZSynthTiny(JZZ)
 
 export type PitchClass = string
 export type Octave = number
@@ -373,9 +377,10 @@ function compositionToMsgs (
       } else if (composition.mod.type === 'pitchBend') {
         const msgs = []
         const data = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.note)
-        msgs.push(midiMsg(startTime, JZZ.MIDI.pitchBendF(0, composition.mod.fields[0])))
+        // N.B., pitchBendF isn't defined for JZZ.MIDI for some reason...
+        msgs.push(midiMsg(startTime, (JZZ.MIDI as any).pitchBendF(0, composition.mod.fields[0])))
         msgs.push(...data.msgs)
-        msgs.push(midiMsg(data.endTime, JZZ.MIDI.pitchBendF(0, 0)))
+        msgs.push(midiMsg(data.endTime, (JZZ.MIDI as any).pitchBendF(0, 0)))
         return { msgs, endTime: data.endTime }
       } else if (composition.mod.type === 'tempo') {
         return compositionToMsgs(composition.mod.fields[0], composition.mod.fields[1], velocity, startTime, program, composition.note)
@@ -396,7 +401,8 @@ function compositionToMsgs (
 }
 
 export function playComposition (env: L.Env, composition: Composition): number {
-  const synth: Synth = JZZ.synth.Tiny()
+  // N.B., synth is dynamically loaded into JZZ via jzz-synth-tiny package.
+  const synth: Synth = (JZZ as any).synth.Tiny()
   const startTime = window.performance.now()
   const msgs = compositionToMsgs(dur(1, 4), 120, 64, 0, 0, composition).msgs
   let i = 0
