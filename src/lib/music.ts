@@ -308,13 +308,15 @@ function durationToTimeMs (beat: Duration, bpm: number, dur: Duration) {
 function freqToNoteOffset (freq: number): { note: number, offset: number } {
   const value = Math.log2(freq / 440) * 12 + 69
   const note = Math.floor(value)
-  const offset = value - note
+  // N.B., assume a pitch bend of _two_ semitones, so we want half the fractional part
+  // to obtain the percentage to bend within that note.
+  const offset = (value - note) / 2
   return { note, offset }
 }
 
 function pitchBendF (ch: number, amt: number): MIDI {
   // N.B., JZZ.MIDI doesn't define pitchBendF for some reason...
-  (JZZ.MIDI as any).pitchBendF(ch, amt)
+  return (JZZ.MIDI as any).pitchBendF(ch, amt)
 }
 
 function compositionToMsgs (
