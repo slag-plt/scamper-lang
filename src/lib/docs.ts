@@ -1319,6 +1319,14 @@ export const note: Doc = new Doc(
   'Creates a new composition consisting of a single note from the given MIDI note value and duration.'
 )
 
+export const noteFreq: Doc = new Doc(
+  '(note-freq freq dur): composition?', [
+    'midi-note: integer?, 0 <= frequency <= 4000',
+    'dur: dur?'
+  ],
+  'Creates a new composition consisting of a single note of the given frequency and duration.'
+)
+
 export const rest: Doc = new Doc(
   '(rest dur): composition?', [
     'dur: dur?'

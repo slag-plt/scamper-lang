@@ -41,6 +41,11 @@ const note = (note: number, duration: Duration): Note => ({
   renderAs: 'composition', tag: 'note', note, duration
 })
 
+export type NoteFreq = { renderAs: 'composition', tag: 'note-freq', freq: number, duration: Duration }
+const noteFreq = (freq: number, duration: Duration): NoteFreq => ({
+  renderAs: 'composition', tag: 'note-freq', freq, duration
+})
+
 const repeatPrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('repeat', ['integer?', 'composition'], undefined, args, app).asyncAndThen(async _ => {
     const n = args[0] as number
@@ -71,7 +76,6 @@ const rest = (duration: Duration): Rest => ({ renderAs: 'composition', tag: 'res
 
 type Trigger = { renderAs: 'composition', tag: 'trigger', fn: L.FunctionType }
 const trigger = (fn: L.FunctionType): Trigger => {
-  console.log(fn)
   return ({ renderAs: 'composition', tag: 'trigger', fn })
 }
 
@@ -144,7 +148,7 @@ export const modPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('mod', ['mod', 'composition'], undefined, args, app)
     .andThen(_ => ok(mod(args[0] as ModKind, args[1] as Composition))))
 
-export type Composition = Empty | Note | Rest | Trigger | Par | Seq | Pickup | Mod
+export type Composition = Empty | Note | NoteFreq | Rest | Trigger | Par | Seq | Pickup | Mod
 
 const pitchQPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('pitch?', ['any'], undefined, args, app).andThen(_ =>
@@ -171,6 +175,18 @@ const notePrim: L.Prim = (_env, args, app) =>
         '0 <= amount <= 128', Pretty.expToString(0, L.nlevalue(args[0])), app))
     } else {
       return ok(note(midiNote, dur))
+    }
+  }))
+
+const noteFreqPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('note', ['number?', 'dur'], undefined, args, app).andThen(_ => {
+    const freq = args[0] as number
+    const dur = args[1] as Duration
+    if (freq < 0 && freq > 4000) {
+      return runtimeError(msg('error-precondition-not-met', 'note-freq', 1,
+        '0 <= frequency <= 4000', Pretty.expToString(0, L.nlevalue(args[0])), app))
+    } else {
+      return ok(noteFreq(freq, dur))
     }
   }))
 
@@ -224,6 +240,7 @@ export const musicLib: L.Env = new L.Env([
   ['denominator', musicEntry(denominatorPrim, Docs.denominator)],
   ['empty', L.entry(empty(), 'music', undefined, Docs.empty)],
   ['note', musicEntry(notePrim, Docs.note)],
+  ['note-freq', musicEntry(noteFreqPrim, Docs.noteFreq)],
   ['rest', musicEntry(restPrim, Docs.rest)],
   ['par', musicEntry(parPrim, Docs.par)],
   ['seq', musicEntry(seqPrim, Docs.seq)],
@@ -288,6 +305,18 @@ function durationToTimeMs (beat: Duration, bpm: number, dur: Duration) {
   return ratioToDouble(dur) / (ratioToDouble(beat) * bpm) * 60 * 1000
 }
 
+function freqToNoteOffset (freq: number): { note: number, offset: number } {
+  const value = Math.log2(freq / 440) * 12 + 69
+  const note = Math.floor(value)
+  const offset = value - note
+  return { note, offset }
+}
+
+function pitchBendF (ch: number, amt: number): MIDI {
+  // N.B., JZZ.MIDI doesn't define pitchBendF for some reason...
+  (JZZ.MIDI as any).pitchBendF(ch, amt)
+}
+
 function compositionToMsgs (
   beat: Duration, bpm: number, velocity: number, startTime: number,
   program: number, composition: Composition): { endTime: number, msgs: Msg[] } {
@@ -306,6 +335,31 @@ function compositionToMsgs (
           midiMsg(
             endTime,
             JZZ.MIDI.noteOff(program, composition.note, velocity)
+          )
+        ]
+      }
+    }
+    case 'note-freq': {
+      const endTime = startTime + durationToTimeMs(beat, bpm, composition.duration)
+      const { note, offset } = freqToNoteOffset(composition.freq)
+      return {
+        endTime,
+        msgs: [
+          midiMsg(
+            startTime,
+            pitchBendF(0, offset)
+          ),
+          midiMsg(
+            startTime,
+            JZZ.MIDI.noteOn(program, note, velocity)
+          ),
+          midiMsg(
+            endTime,
+            JZZ.MIDI.noteOff(program, note, velocity)
+          ),
+          midiMsg(
+            endTime,
+            pitchBendF(0, 0)
           )
         ]
       }
@@ -391,7 +445,6 @@ function compositionToMsgs (
         // to pass the "current" voice. Or do we need to add infrastructure to
         // map one new voice to each channel? Need to check if channels 0-8 are
         // actually available for playback...
-        console.log(composition.mod.fields[0])
         return compositionToMsgs(beat, bpm, velocity, startTime, composition.mod.fields[0], composition.note)
       } else {
         throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod}`)
@@ -408,7 +461,6 @@ export function playComposition (env: L.Env, composition: Composition): number {
   let i = 0
   // NOT WORKING, I WONDER WHY!?
   for (let i = 0; i < testProgramMap.length; i++) {
-    console.log(`Setting ${i} to ${testProgramMap[i]}`)
     JZZ.MIDI.program(i, testProgramMap[i])
   }
   // JZZ.synth.Tiny.setSynth(0, 50)
@@ -421,8 +473,7 @@ export function playComposition (env: L.Env, composition: Composition): number {
         if (msg.tag === 'midi') {
           synth.send(msg.data)
         } else if (msg.tag === 'trigger') {
-          const result = await evaluateExp(env, L.nlecall(L.nlevalue(msg.callback), []))
-          console.log(result)
+          await evaluateExp(env, L.nlecall(L.nlevalue(msg.callback), []))
         }
         i += 1
         continue // N.B., try to process the next message
