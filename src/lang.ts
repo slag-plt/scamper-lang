@@ -179,13 +179,13 @@ export function valueEquals (v1: Value, v2: Value): boolean {
     const s2 = v2 as StructType
     return s1.kind === s2.kind && s1.fields.length === s2.fields.length &&
       s1.fields.every((v, i) => valueEquals(v, s2.fields[i]))
-  } else if (valueIsObject(v1) && valueIsObject(v2)) {
-    // TODO: should implement a deep equality check with Object methods
-    return v1 === v2
   } else if (valueIsVector(v1) && valueIsVector(v2)) {
     const a1 = v1 as Value[]
     const a2 = v2 as Value[]
     return a1.length === a2.length && a1.every((v, i) => valueEquals(v, a2[i]))
+  } else if (valueIsObject(v1) && valueIsObject(v2)) {
+    // TODO: should implement a deep equality check with Object methods
+    return v1 === v2
   } else {
     return false
   }
