@@ -100,12 +100,11 @@ function emitReactiveFileWidget (node: Element): Promise<void> {
     console.log('change!')
     reader.onload = async (e) => {
       if (e !== null && e.target !== null) {
-        // TODO: need to run the reactive file callback on the file contents!
         const v = await Scamper.evaluateExp(Scamper.preludeEnv, Scamper.Lang.nlecall(Scamper.Lang.nlevalue(callback), [Scamper.Lang.nlevalue(e.target.result)]))
         if (v.tag === 'error') {
-          outp.innerText = Scamper.errorToString(v)
+          outp.innerHTML = Scamper.errorToString(v)
         } else {
-          outp.innerText = Scamper.Pretty.valueToString(0, v.value, true)
+          outp.innerHTML = Scamper.Pretty.valueToString(0, v.value, true)
           await renderRichWidgets(outp)
         }
       }
