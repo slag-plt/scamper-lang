@@ -919,6 +919,20 @@ export const listString: Doc = new Doc(
   'Returns a string made by joining the characters in `l` together.'
 )
 
+export const stringVector: Doc = new Doc(
+  '(string->vector s): vector?', [
+    's: string?'
+  ],
+  'Returns a vector of the characters in `s`.'
+)
+
+export const vectorString: Doc = new Doc(
+  '(vector->string v): string?', [
+    'v: vector? of characters'
+  ],
+  'Returns a string made by joining the characters in `v` together.'
+)
+
 export const stringContains: Doc = new Doc(
   '(string-contains? s1 s2): boolean?', [
     's1: string?',
@@ -1022,6 +1036,14 @@ export const vectorMap: Doc = new Doc(
     'v: vector?'
   ],
   'Returns a new vector containing the results of applying `f` to each element of `v1`, ..., `vk` in a element-wise fashion.'
+)
+
+export const vectorForEach: Doc = new Doc(
+  '(vector-for-each f v1 .. vk): vector?', [
+    'f: procedure?',
+    'v: vector?'
+  ],
+  'Runs `f` on each element of `v1`, ..., `vk` in a element-wise fashion. `f` takes `k+1` arguments where the first argument is the current index and the remaining arguments are the elements of each vector at that index.'
 )
 
 export const voidQ: Doc = new Doc(

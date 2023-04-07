@@ -784,6 +784,22 @@ const listStringPrim: L.Prim = (_env, args, app) =>
     return ok(lst.map(L.valueGetChar_).join(''))
   }))
 
+const stringVectorPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('string->vector', ['string?'], undefined, args, app).andThen(_ =>
+    ok((args[0] as string).split('').map(L.vchar))))
+
+const vectorStringPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('vector->string', ['vector?'], undefined, args, app).andThen(_ => {
+    const vec = args[0] as L.Value[]
+    for (const e of vec) {
+      if (!L.valueIsChar(e)) {
+        return runtimeError(msg('error-type-expected-fun',
+          'vector->string', 1, 'vector of chars', e), app)
+      }
+    }
+    return ok(vec.map(L.valueGetChar_).join(''))
+  }))
+
 // N.B., the following functions:
 //
 //   (string-copy string)
@@ -870,6 +886,8 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['substring', substringPrim, Docs.substring],
   ['string->list', stringListPrim, Docs.stringList],
   ['list->string', listStringPrim, Docs.listString],
+  ['string->vector', stringVectorPrim, Docs.stringVector],
+  ['vector->string', vectorStringPrim, Docs.vectorString],
   ['string-contains', stringContainsPrim, Docs.stringContains],
   ['string-split', stringSplitPrim, Docs.stringSplit],
   ['string-split-vector', stringSplitVectorPrim, Docs.stringSplitVector],
@@ -1206,6 +1224,29 @@ const vectorMapPrim: L.Prim = async (env, args, app) =>
     return ok(result)
   })
 
+const vectorForEachPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('vector-for-each', ['procedure?', 'vector?'], undefined, args, app).asyncAndThen(async _ => {
+    const fn = args[0]
+    const vectors = args.slice(1) as L.Value[][]
+    const len = vectors[0].length
+    if (!(vectors.every(v => v.length === len))) {
+      return runtimeError(msg('error-precondition-not-met', 'vector-for-each', 2,
+        'all vectors have the same length', Pretty.expToString(0, app)), app)
+    }
+    for (let i = 0; i < len; i++) {
+      const args: L.Exp[] = new Array<L.Exp>(vectors.length + 1)
+      args[0] = L.nlevalue(i)
+      for (let j = 1; j < vectors.length + 1; j++) {
+        args[j] = L.nlevalue(vectors[j - 1][i])
+      }
+      const v = await evaluateExp(env, L.nlecall(L.nlevalue(fn), args))
+      if (v.tag === 'error') {
+        return v
+      }
+    }
+    return ok(undefined)
+  })
+
 // TODO: implement:
 //   (for-each fn l1 ... lk)
 //   (string-for-each fn str1 ... strk)
@@ -1329,6 +1370,7 @@ const controlPrimitives: [string, L.Prim, L.Doc][] = [
   ['fold-right', foldRightPrim, Docs.foldRight],
   ['reduce-right', reduceRightPrim, Docs.reduceRight],
   ['vector-map', vectorMapPrim, Docs.vectorMap],
+  ['vector-for-each', vectorForEachPrim, Docs.vectorForEach],
   ['vector-filter', vectorFilterPrim, Docs.vectorFilter],
   ['vector-append', vectorAppendPrim, Docs.vectorAppend],
   ['voidQ', voidQ, Docs.voidQ],
