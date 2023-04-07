@@ -1247,6 +1247,20 @@ const vectorForEachPrim: L.Prim = async (env, args, app) =>
     return ok(undefined)
   })
 
+const forRangePrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('for-range', ['number?', 'number?', 'procedure?'], undefined, args, app).asyncAndThen(async _ => {
+    const start = args[0] as number
+    const end = args[1] as number
+    const fn = args[2]
+    for (let i = start; i < end; i++) {
+      const v = await evaluateExp(env, L.nlecall(L.nlevalue(fn), asValues([i])))
+      if (v.tag === 'error') {
+        return v
+      }
+    }
+    return ok(undefined)
+  })
+
 // TODO: implement:
 //   (for-each fn l1 ... lk)
 //   (string-for-each fn str1 ... strk)
@@ -1371,6 +1385,7 @@ const controlPrimitives: [string, L.Prim, L.Doc][] = [
   ['reduce-right', reduceRightPrim, Docs.reduceRight],
   ['vector-map', vectorMapPrim, Docs.vectorMap],
   ['vector-for-each', vectorForEachPrim, Docs.vectorForEach],
+  ['for-range', forRangePrim, Docs.forRange],
   ['vector-filter', vectorFilterPrim, Docs.vectorFilter],
   ['vector-append', vectorAppendPrim, Docs.vectorAppend],
   ['voidQ', voidQ, Docs.voidQ],

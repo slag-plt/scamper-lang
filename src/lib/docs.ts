@@ -1046,6 +1046,15 @@ export const vectorForEach: Doc = new Doc(
   'Runs `f` on each element of `v1`, ..., `vk` in a element-wise fashion. `f` takes `k+1` arguments where the first argument is the current index and the remaining arguments are the elements of each vector at that index.'
 )
 
+export const forRange: Doc = new Doc(
+  '(for-range beg end f): void?', [
+    'beg: number?',
+    'end: number?',
+    'f: procedure?'
+  ],
+  'Runs `f` on each integer in the range `[beg, end)`. `f` takes one argument, the current value of integer.'
+)
+
 export const voidQ: Doc = new Doc(
   '(void? v): boolean?', [
     'v: any'

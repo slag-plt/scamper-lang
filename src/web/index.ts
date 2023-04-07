@@ -97,7 +97,6 @@ function emitReactiveFileWidget (node: Element): Promise<void> {
   inp.type = 'file'
   inp.addEventListener('change', () => {
     const reader = new FileReader()
-    console.log('change!')
     reader.onload = async (e) => {
       if (e !== null && e.target !== null) {
         const v = await Scamper.evaluateExp(Scamper.preludeEnv, Scamper.Lang.nlecall(Scamper.Lang.nlevalue(callback), [Scamper.Lang.nlevalue(e.target.result)]))
@@ -107,9 +106,12 @@ function emitReactiveFileWidget (node: Element): Promise<void> {
           outp.innerHTML = Scamper.Pretty.valueToString(0, v.value, true)
           await renderRichWidgets(outp)
         }
+      } else {
+        outp.innerText = ''
       }
     }
     if (inp.files !== null && inp.files.length > 0) {
+      outp.innerText = 'Loading...'
       reader.readAsText(inp.files[0])
     }
   }, false)
