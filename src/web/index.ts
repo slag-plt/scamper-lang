@@ -88,6 +88,40 @@ function emitAudioPipelineWidget (node: Element): Promise<void> {
   return Promise.resolve(undefined)
 }
 
+function emitReactiveFileWidget (node: Element): Promise<void> {
+  const id = parseInt(node.id)
+  const blob: any = Scamper.store.get(id)!
+  const callback = blob.callback as Scamper.Lang.FunctionType
+  const inp = document.createElement('input')
+  const outp = document.createElement('code')
+  inp.type = 'file'
+  inp.addEventListener('change', () => {
+    const reader = new FileReader()
+    console.log('change!')
+    reader.onload = async (e) => {
+      if (e !== null && e.target !== null) {
+        // TODO: need to run the reactive file callback on the file contents!
+        const v = await Scamper.evaluateExp(Scamper.preludeEnv, Scamper.Lang.nlecall(Scamper.Lang.nlevalue(callback), [Scamper.Lang.nlevalue(e.target.result)]))
+        console.log(v)
+        if (v.tag === 'error') {
+          outp.innerText = Scamper.errorToString(v)
+        } else {
+          outp.innerText = Scamper.Pretty.valueToString(0, v.value, true)
+          await renderRichWidgets(outp)
+        }
+      }
+    }
+    if (inp.files !== null && inp.files.length > 0) {
+      reader.readAsText(inp.files[0])
+    }
+  }, false)
+
+  node.appendChild(inp)
+  node.appendChild(document.createElement('br'))
+  node.appendChild(outp)
+  return Promise.resolve(undefined)
+}
+
 async function renderRichWidgets (root: Element | Document) {
   const canvases = Array.from(root.getElementsByClassName('canvas'))
   for (const canvas of canvases) {
@@ -99,6 +133,7 @@ async function renderRichWidgets (root: Element | Document) {
   await forEachByClass(root, 'drawing', e => Promise.resolve(Image.emitDrawingWidget(e)))
   await forEachByClass(root, 'composition', e => Promise.resolve(Music.emitCompositionWidget(e)))
   await forEachByClass(root, 'audio', e => Promise.resolve(Audio.emitAudioWidget(Scamper.store, audioContext, e)))
+  await forEachByClass(root, 'reactive-file', e => Promise.resolve(emitReactiveFileWidget(e)))
   Prism.highlightAll()
 }
 

@@ -6,7 +6,7 @@ import * as Utils from './utils.js'
 import { msg } from '../messages.js'
 import * as Docs from './docs.js'
 import * as Pretty from '../pretty.js'
-import { fs } from '../vfs.js'
+// import { fs } from '../vfs.js'
 import { noRange } from '../loc.js'
 
 function asNumbers (args: L.Value[]): Result<number[]> {
@@ -807,17 +807,24 @@ const stringSplitVectorPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('string-split', ['string?', 'string?'], undefined, args, app).andThen(_ =>
     ok((args[0] as string).split(args[1] as string))))
 
-const fileStringPrim: L.Prim = (_env, args, app) =>
-  Utils.checkArgsResult('file->string', ['string?'], undefined, args, app).asyncAndThen(async _ =>
-    (await fs.read(args[0] as string)).asyncAndThen(s =>
-      Promise.resolve(ok(s))))
+// const fileStringPrim: L.Prim = (_env, args, app) =>
+//   Utils.checkArgsResult('file->string', ['string?'], undefined, args, app).asyncAndThen(async _ =>
+//     (await fs.read(args[0] as string)).asyncAndThen(s =>
+//       Promise.resolve(ok(s))))
 
-const fileLinesPrim: L.Prim = (env, args, app) =>
-  Utils.checkArgsResult('file->lines', ['string?'], undefined, args, app).asyncAndThen(_ =>
-    evaluateExp(env, L.nlecall(L.nlevar('string-split'), [
-      L.nlecall(L.nlevar('file->string'), [L.nlevalue(args[0])]),
-      L.nlestr('\n')
-    ])))
+// const fileLinesPrim: L.Prim = (env, args, app) =>
+//   Utils.checkArgsResult('file->lines', ['string?'], undefined, args, app).asyncAndThen(_ =>
+//     evaluateExp(env, L.nlecall(L.nlevar('string-split'), [
+//       L.nlecall(L.nlevar('file->string'), [L.nlevalue(args[0])]),
+//       L.nlestr('\n')
+//     ])))
+
+export type ReactiveFile = { renderAs: 'reactive-file', callback: L.FunctionType }
+export const reactiveFile = (callback: L.FunctionType): ReactiveFile => ({ renderAs: 'reactive-file', callback })
+
+const withFile: L.Prim = (env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('with-file', ['procedure?'], undefined, args, app).andThen(_ =>
+    ok(reactiveFile(args[0] as L.FunctionType))))
 
 const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['char?', charQPrim, Docs.charQ],
@@ -867,8 +874,9 @@ const stringPrimitives: [string, L.Prim, L.Doc | undefined][] = [
   ['string-split', stringSplitPrim, Docs.stringSplit],
   ['string-split-vector', stringSplitVectorPrim, Docs.stringSplitVector],
   ['string-append', stringAppendPrim, Docs.stringAppend],
-  ['file->string', fileStringPrim, Docs.fileString],
-  ['file->lines', fileLinesPrim, Docs.fileLines]
+  // ['file->string', fileStringPrim, Docs.fileString],
+  // ['file->lines', fileLinesPrim, Docs.fileLines]
+  ['with-file', withFile, Docs.withFile]
 ]
 
 // Vectors (6.8)

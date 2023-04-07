@@ -821,6 +821,13 @@ export const fileLines: Doc = new Doc(
   'Returns the contents of the file at `path` as a list of strings, one for each line.'
 )
 
+export const withFile: Doc = new Doc(
+  '(with-file fn): void', [
+    'fn: procedure?'
+  ],
+  "Creates a file choose widget. When a file is selected, `fn` is called and passed the file's contents as input"
+)
+
 export const vectorQ: Doc = new Doc(
   '(vector? v): boolean', [
     'v: any'

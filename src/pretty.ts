@@ -142,7 +142,7 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
     } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'composition') {
       const tag = Runtime.store.add(v)
       return htmlOutput
-        ? `</code><span class="composition" id="${tag}"></span></code>`
+        ? `</code><span class="composition" id="${tag}"></span><code>`
         : '[object Composition]'
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     } else if ('tagName' in v) {
@@ -158,8 +158,15 @@ export function valueToString (col: number, v: L.Value, htmlOutput: boolean = fa
       const tag = Runtime.store.add(v)
       return htmlOutput
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
-        ? `</code><span class="audio-pipeline" id="${tag}"></span>`
+        ? `</code><span class="audio-pipeline" id="${tag}"></span><code>`
         : '[object AudioPipeline]'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    } else if (Object.hasOwn(v, 'renderAs') && (v as any).renderAs === 'reactive-file') {
+      const tag = Runtime.store.add(v)
+      return htmlOutput
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+        ? `</code><span class="reactive-file" id="${tag}"></span><code>`
+        : '[object ReactiveFile]'
     } else {
       return '[object Object]'
     }
