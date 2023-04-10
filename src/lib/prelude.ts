@@ -1224,6 +1224,30 @@ const vectorMapPrim: L.Prim = async (env, args, app) =>
     return ok(result)
   })
 
+const vectorMapBangPrim: L.Prim = async (env, args, app) =>
+  Utils.checkArgsResult('vector-map!', ['procedure?', 'vector?'], 'vector?', args, app).asyncAndThen(async _ => {
+    const fn = args[0]
+    const vectors = args.slice(1) as L.Value[][]
+    const len = vectors[0].length
+    if (!(vectors.every(v => v.length === len))) {
+      return runtimeError(msg('error-precondition-not-met', 'vector-map', 2,
+        'all vectors have the same length', Pretty.expToString(0, app)), app)
+    }
+    for (let i = 0; i < len; i++) {
+      const args: L.Exp[] = new Array<L.Exp>(vectors.length)
+      for (let j = 0; j < vectors.length; j++) {
+        args[j] = L.nlevalue(vectors[j][i])
+      }
+      const v = await evaluateExp(env, L.nlecall(L.nlevalue(fn), args))
+      if (v.tag === 'error') {
+        return v
+      } else {
+        vectors[0][i] = v.value
+      }
+    }
+    return ok(undefined)
+  })
+
 const vectorForEachPrim: L.Prim = async (env, args, app) =>
   Utils.checkArgsResult('vector-for-each', ['procedure?', 'vector?'], undefined, args, app).asyncAndThen(async _ => {
     const fn = args[0]
@@ -1384,6 +1408,7 @@ const controlPrimitives: [string, L.Prim, L.Doc][] = [
   ['fold-right', foldRightPrim, Docs.foldRight],
   ['reduce-right', reduceRightPrim, Docs.reduceRight],
   ['vector-map', vectorMapPrim, Docs.vectorMap],
+  ['vector-map!', vectorMapBangPrim, Docs.vectorMapBang],
   ['vector-for-each', vectorForEachPrim, Docs.vectorForEach],
   ['for-range', forRangePrim, Docs.forRange],
   ['vector-filter', vectorFilterPrim, Docs.vectorFilter],

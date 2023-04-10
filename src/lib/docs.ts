@@ -1038,8 +1038,16 @@ export const vectorMap: Doc = new Doc(
   'Returns a new vector containing the results of applying `f` to each element of `v1`, ..., `vk` in a element-wise fashion.'
 )
 
+export const vectorMapBang: Doc = new Doc(
+  '(vector-map f v1 .. vk): void', [
+    'f: procedure?',
+    'v: vector?'
+  ],
+  'Mutates v1 with the results of results of applying `f` to each element of `v1`, ..., `vk` in a element-wise fashion.'
+)
+
 export const vectorForEach: Doc = new Doc(
-  '(vector-for-each f v1 .. vk): vector?', [
+  '(vector-for-each f v1 .. vk): void', [
     'f: procedure?',
     'v: vector?'
   ],
