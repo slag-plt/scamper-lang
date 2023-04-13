@@ -32,6 +32,7 @@ export function tryMatch (v: L.Value, p: L.Pat): L.Env | undefined {
       const env1 = tryMatch((v as L.PairType).fst, args[0])
       const env2 = tryMatch((v as L.PairType).snd, args[1])
       return env1 && env2 ? env1.concat(env2) : undefined
+    // TODO: need to special case html elements...
     } else if (L.valueIsStructKind(v, head)) {
       const fields = [...((v as L.StructType).fields).values()]
       if (fields.length === args.length) {

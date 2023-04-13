@@ -1,3 +1,4 @@
+import { runtimeError } from '../runtime.js'
 import { ok } from '../result.js'
 import * as E from '../evaluator.js'
 import * as L from '../lang.js'
@@ -95,6 +96,47 @@ const outputAreaPutPrim: L.Prim = (_env, args, app) =>
     return ok(undefined)
   }))
 
+const tagDoc: L.Doc = new L.Doc(
+  '(tag name c1 c2...) -> element?', [
+    'name: string?',
+    'c: any'
+  ],
+  'Creates an HTML element with the given name and children.'
+)
+
+const tagPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('tag', ['string?'], 'any', args, app).andThen(_ => {
+    const elt = document.createElement(args[0] as string)
+    if (args.length > 1 && L.valueIsList(args[1])) {
+      const attrs = L.valueListToArray_(args[1])
+      for (const attr of attrs) {
+        if (L.valueIsPair(attr)) {
+          const pair = attr as L.PairType
+          if (!L.valueIsString(pair.fst)) {
+            return runtimeError(`attribute must be a string: ${L.valueToString(pair.fst)}`)
+          } else if (!L.valueIsString(pair.snd)) {
+            return runtimeError(`attribute value must be a string: ${L.valueToString(pair.snd)}`)
+          } else {
+            elt.setAttribute(pair.fst as string, pair.snd as string)
+          }
+        }
+      }
+      // N.B., slice off the head and attribute list to obtain just children
+      args = args.slice(2)
+    } else {
+      // N.B., slice off just the head to obtain the children
+      args = args.slice(1)
+    }
+    for (const child of args) {
+      if (child instanceof Element) {
+        elt.appendChild(child)
+      } else {
+        elt.textContent = child as string
+      }
+    }
+    return ok(elt)
+  }))
+
 const htmlEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'html', undefined, docs)
 
 export const htmlLib: L.Env = new L.Env([
@@ -103,5 +145,6 @@ export const htmlLib: L.Env = new L.Env([
   ['button', htmlEntry(buttonPrim, buttonDoc)],
   ['button-onclick', htmlEntry(buttonOnclick, buttonOnclickDoc)],
   ['output-area', htmlEntry(outputAreaPrim, outputAreaDoc)],
-  ['output-area-put', htmlEntry(outputAreaPutPrim, outputAreaPutDoc)]
+  ['output-area-put', htmlEntry(outputAreaPutPrim, outputAreaPutDoc)],
+  ['tag', htmlEntry(tagPrim, tagDoc)]
 ])
