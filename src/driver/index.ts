@@ -3,20 +3,6 @@
 import * as fs from 'fs'
 import * as scamper from '../index.js'
 
-class NodeVFS implements scamper.Vfs.VFSProvider {
-  read (path: string): Promise<scamper.Result<string>> {
-    try {
-      return Promise.resolve(scamper.ok(fs.readFileSync(path).toString()))
-    } catch (e) {
-      return Promise.resolve(scamper.Vfs.fileNotFoundError(path))
-    }
-  }
-
-  write (path: string, content: string): Promise<scamper.Result<void>> {
-    throw new Error('Method not implemented.')
-  }
-}
-
 type CompilerOptions = {
   filename?: string,
   checkOnly: boolean,
@@ -107,8 +93,6 @@ function main () {
     printHelp()
     process.exit(1)
   }
-
-  scamper.Vfs.fs.mount('', new NodeVFS())
 
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   fs.readFile(opts.filename, 'utf8', async (error, src) => {

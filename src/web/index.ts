@@ -149,10 +149,6 @@ async function replaceExplorationWidgets () {
   }
 }
 
-global.registerFs = function (path: string, vfs: Scamper.Vfs.VFSProvider): void {
-  Scamper.Vfs.fs.mount(path, vfs)
-}
-
 global.replaceCodeWidgets = async function () {
   await replaceOutputWidgets()
   await replaceExplorationWidgets()
