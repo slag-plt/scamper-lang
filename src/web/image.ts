@@ -1,6 +1,4 @@
-import * as Image from '../lib/image.js'
-
-type Drawing = Image.Drawing
+import { Drawing } from '../lib/image.js'
 
 function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext('2d')!
@@ -160,16 +158,12 @@ function clearDrawing (canvas: HTMLCanvasElement) {
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 }
 
-function renderDrawing (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasElement) {
-  clearDrawing(canvas)
-  render(x, y, drawing, canvas)
-}
-
-export function emitDrawingWidget (node: Element) {
+export function renderer (obj: object): HTMLElement {
+  const drawing = obj as Drawing
   const canvas = document.createElement('canvas')
-  const drawing = JSON.parse(node.textContent!) as Drawing
   canvas.width = drawing.width
   canvas.height = drawing.height
-  renderDrawing(0, 0, drawing, canvas)
-  node.replaceWith(canvas)
+  clearDrawing(canvas)
+  render(0, 0, drawing, canvas)
+  return canvas
 }

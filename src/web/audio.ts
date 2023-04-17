@@ -1,5 +1,9 @@
-import { Store } from '../index.js'
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as Audio from '../lib/audio.js'
+
+const ctx = new AudioContext({ sampleRate: 16000 }) // TODO: need to parameterize this!
 
 function drawOscilloscope (data: Uint8Array, canvas: HTMLCanvasElement, analyser: AnalyserNode) {
   requestAnimationFrame(() => drawOscilloscope(data, canvas, analyser))
@@ -33,9 +37,9 @@ function drawOscilloscope (data: Uint8Array, canvas: HTMLCanvasElement, analyser
   ctx.stroke()
 }
 
-export function emitAudioWidget (store: Store, ctx: AudioContext, node: Element) {
-  const pipeline = JSON.parse(node.textContent!) as Audio.AudioPipeline
-  node.textContent = '' // N.B., clear the contents of the node for the buttons
+export function audioRenderer (obj: object): HTMLElement {
+  const pipeline = obj as Audio.AudioPipeline
+  const ret = document.createElement('span')
   const playButton = document.createElement('button')
   playButton.textContent = '▶'
   const stopButton = document.createElement('button')
@@ -53,7 +57,7 @@ export function emitAudioWidget (store: Store, ctx: AudioContext, node: Element)
       if (pipeline.storeTag === undefined) {
         throw new Error('sample node has no store tag')
       }
-      const data = store.get(pipeline.storeTag) as Float32Array
+      const data = pipeline.data
       // N.B., for now, make the audio sample stereo (2 channels)
       const buffer = ctx.createBuffer(2, data.length, ctx.sampleRate)
       buffer.copyToChannel(data, 0)
@@ -75,7 +79,44 @@ export function emitAudioWidget (store: Store, ctx: AudioContext, node: Element)
     }
   }
 
-  node.appendChild(playButton)
-  node.appendChild(stopButton)
-  node.appendChild(visualizer)
+  ret.appendChild(playButton)
+  ret.appendChild(stopButton)
+  ret.appendChild(visualizer)
+  return ret
+}
+
+export function audioPipelineRenderer (obj: object): HTMLElement {
+  const blob: { renderAs: 'audio-pipeline', ctx: AudioContext, pipeline: AudioScheduledSourceNode, onOffNode: GainNode } = obj as any
+  const pipeline: AudioScheduledSourceNode = blob.pipeline
+  const onOffNode: GainNode = blob.onOffNode
+
+  const ret = document.createElement('span')
+  const playButton = document.createElement('button')
+  playButton.textContent = '▶'
+  const stopButton = document.createElement('button')
+  stopButton.textContent = '■'
+  const startable = typeof (pipeline as any).start !== 'undefined'
+  const sourceIsFile = typeof (pipeline as any).mediaElement !== 'undefined' && typeof (pipeline as any).mediaElement.play !== 'undefined'
+  let started = false
+  onOffNode.gain.value = 0
+  playButton.onclick = _ => {
+    onOffNode.gain.value = 1
+    if (startable && !started) {
+      pipeline.start()
+      started = true
+    } else if (sourceIsFile) {
+      (pipeline as any).mediaElement.play()
+      started = true
+    }
+  }
+  stopButton.onclick = _ => {
+    onOffNode.gain.value = 0
+    if (sourceIsFile) {
+      (pipeline as any).mediaElement.load()
+      started = false
+    }
+  }
+  ret.appendChild(playButton)
+  ret.appendChild(stopButton)
+  return ret
 }

@@ -258,7 +258,7 @@ export function effectToString (col: number, effect: L.SEffect, outputBindings: 
         return `[[ Test "${sanitize(effect.desc, htmlOutput)}" failed!\n${msg}\n]]`
       }
     }
-    case 'value': return effect.output ? effect.output : 'void'
+    case 'value': return valueToString(col, effect.output, htmlOutput)
     case 'imported': return outputBindings ? `[[${sanitize(effect.source, htmlOutput)} imported]]` : ''
   }
 }

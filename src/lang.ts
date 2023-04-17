@@ -24,7 +24,7 @@ export type PairType = { _scamperTag: 'pair', fst: Value, snd: Value, isList: bo
 export type StructType = { _scamperTag: 'struct', kind: string, fields: Value[] }
 
 /** In Scamper, a Value is, directly, a Javascript value. */
-export type Value = boolean | number | string | null | object | Value[] | TaggedObject | undefined
+export type Value = boolean | number | string | null | undefined | Value[] | object | TaggedObject
 
 /*
  * Scamper-Javascript value conversion:
@@ -626,8 +626,8 @@ type STestResult = {
 const stestresult = (desc: string, passed: boolean, reason?: string, expected?: Exp, actual?: Exp, range: Range = noRange()): STestResult =>
   ({ tag: 'testresult', range, desc, passed, reason, expected, actual })
 
-type SValue = { tag: 'value', range: Range, output?: string }
-const svalue = (output?: string, range: Range = noRange()): SValue => ({ tag: 'value', range, output })
+type SValue = { tag: 'value', range: Range, output?: Value }
+const svalue = (output?: Value, range: Range = noRange()): SValue => ({ tag: 'value', range, output })
 
 type Stmt = SImport | SDefine | SExp | SStruct | STestCase | SEffect
 

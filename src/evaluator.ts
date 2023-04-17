@@ -1,5 +1,4 @@
 import * as L from './lang.js'
-import * as P from './pretty.js'
 import { msg } from './messages.js'
 import { runtimeError, tryMatch } from './runtime.js'
 import { Result, ok, join, errorDetails } from './result.js'
@@ -213,7 +212,7 @@ export async function evaluateStmt (env: L.Env, s: L.Stmt, htmlOutput: boolean):
     case 'exp': {
       const v = await evaluateExp(env, s.value)
       if (v.tag === 'ok') {
-        return L.svalue(P.valueToString(0, v.value, htmlOutput))
+        return L.svalue(v.value)
       } else {
         return L.serror(v.details)
       }

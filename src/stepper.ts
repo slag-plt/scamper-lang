@@ -460,10 +460,10 @@ async function stepStmt (env: L.Env, s: L.Stmt): Promise<[L.Env, L.Stmt]> {
     // TODO: probably should thread htmlOutput through here, but will be refactoring soon, anyways...
     case 'exp': {
       const result = L.isValue(s.value)
-        ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(L.svalue(Pretty.valueToString(0, L.unpackIfValue(vp), true)))))
+        ? resultToStmt(substituteIfFreeVar(env, s.value).andThen(vp => ok(L.svalue(L.unpackIfValue(vp)))))
         : resultToStmt((await stepExp(env, s.value)).andThen(v =>
           L.isValue(v)
-            ? substituteIfFreeVar(env, v).andThen(vp => ok(L.svalue(Pretty.valueToString(0, L.unpackIfValue(vp), true))))
+            ? substituteIfFreeVar(env, v).andThen(vp => ok(L.svalue(L.unpackIfValue(vp))))
             : ok(L.sexp(v)) as Result<L.Stmt>))
       return [env, result]
     }
