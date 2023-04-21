@@ -32,68 +32,22 @@ const textAreaGetPrim: L.Prim = (_env, args, app) =>
   }))
 
 const buttonDoc: L.Doc = new L.Doc(
-  '(button id label) -> button?', [
-    'id: string?',
-    'label: string?'
+  '(button label fn) -> button?', [
+    'label: string?',
+    'fn: procedure?'
   ],
-  'Creates a button with the given id and label.'
+  'Creates a button with the given label and function that is called when the button is pressed.'
 )
 
-const buttonPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('button', ['string?', 'string?'], undefined, args, app).andThen(_ => {
+const buttonPrim: L.Prim = (env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('button', ['string?', 'procedure?'], undefined, args, app).andThen(_ => {
     const ret = document.createElement('button')
-    ret.id = args[0] as string
-    ret.textContent = args[1] as string
-    return ok(ret)
-  }))
-
-const buttonOnclickDoc: L.Doc = new L.Doc(
-  '(button-onclick button f) -> button?', [
-    'button: button?',
-    'f: procedure?'
-  ],
-  'Sets the function that is called when the button is pressed to be `f`.'
-)
-
-const buttonOnclick: L.Prim = (env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('button-onclick', ['any', 'procedure?'], undefined, args, app).andThen(_ => {
-    const button = args[0] as HTMLButtonElement
+    ret.textContent = args[0] as string
     const fn = args[1] as L.FunctionType
-    button.onclick = async () => {
+    ret.onclick = async () => {
       await E.evaluateExp(env, L.nlecall(L.nlevalue(fn), []))
     }
-    return ok(undefined)
-  }))
-
-const outputAreaDoc: L.Doc = new L.Doc(
-  '(output-area id text) -> output-area?', [
-    'id: string?',
-    'text: string?'
-  ],
-  'Creates an output area with the given id and initial text.'
-)
-
-const outputAreaPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('output-area', ['string?', 'string?'], undefined, args, app).andThen(_ => {
-    const ret = document.createElement('div')
-    ret.id = args[0] as string
-    ret.textContent = args[1] as string
     return ok(ret)
-  }))
-
-const outputAreaPutDoc: L.Doc = new L.Doc(
-  '(output-area-put output-area text) -> output-area?', [
-    'output-area: output-area?',
-    'text: string?'
-  ],
-  'Sets the text in the given output area to be `text`.'
-)
-
-const outputAreaPutPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('output-area-put', ['any', 'string?'], undefined, args, app).andThen(_ => {
-    const div = args[0] as Element
-    div.textContent = args[1] as string
-    return ok(undefined)
   }))
 
 const tagDoc: L.Doc = new L.Doc(
@@ -137,14 +91,52 @@ const tagPrim: L.Prim = (_env, args, app) =>
     return ok(elt)
   }))
 
+const tagSetChildrenDoc: L.Doc = new L.Doc(
+  '(tag-set-children! name c1 c2...) -> element?', [
+    'elt: an HTML element',
+    'c: an HTML element or string'
+  ],
+  'Sets `elt`\'s children to be `c1`, `c2`, ..'
+)
+
+const tagSetChildrenPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('tag-set-children!', ['any'], 'any', args, app).andThen(_ => {
+    const elt = args[0] as Element
+    if (!(elt instanceof HTMLElement)) {
+      return runtimeError(`tag-set-children! expects an HTML element, but received ${L.valueToString(elt)}`)
+    } else {
+      const children = args.slice(1)
+      for (const child of children) {
+        if (child instanceof Element) {
+          elt.appendChild(child)
+        } else {
+          elt.textContent = child as string
+        }
+      }
+      return ok(undefined)
+    }
+  }))
+
+const ignoreDoc: L.Doc = new L.Doc(
+  '(ignore v) -> element?', [
+    'e: any'
+  ],
+  'Surpresses the output of `v` to the page.'
+)
+
+const ignorePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('ignore', ['any'], undefined, args, app).andThen(_ => {
+    const ret = document.createElement('div')
+    return ok(ret)
+  }))
+
 const htmlEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'html', undefined, docs)
 
 export const htmlLib: L.Env = new L.Env([
   ['text-area', htmlEntry(textAreaPrim, textAreaDoc)],
   ['text-area-get', htmlEntry(textAreaGetPrim, textAreaGetDoc)],
   ['button', htmlEntry(buttonPrim, buttonDoc)],
-  ['button-onclick', htmlEntry(buttonOnclick, buttonOnclickDoc)],
-  ['output-area', htmlEntry(outputAreaPrim, outputAreaDoc)],
-  ['output-area-put', htmlEntry(outputAreaPutPrim, outputAreaPutDoc)],
-  ['tag', htmlEntry(tagPrim, tagDoc)]
+  ['tag', htmlEntry(tagPrim, tagDoc)],
+  ['tag-set-children!', htmlEntry(tagSetChildrenPrim, tagSetChildrenDoc)],
+  ['ignore', htmlEntry(ignorePrim, ignoreDoc)]
 ])

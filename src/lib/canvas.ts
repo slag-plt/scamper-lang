@@ -5,24 +5,24 @@ import * as E from '../evaluator.js'
 import * as L from '../lang.js'
 import * as Utils from './utils.js'
 
-const canvasDoc: L.Doc = new L.Doc(
-  '(canvas width height) -> canvas?', [
+const makeCanvasDoc: L.Doc = new L.Doc(
+  '(make-canvas width height) -> canvas?', [
     'width: integer?, positive',
     'height: integer?, positive'
   ],
   'Creates a canvas with the given width and height.'
 )
 
-const canvasPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('canvas', ['integer?', 'integer?'], undefined, args, app).andThen(_ => {
+const makeCanvasPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('make-canvas', ['integer?', 'integer?'], undefined, args, app).andThen(_ => {
     const canvas = document.createElement('canvas')
     canvas.width = args[0] as number
     canvas.height = args[1] as number
     return ok(canvas)
   }))
 
-const rectangleDoc: L.Doc = new L.Doc(
-  '(rectangle canvas x y width height) -> void?', [
+const drawRectangleDoc: L.Doc = new L.Doc(
+  '(draw-rectangle canvas x y width height) -> void?', [
     'canvas: canvas?',
     'x: integer?',
     'y: integer?',
@@ -34,8 +34,8 @@ const rectangleDoc: L.Doc = new L.Doc(
   'Renders a rectangle whose upper-left corner is at `(x, y)`.'
 )
 
-const rectanglePrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('rectangle', ['any', 'integer?', 'integer?', 'integer?', 'integer?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
+const drawRectanglePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('drawRectangle', ['any', 'integer?', 'integer?', 'integer?', 'integer?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     const mode = args[5] as string
@@ -57,13 +57,13 @@ const rectanglePrim: L.Prim = (_env, args, app) =>
         args[4] as number
       )
     } else {
-      return runtimeError(msg('error-precondition-not-met', 'rectangle', '6', '"solid" or "outline"', mode), app)
+      return runtimeError(msg('error-precondition-not-met', 'draw-rectangle', '6', '"solid" or "outline"', mode), app)
     }
     return ok(undefined)
   }))
 
-const ellipseDoc = new L.Doc(
-  '(ellipse canvas x y radiusX radiusY rotation startAngle endAngle mode color) -> void?', [
+const drawEllipseDoc = new L.Doc(
+  '(draw-ellipse canvas x y radiusX radiusY rotation startAngle endAngle mode color) -> void?', [
     'canvas: canvas?',
     'x: number?',
     'y: number?',
@@ -78,8 +78,8 @@ const ellipseDoc = new L.Doc(
   'Renders an ellipse whose center is at `(x, y)`, radii `radiusX` and `radiusY`, `rotation`, and `startAngle`, and `endAngle`.'
 )
 
-const ellipsePrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('ellipse', ['any', 'number?', 'number?', 'number?', 'number?', 'number?', 'number?', 'number?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
+const drawEllipsePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('draw-ellipse', ['any', 'number?', 'number?', 'number?', 'number?', 'number?', 'number?', 'number?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     const mode = args[8] as string
@@ -101,13 +101,13 @@ const ellipsePrim: L.Prim = (_env, args, app) =>
     } else if (mode === 'outline') {
       ctx.stroke()
     } else {
-      return runtimeError(msg('error-precondition-not-met', 'ellipse', '9', '"solid" or "outline"', mode), app)
+      return runtimeError(msg('error-precondition-not-met', 'draw-ellipse', '9', '"solid" or "outline"', mode), app)
     }
     return ok(undefined)
   }))
 
-const circleDoc = new L.Doc(
-  '(circle canvas x y radius mode color) -> void?', [
+const drawCircleDoc = new L.Doc(
+  '(draw-circle canvas x y radius mode color) -> void?', [
     'canvas: canvas?',
     'x: number?',
     'y: number?',
@@ -118,8 +118,8 @@ const circleDoc = new L.Doc(
   'Renders a circle whose center is at `(x, y)` and radius `radius`.'
 )
 
-const circlePrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('circle', ['any', 'number?', 'number?', 'number?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
+const drawCirclePrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('draw-circle', ['any', 'number?', 'number?', 'number?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     const mode = args[4] as string
@@ -139,13 +139,13 @@ const circlePrim: L.Prim = (_env, args, app) =>
     } else if (mode === 'outline') {
       ctx.stroke()
     } else {
-      return runtimeError(msg('error-precondition-not-met', 'circle', '5', '"solid" or "outline"', mode), app)
+      return runtimeError(msg('error-precondition-not-met', 'draw-circle', '5', '"solid" or "outline"', mode), app)
     }
     return ok(undefined)
   }))
 
-const textDoc: L.Doc = new L.Doc(
-  '(text canvas text x y mode color font) -> void?', [
+const drawTextDoc: L.Doc = new L.Doc(
+  '(draw-text canvas text x y mode color font) -> void?', [
     'canvas: canvas?',
     'text: string?',
     'x: integer?',
@@ -157,8 +157,8 @@ const textDoc: L.Doc = new L.Doc(
   'Renders the given text at the given coordinates.'
 )
 
-const textPrim: L.Prim = (_env, args, app) =>
-  Promise.resolve(Utils.checkArgsResult('text', ['any', 'string?', 'integer?', 'integer?', 'string?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
+const drawTextPrim: L.Prim = (_env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('draw-text', ['any', 'string?', 'integer?', 'integer?', 'string?', 'string?', 'string?'], undefined, args, app).andThen(_ => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
     const mode = args[4] as string
@@ -172,27 +172,26 @@ const textPrim: L.Prim = (_env, args, app) =>
     } else if (mode === 'outline') {
       ctx.strokeText(args[1] as string, args[2] as number, args[3] as number)
     } else {
-      return runtimeError(msg('error-precondition-not-met', 'text', '5', '"solid" or "outline"', mode), app)
+      return runtimeError(msg('error-precondition-not-met', 'draw-text', '5', '"solid" or "outline"', mode), app)
     }
     return ok(undefined)
   }))
 
-const imageDoc: L.Doc = new L.Doc(
-  '(image path) -> void?', [
+const loadImageDoc: L.Doc = new L.Doc(
+  '(load-image path) -> void?', [
     'path: string?, the path to the image'
   ],
   'Constructs an image value from the given path.'
 )
 
-const imagePrim: L.Prim = (_env, args, app) =>
-  Utils.checkArgsResult('image', ['string?'], undefined, args, app).asyncAndThen(async _ => {
+const loadImagePrim: L.Prim = (_env, args, app) =>
+  Utils.checkArgsResult('load-image', ['string?'], undefined, args, app).asyncAndThen(async _ => {
     const image = new Image()
     await new Promise(resolve => {
       console.log('...')
       image.onload = resolve
       image.src = args[0] as string
     })
-    console.log(`image.src = ${image.src}`)
     return ok(image)
   })
 
@@ -216,8 +215,8 @@ const drawImagePrim: L.Prim = (_env, args, app) =>
     return ok(undefined)
   }))
 
-const pathDoc: L.Doc = new L.Doc(
-  '(path canvas pairs mode color) -> void?', [
+const drawPathDoc: L.Doc = new L.Doc(
+  '(draw-path canvas pairs mode color) -> void?', [
     'canvas: canvas?',
     'pairs: list?, a list of pairs of numbers',
     'mode: string?, either `"solid"` or `"outline"`',
@@ -226,15 +225,15 @@ const pathDoc: L.Doc = new L.Doc(
   'Renders a path from the given list of pairs of numbers.'
 )
 
-const pathPrim: L.Prim = (_env, args, app) => {
-  const argErr = Utils.checkArgs('path', ['any', 'list?', 'string?', 'string?'], undefined, args, app)
+const drawPathPrim: L.Prim = (_env, args, app) => {
+  const argErr = Utils.checkArgs('draw-path', ['any', 'list?', 'string?', 'string?'], undefined, args, app)
   if (argErr) { return Promise.resolve(argErr) }
   const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
   const pairs = L.valueListToArray_(args[1])
   const mode = args[2] as string
   const color = args[3] as string
   if (mode !== 'solid' && mode !== 'outline') {
-    return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'path', '3', '"solid" or "outline"', mode), app))
+    return Promise.resolve(runtimeError(msg('error-precondition-not-met', 'draw-path', '3', '"solid" or "outline"', mode), app))
   }
   if (pairs.length === 0) {
     return Promise.resolve(ok(undefined))
@@ -279,15 +278,15 @@ const animateWithPrim: L.Prim = (env, args, app) =>
     return ok(undefined)
   }))
 
-const canvasOnclickDoc: L.Doc = new L.Doc(
-  '(canvas-onclick canvas proc) -> void?', [
+const setCanvasOnclickDoc: L.Doc = new L.Doc(
+  '(set-canvas-onclick canvas proc) -> void?', [
     'canvas: canvas?',
     'proc: procedure?, a procedure that takes two arguments: numbers representing the x and y coordinate of the mouse click on the canvas.'
   ],
   'Sets the given procedure to be called when the canvas is clicked by the user.'
 )
 
-const canvasOnclickPrim: L.Prim = (env, args, app) =>
+const setCanvasOnclickPrim: L.Prim = (env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('canvas-onclick', ['any', 'procedure?'], undefined, args, app).andThen(_ => {
     const canvas = args[0] as HTMLCanvasElement
     const fn = args[1] as L.FunctionType
@@ -300,14 +299,14 @@ const canvasOnclickPrim: L.Prim = (env, args, app) =>
 const canvasEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'canvas', undefined, docs)
 
 export const canvasLib: L.Env = new L.Env([
-  ['canvas', canvasEntry(canvasPrim, canvasDoc)],
-  ['rectangle', canvasEntry(rectanglePrim, rectangleDoc)],
-  ['ellipse', canvasEntry(ellipsePrim, ellipseDoc)],
-  ['circle', canvasEntry(circlePrim, circleDoc)],
-  ['text', canvasEntry(textPrim, textDoc)],
-  ['image', canvasEntry(imagePrim, imageDoc)],
+  ['make-canvas', canvasEntry(makeCanvasPrim, makeCanvasDoc)],
+  ['draw-rectangle', canvasEntry(drawRectanglePrim, drawRectangleDoc)],
+  ['draw-ellipse', canvasEntry(drawEllipsePrim, drawEllipseDoc)],
+  ['draw-circle', canvasEntry(drawCirclePrim, drawCircleDoc)],
+  ['draw-text', canvasEntry(drawTextPrim, drawTextDoc)],
+  ['load-image', canvasEntry(loadImagePrim, loadImageDoc)],
   ['draw-image', canvasEntry(drawImagePrim, drawImageDoc)],
-  ['path', canvasEntry(pathPrim, pathDoc)],
+  ['draw-path', canvasEntry(drawPathPrim, drawPathDoc)],
   ['animate-with', canvasEntry(animateWithPrim, animateWithDoc)],
-  ['canvas-onclick', canvasEntry(canvasOnclickPrim, canvasOnclickDoc)]
+  ['set-canvas-onclick', canvasEntry(setCanvasOnclickPrim, setCanvasOnclickDoc)]
 ])
