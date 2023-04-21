@@ -54,9 +54,6 @@ export function audioRenderer (obj: object): HTMLElement {
 
   switch (pipeline.tag) {
     case 'sample': {
-      if (pipeline.storeTag === undefined) {
-        throw new Error('sample node has no store tag')
-      }
       const data = pipeline.data
       // N.B., for now, make the audio sample stereo (2 channels)
       const buffer = ctx.createBuffer(2, data.length, ctx.sampleRate)
