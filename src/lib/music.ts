@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import * as JZZ from './jzz/jzz-combined.cjs'
 import * as L from '../lang.js'
 import { msg } from '../messages.js'
 import { ICE, ok } from '../result.js'
@@ -12,6 +11,10 @@ import { evaluateExp } from '../evaluator.js'
 import * as Docs from './docs.js'
 import * as Pretty from '../pretty.js'
 import * as Utils from './utils.js'
+
+import * as webaudiofont from './webaudiofont/WebAudioFontPlayer.js'
+
+const player: any = new webaudiofont.WebAudioFontPlayer()
 
 export type PitchClass = string
 export type Octave = number
