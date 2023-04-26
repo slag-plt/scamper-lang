@@ -4,7 +4,7 @@
 import * as Scamper from '../index.js'
 import * as Pretty from './pretty.js'
 
-// import 'prismjs'
+import 'prismjs'
 
 // N.B., this module injects functions directly into window so that pages can
 // call the setup functions as needed. We also call on modules that attach
@@ -12,7 +12,7 @@ import * as Pretty from './pretty.js'
 const global = window as any
 
 // The Prism instance
-// declare let Prism: any
+declare let Prism: any
 
 async function forEachByClass (elt: Element | Document, cls: string, fn: (e: Element) => Promise<void>) {
   // N.B., we need to freeze the list of elements to an array because fn
@@ -29,6 +29,14 @@ async function forEachByClass (elt: Element | Document, cls: string, fn: (e: Ele
 export const sanitize = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
+function makeTag (tag: string, ...attrs: [string, string][]): HTMLElement {
+  const ret = document.createElement(tag)
+  for (const [k, v] of attrs) {
+    ret.setAttribute(k, v)
+  }
+  return ret
+}
+
 async function replaceOutputWidgets () {
   for (const element of document.getElementsByClassName('scamper-output')) {
     const classes = element.className.split(' ')
@@ -41,34 +49,42 @@ async function replaceOutputWidgets () {
       }))
     if (result.tag === 'error') {
       element.innerHTML = sanitize(Scamper.errorToString(result))
-    } else if (outputProg) {
+    } else {
       element.innerHTML = ''
       const endLocs = result.value.statements.map(s => s.range.end)
       const segments = Scamper.splitByLocs(endLocs, src)
       result.value.statements.forEach((s, i) => {
         const segment = segments[i]
         const outp = result.value.outputs[i]
-        element.appendChild(Pretty.makeCodeElt(segment + '\n'))
+        const outDiv = makeTag('div', ['class', 'output'])
+        const progDiv = makeTag('div', ['class', 'program language-racket'])
+        progDiv.appendChild(Pretty.makeCodeElt(segment + '\n'))
+        if (!outputProg) {
+          progDiv.setAttribute('style', 'display: none;')
+        }
         // TODO: patching for now to observe output for values
         // will need to handle other non-value effects here
         if (outp.tag === 'value') {
-          element.appendChild(document.createTextNode('> '))
-          element.appendChild(Pretty.valueToNode(outp.output))
+          outDiv.appendChild(Pretty.valueToNode(outp.output))
+        } else if (outp.tag === 'error') {
+          outDiv.appendChild(document.createTextNode(
+            outp.errors.map(Scamper.Result.detailsToCompleteString).join('\n')))
+        } else if (outp.tag === 'testresult') {
+          if (outp.passed) {
+            outDiv.appendChild(document.createTextNode(`[[ Test "${outp.desc}" passed! ]]`))
+          } else {
+            const msg: string = outp.reason
+              ? outp.reason
+              : `  Expected: ${Scamper.expToString(0, outp.expected!)}\n  Actual: ${Scamper.expToString(0, outp.actual!)}`
+            outDiv.appendChild(document.createTextNode(
+              `[[ Test "${outp.desc}" failed!\n${msg}\n]]`))
+          }
         }
-        element.appendChild(document.createTextNode('\n'))
+        element.appendChild(progDiv)
+        element.appendChild(outDiv)
       })
-    } else {
-      element.innerHTML = ''
-      for (let i = 0; i < result.value.statements.length; i++) {
-        const outp = result.value.outputs[i]
-        // TODO: patching for now to observe output for values
-        // will need to handle other non-value effects here
-        if (outp.tag === 'value') {
-          element.appendChild(Pretty.valueToNode(outp.output))
-          element.appendChild(document.createElement('br'))
-        }
-      }
     }
+    Prism.highlightAll()
   }
 }
 
