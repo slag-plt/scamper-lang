@@ -57,11 +57,18 @@ async function replaceOutputWidgets () {
         const segment = segments[i]
         const outp = result.value.outputs[i]
         const outDiv = makeTag('div', ['class', 'output'])
-        const progDiv = makeTag('div', ['class', 'program language-racket'])
-        progDiv.appendChild(Pretty.makeCodeElt(segment + '\n'))
+        // N.B., 'language-racket' is used for Prism syntax highlighting.
+        // Eventually, we should manually tag code since at this point we're
+        // pretty-printing from the AST.
+        const progDiv = makeTag('pre', ['class', 'program'])
+        const codeElt = makeTag('code', ['class', 'language-racket'])
+        // N.B., remove leading and trailing newline characters from program outputk
+        codeElt.textContent = segment.replace(/^\n+|\n+$/g, '')
+        progDiv.appendChild(codeElt)
         if (!outputProg) {
           progDiv.setAttribute('style', 'display: none;')
         }
+        Prism.highlightAllUnder(progDiv)
         // TODO: patching for now to observe output for values
         // will need to handle other non-value effects here
         if (outp.tag === 'value') {
@@ -84,7 +91,6 @@ async function replaceOutputWidgets () {
         element.appendChild(outDiv)
       })
     }
-    Prism.highlightAll()
   }
 }
 
