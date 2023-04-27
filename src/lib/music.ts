@@ -14,7 +14,12 @@ import * as Utils from './utils.js'
 
 import * as webaudiofont from './webaudiofont/WebAudioFontPlayer.js'
 
+// eslint-disable-next-line camelcase
+import { _tone_0000_Aspirin_sf2_file } from './webaudiofont/0000_Aspirin_sf2_file.js'
+
 const player: any = new webaudiofont.WebAudioFontPlayer()
+const audioContext = new window.AudioContext()
+player.loader.decodeAfterLoading(audioContext, '_tone_0000_Aspirin_sf2_file.js')
 
 export type PitchClass = string
 export type Octave = number
@@ -261,13 +266,10 @@ export const musicLib: L.Env = new L.Env([
   ['play-composition', musicEntry(playCompositionPrim, Docs.playComposition)]
 ])
 
-type MIDI = any // TODO: ugh, how do I specify this type!?
-type Synth = any // TODO: ...this one, too!
-
 type MidiMsg = {
   tag: 'midi',
   time: number,
-  data: MIDI,
+  data: { duration: number, note: number }
 }
 
 type TriggerMsg = {
@@ -276,21 +278,9 @@ type TriggerMsg = {
   callback: L.FunctionType
 }
 
-const testProgramMap = [
-  56, // piano
-  5, // electric piano
-  19, // rock organ
-  26, // jazz guitar
-  31, // distorted gutiar
-  33, // electric bass
-  40, // violin
-  56, // trumpet
-  65 // alto sax
-]
-
 type Msg = MidiMsg | TriggerMsg
 
-const midiMsg = (time: number, data: MIDI): Msg =>
+const midiMsg = (time: number, data: { duration: number, note: number }): Msg =>
   ({ tag: 'midi', time, data })
 
 const triggerMsg = (time: number, callback: L.FunctionType): Msg =>
@@ -304,6 +294,7 @@ function durationToTimeMs (beat: Duration, bpm: number, dur: Duration) {
   return ratioToDouble(dur) / (ratioToDouble(beat) * bpm) * 60 * 1000
 }
 
+// eslint-disable-next-line no-unused-vars
 function freqToNoteOffset (freq: number): { note: number, offset: number } {
   const value = Math.log2(freq / 440) * 12 + 69
   const note = Math.floor(value)
@@ -313,9 +304,11 @@ function freqToNoteOffset (freq: number): { note: number, offset: number } {
   return { note, offset }
 }
 
-function pitchBendF (ch: number, amt: number): MIDI {
+// eslint-disable-next-line no-unused-vars
+function _pitchBendF (_ch: number, _amt: number): void {
   // N.B., JZZ.MIDI doesn't define pitchBendF for some reason...
-  return (JZZ.MIDI as any).pitchBendF(ch, amt)
+  // return (JZZ.MIDI as any).pitchBendF(ch, amt)
+  throw new Error('NOT IMPLEMENTED AHHH')
 }
 
 function compositionToMsgs (
@@ -330,40 +323,44 @@ function compositionToMsgs (
         endTime,
         msgs: [
           midiMsg(
-            startTime,
-            JZZ.MIDI.noteOn(program, composition.note, velocity)
-          ),
-          midiMsg(
-            endTime,
-            JZZ.MIDI.noteOff(program, composition.note, velocity)
+            startTime, {
+              duration: durationToTimeMs(beat, bpm, composition.duration),
+              note: composition.note
+            }
           )
         ]
       }
     }
     case 'note-freq': {
       const endTime = startTime + durationToTimeMs(beat, bpm, composition.duration)
-      const { note, offset } = freqToNoteOffset(composition.freq)
+      // const { note, offset } = freqToNoteOffset(composition.freq)
+      // TODO: add pitch bend to msgs
       return {
         endTime,
         msgs: [
-          midiMsg(
-            startTime,
-            pitchBendF(0, offset)
-          ),
-          midiMsg(
-            startTime,
-            JZZ.MIDI.noteOn(program, note, velocity)
-          ),
-          midiMsg(
-            endTime,
-            JZZ.MIDI.noteOff(program, note, velocity)
-          ),
-          midiMsg(
-            endTime,
-            pitchBendF(0, 0)
-          )
         ]
       }
+      // return {
+      //   endTime,
+      //   msgs: [
+      //     midiMsg(
+      //       startTime,
+      //       pitchBendF(0, offset)
+      //     ),
+      //     midiMsg(
+      //       startTime,
+      //       JZZ.MIDI.noteOn(program, note, velocity)
+      //     ),
+      //     midiMsg(
+      //       endTime,
+      //       JZZ.MIDI.noteOff(program, note, velocity)
+      //     ),
+      //     midiMsg(
+      //       endTime,
+      //       pitchBendF(0, 0)
+      //     )
+      //   ]
+      // }
     }
     case 'rest':
       return {
@@ -430,11 +427,12 @@ function compositionToMsgs (
       if (composition.mod.type === 'percussion') {
         return compositionToMsgs(beat, bpm, velocity, startTime, 9, composition.note)
       } else if (composition.mod.type === 'pitchBend') {
-        const msgs = []
+        const msgs: Msg[] = []
         const data = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.note)
-        msgs.push(midiMsg(startTime, pitchBendF(0, composition.mod.fields[0])))
-        msgs.push(...data.msgs)
-        msgs.push(midiMsg(data.endTime, pitchBendF(0, 0)))
+        // TODO: handle pitch bends
+        // msgs.push(midiMsg(startTime, pitchBendF(0, composition.mod.fields[0])))
+        // msgs.push(...data.msgs)
+        // msgs.push(midiMsg(data.endTime, pitchBendF(0, 0)))
         return { msgs, endTime: data.endTime }
       } else if (composition.mod.type === 'tempo') {
         return compositionToMsgs(composition.mod.fields[0], composition.mod.fields[1], velocity, startTime, program, composition.note)
@@ -454,30 +452,17 @@ function compositionToMsgs (
 }
 
 export function playComposition (env: L.Env, composition: Composition): number {
-  const synth: Synth = JZZ.synth.Tiny()
-  const startTime = window.performance.now()
   const msgs = compositionToMsgs(dur(1, 4), 120, 64, 0, 0, composition).msgs
-  let i = 0
-  // NOT WORKING, I WONDER WHY!?
-  for (let i = 0; i < testProgramMap.length; i++) {
-    JZZ.MIDI.program(i, testProgramMap[i])
-  }
-  // JZZ.synth.Tiny.setSynth(0, 50)
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   const id = window.setInterval(async () => {
-    const now = window.performance.now()
-    while (i < msgs.length) {
-      const msg = msgs[i]
-      if (msg.time + startTime <= now) {
-        if (msg.tag === 'midi') {
-          synth.send(msg.data)
-        } else if (msg.tag === 'trigger') {
-          await evaluateExp(env, L.nlecall(L.nlevalue(msg.callback), []))
-        }
-        i += 1
-        continue // N.B., try to process the next message
-      } else {
-        return Promise.resolve(undefined) // N.B., wait for the next interval to process msgs again
+    // N.B., in milliseconds
+    const startTime = audioContext.currentTime
+    for (const msg of msgs) {
+      // const elapsed = audioContext.currentTime - startTime
+      if (msg.tag === 'midi') {
+        player.queueWaveTable(audioContext, audioContext.destination, _tone_0000_Aspirin_sf2_file, startTime + msg.time / 1000, msg.data.note, msg.data.duration / 1000, 1.0)
+      } else if (msg.tag === 'trigger') {
+        await evaluateExp(env, L.nlecall(L.nlevalue(msg.callback), []))
       }
     }
     clearInterval(id)

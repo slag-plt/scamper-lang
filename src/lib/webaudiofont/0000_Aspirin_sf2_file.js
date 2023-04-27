@@ -1,5 +1,5 @@
 console.log('load _tone_0000_Aspirin_sf2_file');
-var _tone_0000_Aspirin_sf2_file={
+export var _tone_0000_Aspirin_sf2_file={
 	zones:[
 		{
 			midi:0
