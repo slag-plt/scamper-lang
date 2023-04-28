@@ -1,9 +1,9 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-use-before-define */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import * as JZZ from './jzz/jzz-combined.cjs'
 import * as L from '../lang.js'
 import { msg } from '../messages.js'
 import { ICE, ok } from '../result.js'
@@ -12,6 +12,8 @@ import { evaluateExp } from '../evaluator.js'
 import * as Docs from './docs.js'
 import * as Pretty from '../pretty.js'
 import * as Utils from './utils.js'
+
+import { waf, instrMap, percMap } from './webaudiofont/webaudiofont.js'
 
 export type PitchClass = string
 export type Octave = number
@@ -236,7 +238,7 @@ export const musicLib: L.Env = new L.Env([
   ['denominator', musicEntry(denominatorPrim, Docs.denominator)],
   ['empty', L.entry(empty(), 'music', undefined, Docs.empty)],
   ['note', musicEntry(notePrim, Docs.note)],
-  ['note-freq', musicEntry(noteFreqPrim, Docs.noteFreq)],
+  // ['note-freq', musicEntry(noteFreqPrim, Docs.noteFreq)],
   ['rest', musicEntry(restPrim, Docs.rest)],
   ['par', musicEntry(parPrim, Docs.par)],
   ['seq', musicEntry(seqPrim, Docs.seq)],
@@ -258,13 +260,13 @@ export const musicLib: L.Env = new L.Env([
   ['play-composition', musicEntry(playCompositionPrim, Docs.playComposition)]
 ])
 
-type MIDI = any // TODO: ugh, how do I specify this type!?
-type Synth = any // TODO: ...this one, too!
-
 type MidiMsg = {
   tag: 'midi',
   time: number,
-  data: MIDI,
+  duration: number,
+  note: number,
+  instrument: number,
+  velocity: number
 }
 
 type TriggerMsg = {
@@ -273,22 +275,10 @@ type TriggerMsg = {
   callback: L.FunctionType
 }
 
-const testProgramMap = [
-  56, // piano
-  5, // electric piano
-  19, // rock organ
-  26, // jazz guitar
-  31, // distorted gutiar
-  33, // electric bass
-  40, // violin
-  56, // trumpet
-  65 // alto sax
-]
-
 type Msg = MidiMsg | TriggerMsg
 
-const midiMsg = (time: number, data: MIDI): Msg =>
-  ({ tag: 'midi', time, data })
+const midiMsg = (time: number, duration: number, note: number, instrument: number, velocity: number): Msg =>
+  ({ tag: 'midi', time, duration, note, instrument, velocity })
 
 const triggerMsg = (time: number, callback: L.FunctionType): Msg =>
   ({ tag: 'trigger', time, callback })
@@ -301,6 +291,7 @@ function durationToTimeMs (beat: Duration, bpm: number, dur: Duration) {
   return ratioToDouble(dur) / (ratioToDouble(beat) * bpm) * 60 * 1000
 }
 
+// eslint-disable-next-line no-unused-vars
 function freqToNoteOffset (freq: number): { note: number, offset: number } {
   const value = Math.log2(freq / 440) * 12 + 69
   const note = Math.floor(value)
@@ -310,14 +301,16 @@ function freqToNoteOffset (freq: number): { note: number, offset: number } {
   return { note, offset }
 }
 
-function pitchBendF (ch: number, amt: number): MIDI {
+// eslint-disable-next-line no-unused-vars
+function _pitchBendF (_ch: number, _amt: number): void {
   // N.B., JZZ.MIDI doesn't define pitchBendF for some reason...
-  return (JZZ.MIDI as any).pitchBendF(ch, amt)
+  // return (JZZ.MIDI as any).pitchBendF(ch, amt)
+  throw new Error('NOT IMPLEMENTED AHHH')
 }
 
 function compositionToMsgs (
   beat: Duration, bpm: number, velocity: number, startTime: number,
-  program: number, composition: Composition): { endTime: number, msgs: Msg[] } {
+  instrument: number, composition: Composition): { endTime: number, msgs: Msg[] } {
   switch (composition.tag) {
     case 'empty':
       return { endTime: startTime, msgs: [] }
@@ -328,39 +321,44 @@ function compositionToMsgs (
         msgs: [
           midiMsg(
             startTime,
-            JZZ.MIDI.noteOn(program, composition.note, velocity)
-          ),
-          midiMsg(
-            endTime,
-            JZZ.MIDI.noteOff(program, composition.note, velocity)
+            durationToTimeMs(beat, bpm, composition.duration),
+            composition.note,
+            instrument,
+            velocity / 127
           )
         ]
       }
     }
     case 'note-freq': {
       const endTime = startTime + durationToTimeMs(beat, bpm, composition.duration)
-      const { note, offset } = freqToNoteOffset(composition.freq)
+      // const { note, offset } = freqToNoteOffset(composition.freq)
+      // TODO: add pitch bend to msgs
       return {
         endTime,
         msgs: [
-          midiMsg(
-            startTime,
-            pitchBendF(0, offset)
-          ),
-          midiMsg(
-            startTime,
-            JZZ.MIDI.noteOn(program, note, velocity)
-          ),
-          midiMsg(
-            endTime,
-            JZZ.MIDI.noteOff(program, note, velocity)
-          ),
-          midiMsg(
-            endTime,
-            pitchBendF(0, 0)
-          )
         ]
       }
+      // return {
+      //   endTime,
+      //   msgs: [
+      //     midiMsg(
+      //       startTime,
+      //       pitchBendF(0, offset)
+      //     ),
+      //     midiMsg(
+      //       startTime,
+      //       JZZ.MIDI.noteOn(program, note, velocity)
+      //     ),
+      //     midiMsg(
+      //       endTime,
+      //       JZZ.MIDI.noteOff(program, note, velocity)
+      //     ),
+      //     midiMsg(
+      //       endTime,
+      //       pitchBendF(0, 0)
+      //     )
+      //   ]
+      // }
     }
     case 'rest':
       return {
@@ -378,7 +376,7 @@ function compositionToMsgs (
       const msgs: Msg[] = []
       let endTime = 0
       composition.notes.forEach(note => {
-        const result = compositionToMsgs(beat, bpm, velocity, startTime, program, note)
+        const result = compositionToMsgs(beat, bpm, velocity, startTime, instrument, note)
         msgs.push(...result.msgs)
         endTime = Math.max(result.endTime, endTime)
       })
@@ -390,7 +388,7 @@ function compositionToMsgs (
       const msgs: Msg[] = []
       let time = startTime
       composition.notes.forEach(note => {
-        const result = compositionToMsgs(beat, bpm, velocity, time, program, note)
+        const result = compositionToMsgs(beat, bpm, velocity, time, instrument, note)
         msgs.push(...result.msgs)
         time = result.endTime
       })
@@ -399,7 +397,7 @@ function compositionToMsgs (
     }
 
     case 'pickup': {
-      const pickup = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.pickup)
+      const pickup = compositionToMsgs(beat, bpm, velocity, startTime, instrument, composition.pickup)
       const pickupDuration = pickup.endTime - startTime
       let notes: { endTime: number, msgs: Msg[] } | undefined
       // If the pickup would start in negative time, then rebase the composition to start
@@ -408,14 +406,14 @@ function compositionToMsgs (
         pickup.msgs.forEach(msg => {
           msg.time += pickupDuration
         })
-        notes = compositionToMsgs(beat, bpm, velocity, pickupDuration, program, composition.notes)
+        notes = compositionToMsgs(beat, bpm, velocity, pickupDuration, instrument, composition.notes)
 
       // Otherwise, rebase pickup to start before the composition.
       } else {
         pickup.msgs.forEach(msg => {
           msg.time -= pickupDuration
         })
-        notes = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.notes)
+        notes = compositionToMsgs(beat, bpm, velocity, startTime, instrument, composition.notes)
       }
       const msgs: Msg[] = []
       msgs.push(...pickup.msgs)
@@ -425,23 +423,20 @@ function compositionToMsgs (
 
     case 'mod': {
       if (composition.mod.type === 'percussion') {
-        return compositionToMsgs(beat, bpm, velocity, startTime, 9, composition.note)
+        return compositionToMsgs(beat, bpm, velocity, startTime, 128, composition.note)
       } else if (composition.mod.type === 'pitchBend') {
-        const msgs = []
-        const data = compositionToMsgs(beat, bpm, velocity, startTime, program, composition.note)
-        msgs.push(midiMsg(startTime, pitchBendF(0, composition.mod.fields[0])))
-        msgs.push(...data.msgs)
-        msgs.push(midiMsg(data.endTime, pitchBendF(0, 0)))
+        const msgs: Msg[] = []
+        const data = compositionToMsgs(beat, bpm, velocity, startTime, instrument, composition.note)
+        // TODO: handle pitch bends
+        // msgs.push(midiMsg(startTime, pitchBendF(0, composition.mod.fields[0])))
+        // msgs.push(...data.msgs)
+        // msgs.push(midiMsg(data.endTime, pitchBendF(0, 0)))
         return { msgs, endTime: data.endTime }
       } else if (composition.mod.type === 'tempo') {
-        return compositionToMsgs(composition.mod.fields[0], composition.mod.fields[1], velocity, startTime, program, composition.note)
+        return compositionToMsgs(composition.mod.fields[0], composition.mod.fields[1], velocity, startTime, instrument, composition.note)
       } else if (composition.mod.type === 'dynamics') {
-        return compositionToMsgs(beat, bpm, composition.mod.fields[0], startTime, program, composition.note)
+        return compositionToMsgs(beat, bpm, composition.mod.fields[0], startTime, instrument, composition.note)
       } else if (composition.mod.type === 'instrument') {
-        // TODO: need to add an additional argument to compositionToMsgs
-        // to pass the "current" voice. Or do we need to add infrastructure to
-        // map one new voice to each channel? Need to check if channels 0-8 are
-        // actually available for playback...
         return compositionToMsgs(beat, bpm, velocity, startTime, composition.mod.fields[0], composition.note)
       } else {
         throw new ICE('compositionToMsgs', `unknown mod tag: ${composition.mod}`)
@@ -451,30 +446,35 @@ function compositionToMsgs (
 }
 
 export function playComposition (env: L.Env, composition: Composition): number {
-  const synth: Synth = JZZ.synth.Tiny()
-  const startTime = window.performance.now()
   const msgs = compositionToMsgs(dur(1, 4), 120, 64, 0, 0, composition).msgs
-  let i = 0
-  // NOT WORKING, I WONDER WHY!?
-  for (let i = 0; i < testProgramMap.length; i++) {
-    JZZ.MIDI.program(i, testProgramMap[i])
+  const triggers = msgs.filter(msg => msg.tag === 'trigger')
+  const startTime = waf().audioContext.currentTime
+  console.log(startTime)
+
+  // Enqueue notes
+  for (const msg of msgs) {
+    // const elapsed = audioContext.currentTime - startTime
+    if (msg.tag === 'midi' && msg.instrument < 128) {
+      waf().player.queueWaveTable(waf().audioContext, waf().audioContext.destination, instrMap.get(msg.instrument)!, startTime + msg.time / 1000, msg.note, msg.duration / 1000, msg.velocity)
+    } else if (msg.tag === 'midi' && msg.instrument === 128) {
+      waf().player.queueWaveTable(waf().audioContext, waf().audioContext.destination, percMap.get(msg.note)!, startTime + msg.time / 1000, msg.note, msg.duration / 1000, msg.velocity)
+    }
   }
-  // JZZ.synth.Tiny.setSynth(0, 50)
+
+  // Set up a timer to discharge triggers
+  let i = 0
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   const id = window.setInterval(async () => {
-    const now = window.performance.now()
-    while (i < msgs.length) {
-      const msg = msgs[i]
-      if (msg.time + startTime <= now) {
-        if (msg.tag === 'midi') {
-          synth.send(msg.data)
-        } else if (msg.tag === 'trigger') {
-          await evaluateExp(env, L.nlecall(L.nlevalue(msg.callback), []))
-        }
+    // N.B., in milliseconds
+    const now = waf().audioContext.currentTime
+    while (i < triggers.length) {
+      const trigger = triggers[i]
+      if (trigger.time / 1000 + startTime <= now) {
+        await evaluateExp(env, L.nlecall(L.nlevalue((trigger as TriggerMsg).callback), []))
         i += 1
-        continue // N.B., try to process the next message
+        continue
       } else {
-        return Promise.resolve(undefined) // N.B., wait for the next interval to process msgs again
+        return Promise.resolve(undefined)
       }
     }
     clearInterval(id)

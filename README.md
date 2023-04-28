@@ -20,5 +20,5 @@ Scamper is:
 
 Scamper uses:
 
-+   [JZZ](https://github.com/jazz-soft/JZZ) for its MIDI playback facilities.
++   [WebAudioFont](https://surikov.github.io/webaudiofont/) for sample-based music playback.
 +   [Prism.js](https://prismjs.com) for syntax highlighting.
