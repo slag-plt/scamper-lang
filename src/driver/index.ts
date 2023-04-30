@@ -7,6 +7,7 @@ type CompilerOptions = {
   filename?: string,
   checkOnly: boolean,
   formatOnly: boolean,
+  emitPage: boolean,
   emitProg: boolean,
   emitTokens: boolean,
   emitTrace: boolean,
@@ -18,6 +19,7 @@ function makeDefaultOptions (): CompilerOptions {
     filename: undefined,
     checkOnly: false,
     formatOnly: false,
+    emitPage: false,
     emitProg: false,
     emitTokens: false,
     emitTrace: false,
@@ -35,6 +37,7 @@ Options:
 -h, --help       Prints this help message.
 -c, --check      Checks the program for errors, but does not run the program.
 --format         Formats the program, printing the results to stdout.
+--emit-webpage   Prints a standalone webpage that executes the program.
 --emit-prog      Prints the output interspersed between the program's statements.
 --emit-tokens    Prints tokens emitted by the lexer.
 --emit-trace     Prints the step-by-step evaluation of the program (implies --use-stepper).
@@ -53,6 +56,8 @@ function processArgs (args: string[]): CompilerOptions {
       opts.checkOnly = true
     } else if (arg === '--format') {
       opts.formatOnly = true
+    } else if (arg === '--emit-webpage') {
+      opts.emitPage = true
     } else if (arg === '--emit-prog') {
       opts.emitProg = true
     } else if (arg === '--emit-tokens') {
@@ -139,7 +144,9 @@ function main () {
     if (opts.checkOnly) { process.exit(0) }
 
     // Phase 3: Output
-    if (opts.emitTrace) {
+    if (opts.emitPage) {
+      console.log(scamper.makePage(opts.filename!, 'latest', src))
+    } else if (opts.emitTrace) {
       let state = new scamper.ProgramState(prog)
       let step = 1
       console.log('===== Initial Program =====')

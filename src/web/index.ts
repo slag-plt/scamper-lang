@@ -42,6 +42,7 @@ async function replaceOutputWidgets () {
     const classes = element.className.split(' ')
     const outputProg = classes.includes('output-prog')
     const src = element.textContent!
+    element.textContent = 'Executing program...'
     const result = await Scamper.compileProgram(src).asyncAndThen(async prog =>
       Scamper.ok({
         statements: prog,
@@ -174,6 +175,13 @@ async function replaceExplorationWidgets () {
 global.replaceCodeWidgets = async function () {
   await replaceOutputWidgets()
   await replaceExplorationWidgets()
+}
+
+global.toggleInlineSource = function () {
+  const inlineSource = (document.getElementById('inline-source')! as HTMLInputElement).checked
+  for (const e of document.getElementsByClassName('program')) {
+    e.setAttribute('style', inlineSource ? 'display: block' : 'display: none')
+  }
 }
 
 global.ok = Scamper.ok

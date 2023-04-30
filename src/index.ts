@@ -20,6 +20,7 @@ export * as Image from './lib/image.js'
 export * as Music from './lib/music.js'
 export { Store, store } from './runtime.js'
 export { preludeEnv, internalLibs } from './lib/exports.js'
+export { makePage } from './web/page.js'
 
 export function compileProgram (src: string): Result<Program> {
   return parseProgram(src).andThen(prog =>
