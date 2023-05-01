@@ -130,6 +130,23 @@ const ignorePrim: L.Prim = (_env, args, app) =>
     return ok(ret)
   }))
 
+const onKeydownDoc: L.Doc = new L.Doc(
+  '(on-keydown! fn) -> void?', [
+    'fn: procedure?'
+  ],
+  'Calls `fn` whenever a key is pressed while the page is focused. `fn` takes a single argument, the key pressed by the user as a string.'
+)
+
+const onKeydownPrim: L.Prim = (env, args, app) =>
+  Promise.resolve(Utils.checkArgsResult('on-keydown!', ['procedure?'], undefined, args, app).andThen(_ => {
+    const fn = args[0] as L.FunctionType
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    window.addEventListener('keydown', async (e) => {
+      await E.evaluateExp(env, L.nlecall(L.nlevalue(fn), [L.nlevalue(e.key)]))
+    })
+    return ok(undefined)
+  }))
+
 const htmlEntry = (prim: L.Prim, docs?: L.Doc) => L.entry(L.vprim(prim), 'html', undefined, docs)
 
 export const htmlLib: L.Env = new L.Env([
@@ -138,5 +155,6 @@ export const htmlLib: L.Env = new L.Env([
   ['button', htmlEntry(buttonPrim, buttonDoc)],
   ['tag', htmlEntry(tagPrim, tagDoc)],
   ['tag-set-children!', htmlEntry(tagSetChildrenPrim, tagSetChildrenDoc)],
-  ['ignore', htmlEntry(ignorePrim, ignoreDoc)]
+  ['ignore', htmlEntry(ignorePrim, ignoreDoc)],
+  ['on-keydown!', htmlEntry(onKeydownPrim, onKeydownDoc)]
 ])
