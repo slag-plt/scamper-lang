@@ -1,6 +1,6 @@
 import { Drawing } from '../lib/image.js'
 
-function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasElement) {
+export function render (x: number, y: number, drawing: Drawing, canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext('2d')!
   switch (drawing.tag) {
     case 'ellipse': {

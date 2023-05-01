@@ -1,6 +1,8 @@
 import { msg } from '../messages.js'
 import { errorToString, ok } from '../result.js'
 import { runtimeError } from '../runtime.js'
+import { Drawing } from './image.js'
+import { render } from '../web/image.js'
 import * as E from '../evaluator.js'
 import * as L from '../lang.js'
 import * as Utils from './utils.js'
@@ -177,41 +179,23 @@ const drawTextPrim: L.Prim = (_env, args, app) =>
     return ok(undefined)
   }))
 
-const loadImageDoc: L.Doc = new L.Doc(
-  '(load-image path) -> void?', [
-    'path: string?, the path to the image'
-  ],
-  'Constructs an image value from the given path.'
-)
-
-const loadImagePrim: L.Prim = (_env, args, app) =>
-  Utils.checkArgsResult('load-image', ['string?'], undefined, args, app).asyncAndThen(async _ => {
-    const image = new Image()
-    await new Promise(resolve => {
-      console.log('...')
-      image.onload = resolve
-      image.src = args[0] as string
-    })
-    return ok(image)
-  })
-
-const drawImageDoc: L.Doc = new L.Doc(
-  '(draw-image canvas image x y) -> void?', [
+const drawDrawingDoc: L.Doc = new L.Doc(
+  '(draw-drawing canvas drawing x y) -> void?', [
     'canvas: canvas?',
-    'image: image?',
+    'drawing: drawing?',
     'x: integer?',
     'y: integer?'
   ],
-  'Draws the given image at the given coordinates.'
+  'Draws the given drawing (created via the `image` library) at the given coordinates.'
 )
 
-const drawImagePrim: L.Prim = (_env, args, app) =>
+const drawDrawingPrim: L.Prim = (_env, args, app) =>
   Promise.resolve(Utils.checkArgsResult('draw-image', ['any', 'any', 'number?', 'number?'], undefined, args, app).andThen(_ => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const ctx: CanvasRenderingContext2D = (args[0] as HTMLCanvasElement).getContext('2d')!
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const image: HTMLImageElement = args[1] as any
-    ctx.drawImage(image, args[2] as number, args[3] as number)
+    const canvas: HTMLCanvasElement = args[0] as HTMLCanvasElement
+    const drawing: Drawing = args[1] as Drawing
+    const x: number = args[2] as number
+    const y: number = args[3] as number
+    render(x, y, drawing, canvas)
     return ok(undefined)
   }))
 
@@ -304,8 +288,7 @@ export const canvasLib: L.Env = new L.Env([
   ['draw-ellipse', canvasEntry(drawEllipsePrim, drawEllipseDoc)],
   ['draw-circle', canvasEntry(drawCirclePrim, drawCircleDoc)],
   ['draw-text', canvasEntry(drawTextPrim, drawTextDoc)],
-  ['load-image', canvasEntry(loadImagePrim, loadImageDoc)],
-  ['draw-image', canvasEntry(drawImagePrim, drawImageDoc)],
+  ['draw-drawing', canvasEntry(drawDrawingPrim, drawDrawingDoc)],
   ['draw-path', canvasEntry(drawPathPrim, drawPathDoc)],
   ['animate-with', canvasEntry(animateWithPrim, animateWithDoc)],
   ['set-canvas-onclick', canvasEntry(setCanvasOnclickPrim, setCanvasOnclickDoc)]
