@@ -238,7 +238,7 @@ export const musicLib: L.Env = new L.Env([
   ['denominator', musicEntry(denominatorPrim, Docs.denominator)],
   ['empty', L.entry(empty(), 'music', undefined, Docs.empty)],
   ['note', musicEntry(notePrim, Docs.note)],
-  // ['note-freq', musicEntry(noteFreqPrim, Docs.noteFreq)],
+  ['note-freq', musicEntry(noteFreqPrim, Docs.noteFreq)],
   ['rest', musicEntry(restPrim, Docs.rest)],
   ['par', musicEntry(parPrim, Docs.par)],
   ['seq', musicEntry(seqPrim, Docs.seq)],
@@ -291,21 +291,8 @@ function durationToTimeMs (beat: Duration, bpm: number, dur: Duration) {
   return ratioToDouble(dur) / (ratioToDouble(beat) * bpm) * 60 * 1000
 }
 
-// eslint-disable-next-line no-unused-vars
-function freqToNoteOffset (freq: number): { note: number, offset: number } {
-  const value = Math.log2(freq / 440) * 12 + 69
-  const note = Math.floor(value)
-  // N.B., assume a pitch bend of _two_ semitones, so we want half the fractional part
-  // to obtain the percentage to bend within that note.
-  const offset = (value - note) / 2
-  return { note, offset }
-}
-
-// eslint-disable-next-line no-unused-vars
-function _pitchBendF (_ch: number, _amt: number): void {
-  // N.B., JZZ.MIDI doesn't define pitchBendF for some reason...
-  // return (JZZ.MIDI as any).pitchBendF(ch, amt)
-  throw new Error('NOT IMPLEMENTED AHHH')
+function freqToNote (freq: number): number {
+  return Math.log2(freq / 440) * 12 + 69
 }
 
 function compositionToMsgs (
@@ -331,34 +318,18 @@ function compositionToMsgs (
     }
     case 'note-freq': {
       const endTime = startTime + durationToTimeMs(beat, bpm, composition.duration)
-      // const { note, offset } = freqToNoteOffset(composition.freq)
-      // TODO: add pitch bend to msgs
       return {
         endTime,
         msgs: [
+          midiMsg(
+            startTime,
+            durationToTimeMs(beat, bpm, composition.duration),
+            freqToNote(composition.freq),
+            instrument,
+            velocity / 127
+          )
         ]
       }
-      // return {
-      //   endTime,
-      //   msgs: [
-      //     midiMsg(
-      //       startTime,
-      //       pitchBendF(0, offset)
-      //     ),
-      //     midiMsg(
-      //       startTime,
-      //       JZZ.MIDI.noteOn(program, note, velocity)
-      //     ),
-      //     midiMsg(
-      //       endTime,
-      //       JZZ.MIDI.noteOff(program, note, velocity)
-      //     ),
-      //     midiMsg(
-      //       endTime,
-      //       pitchBendF(0, 0)
-      //     )
-      //   ]
-      // }
     }
     case 'rest':
       return {
