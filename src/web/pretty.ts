@@ -59,7 +59,7 @@ export function valueToNode (v: L.Value): HTMLElement {
       case ' ': printed = 'space'; break
       default: break
     }
-    return makeCodeElt(`$\\${printed}`)
+    return makeCodeElt(`#\\${printed}`)
   } else if (L.valueIsPair(v)) {
     if (L.valueIsList(v)) {
       const arr = L.valueListToArray_(v)
