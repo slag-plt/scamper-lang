@@ -36,6 +36,7 @@ function drawOscilloscope (data: Uint8Array, canvas: HTMLCanvasElement, analyser
 }
 
 export function audioRenderer (obj: object): HTMLElement {
+  const ctx = Audio.getCtx()
   const pipeline = obj as Audio.AudioPipeline
   const ret = document.createElement('span')
   const playButton = document.createElement('button')
@@ -44,7 +45,7 @@ export function audioRenderer (obj: object): HTMLElement {
   stopButton.textContent = '■'
   const visualizer = document.createElement('canvas')
 
-  const analyser = Audio.ctx.createAnalyser()
+  const analyser = ctx.createAnalyser()
   analyser.fftSize = 2048
   const bufferLength = analyser.frequencyBinCount
   const dataArray = new Uint8Array(bufferLength)
@@ -54,14 +55,14 @@ export function audioRenderer (obj: object): HTMLElement {
     case 'sample': {
       const data = pipeline.data
       // N.B., for now, make the audio sample stereo (2 channels)
-      const buffer = Audio.ctx.createBuffer(2, data.length, Audio.ctx.sampleRate)
+      const buffer = ctx.createBuffer(2, data.length, ctx.sampleRate)
       buffer.copyToChannel(data, 0)
       buffer.copyToChannel(data, 1)
       let source: AudioBufferSourceNode | undefined
       playButton.onclick = () => {
-        source = Audio.ctx.createBufferSource()
+        source = ctx.createBufferSource()
         source.buffer = buffer
-        source.connect(Audio.ctx.destination)
+        source.connect(ctx.destination)
         source.connect(analyser)
         source.start()
         drawOscilloscope(dataArray, visualizer, analyser)

@@ -10,7 +10,17 @@ import * as Utils from './utils.js'
 import { ok, Result } from '../result.js'
 
 export type AudioPipeline = SampleNode
-export const ctx = new AudioContext({ sampleRate: 16000 }) // TODO: need to parameterize this!
+
+// N.B., lazily instantiate AudioContext to avoid issues with non-web contexts
+// TODO: need to factor appropriately so that we aren't initializing any
+// web things unless we are definitely in the browser.
+let ctx: AudioContext | undefined
+export const getCtx = (): AudioContext => {
+  if (ctx === undefined) {
+    ctx = new AudioContext({ sampleRate: 16000 })
+  }
+  return ctx
+}
 
 export type SampleNode = { renderAs: 'audio', tag: 'sample', data: Float32Array, storeTag?: number }
 export const sampleNode = (data: Float32Array): AudioPipeline => ({ renderAs: 'audio', tag: 'sample', data, storeTag: undefined })
@@ -147,6 +157,7 @@ const playSampleDoc: L.Doc = new L.Doc(
 const playSamplePrim = (env: L.Env, args: L.Value[], app: L.Exp): Promise<Result<L.Value>> =>
   Promise.resolve(Utils.checkArgsResult('play-sample', ['any'], undefined, args, app).andThen(_ => {
     if (L.valueHasPropertyValue(args[0], 'renderAs', 'audio')) {
+      const ctx = getCtx()
       const pipeline = args[0] as AudioPipeline
       const data = pipeline.data
       // N.B., for now, make the audio sample stereo (2 channels)
