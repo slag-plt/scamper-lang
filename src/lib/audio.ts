@@ -7,9 +7,10 @@ import { noRange } from '../loc.js'
 import * as L from '../lang.js'
 import * as Pretty from '../pretty.js'
 import * as Utils from './utils.js'
-import { ok } from '../result.js'
+import { ok, Result } from '../result.js'
 
 export type AudioPipeline = SampleNode
+export const ctx = new AudioContext({ sampleRate: 16000 }) // TODO: need to parameterize this!
 
 export type SampleNode = { renderAs: 'audio', tag: 'sample', data: Float32Array, storeTag?: number }
 export const sampleNode = (data: Float32Array): AudioPipeline => ({ renderAs: 'audio', tag: 'sample', data, storeTag: undefined })
@@ -136,6 +137,32 @@ const delayNodePrim: L.Prim = (_env, args, app) =>
     return ok(source)
   }))
 
+const playSampleDoc: L.Doc = new L.Doc(
+  '(play-sample sample) -> void?', [
+    'sample: audio?'
+  ],
+  'Plays the given audio sample. Note that due to browser limitations, the call to this function must be guarded by user input, _e.g._, by invoking it with a button press.'
+)
+
+const playSamplePrim = (env: L.Env, args: L.Value[], app: L.Exp): Promise<Result<L.Value>> =>
+  Promise.resolve(Utils.checkArgsResult('play-sample', ['any'], undefined, args, app).andThen(_ => {
+    if (L.valueHasPropertyValue(args[0], 'renderAs', 'audio')) {
+      const pipeline = args[0] as AudioPipeline
+      const data = pipeline.data
+      // N.B., for now, make the audio sample stereo (2 channels)
+      const buffer = ctx.createBuffer(2, data.length, ctx.sampleRate)
+      buffer.copyToChannel(data, 0)
+      buffer.copyToChannel(data, 1)
+      const source = ctx.createBufferSource()
+      source.buffer = buffer
+      source.connect(ctx.destination)
+      source.start()
+      return ok(undefined)
+    } else {
+      return runtimeError(msg('error-precondition-not-met', 'play-sample', 1, 'audio', Pretty.valueToString(0, args[0])))
+    }
+  }))
+
 const audioEnvEntry = (prim: L.Prim, doc: L.Doc): L.EnvEntry => ({ value: L.vprim(prim), source: 'audio', range: noRange(), doc })
 
 export const audioLib: L.Env = new L.Env([
@@ -145,5 +172,6 @@ export const audioLib: L.Env = new L.Env([
   ['oscillator-node', audioEnvEntry(oscillatorNodePrim, oscillatorNodeDoc)],
   ['microphone-node', audioEnvEntry(microphoneNodePrim, microphoneNodeDoc)],
   ['audio-file-node', audioEnvEntry(audioFileNodePrim, audioFileNodeDoc)],
-  ['delay-node', audioEnvEntry(delayNodePrim, delayNodeDoc)]
+  ['delay-node', audioEnvEntry(delayNodePrim, delayNodeDoc)],
+  ['play-sample', audioEnvEntry(playSamplePrim, playSampleDoc)]
 ])
